@@ -32,6 +32,17 @@ logs/
 outputs/
 temp/
 
+# 模型权重（阶段 205 修：`models/.gitkeep` 早就承诺「已被 .gitignore 忽略」，
+# 但规则一直缺失 ⇒ 205MB 的 big-lama.pt 被真实追踪，会让 `git push` 被
+# GitHub 的 100MB 单文件硬上限拒绝）。权重由 `python download_model.py` 获取。
+# 保留 `models/.gitkeep`（空目录占位）与 README，故不忽略整个 models/。
+models/*.pt
+models/*.pth
+models/*.onnx
+models/*.safetensors
+# 运行时状态（记录当前激活模型，随本机而变，非源码）
+models/.active_model.json
+
 # 阶段探针与临时脚本（E1 已归档根目录点文件；新探针一律放这里）
 .scratch/
 
