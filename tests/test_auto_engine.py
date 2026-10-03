@@ -59,7 +59,15 @@ def test_auto_uses_opencv_when_model_present():
 
 @pytest.mark.skipif(not is_model_available(), reason="需要 LaMa 权重（P0 环境已就绪）")
 def test_auto_honors_lama_preference_when_model_present():
-    """集成：偏好 lama 且模型就绪时，auto 经 LaMa 路径修复成功（验证接线正确）。"""
+    """集成：偏好 lama 且模型就绪时，auto 经 LaMa 路径修复成功（验证接线正确）。
+
+    阶段 206 补：`skipif` 只检查**权重文件**在位，但走 LaMa 路径**还需要 torch**。
+    真实 CI 是全新 clone（权重不入库 ⇒ `is_model_available()` 为 False ⇒ 本就 skip），
+    故这不是 CI 阻塞；但「有权重、无 torch」的组合（如 `download_model.py` 跑过却
+    没装 torch）会让本用例以 `ModuleNotFoundError` 失败 ⇒ 显式补 torch 守卫，
+    让依赖声明与实现一致。
+    """
+    pytest.importorskip("torch")
     prev = config.INPAINT_AUTO_PREFER
     config.INPAINT_AUTO_PREFER = "lama"
     try:

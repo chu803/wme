@@ -113,6 +113,9 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/audit_selector.py": "S 审计选点工具",
     "scripts/build_real_ground_truth.py": "S 真值构建",
     "scripts/cascade_robustness.py": "S 鲁棒性诊断",
+    # 阶段 206：默认模式会**跑整个 CI 等价子集**（约 10 分钟），不适合做子进程自检
+    # （会拖垮自检套件）。其自身有 `--check` 零副作用自检与 `tests/test_ci_env_probe.py` 守卫。
+    "scripts/ci_env_probe.py": "S CI 环境等价性探针（默认模式跑全量，另见 --check）",
     "scripts/collect_real_assets.py": "S 资产收集（含网络）",
     "scripts/detector_diag.py": "S 检测器诊断",
     "scripts/detector_mask_dilate_audit.py": "S 掩码膨胀审计",

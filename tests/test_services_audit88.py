@@ -77,6 +77,11 @@ def _pdf_text(path: str) -> str:
 
 def _render(entries):
     """渲染一份 HTML + 一份 PDF，返回 (html 汇总文本, pdf 全文)。"""
+    # 阶段 206 修：本助手会经 `generate_pdf` 惰性 import fitz（PyMuPDF），
+    # 而 fitz 是**可选依赖**（requirements-min 不含）⇒ 之前 CI（min 环境）上
+    # 这 6 个用例直接 `ModuleNotFoundError` 失败。在此处 skip 比在 `_pdf_text`
+    # 处更早、更正确（PDF 生成在 `_pdf_text` 之前就会炸）。
+    pytest.importorskip("fitz")
     d = tempfile.mkdtemp(prefix="s88_")
     hp = os.path.join(d, "r.html")
     pp = os.path.join(d, "r.pdf")
@@ -186,13 +191,16 @@ def test_html_and_pdf_consume_same_quality_summary(monkeypatch):
     hp = os.path.join(d, "s.html")
     pp = os.path.join(d, "s.pdf")
     generate_html(ALL_ASSESSED, title="哨兵", out_path=hp)
-    generate_pdf(ALL_ASSESSED, title="哨兵", out_path=pp)
 
     hs = _html_summary(hp)
     # 哨兵专属数值必须原样出现在 HTML 汇总行里（_html_summary 已剥掉标签）。
     assert "良好 7" in hs and "未评估 9" in hs and "平均分 42.5" in hs, hs
     assert "共 3 条" in hs
 
+    # 阶段 206：PDF 侧需 fitz（可选依赖）⇒ 在**此处**守卫，让 HTML 侧断言仍照常执行
+    # （放在用例开头会连 HTML 一起跳过，损失本可运行的覆盖）。
+    pytest.importorskip("fitz")
+    generate_pdf(ALL_ASSESSED, title="哨兵", out_path=pp)
     pt = _pdf_text(pp)
     if "质量概况" in pt:
         assert "良好 7" in pt and "未评估 9" in pt, pt

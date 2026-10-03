@@ -116,13 +116,20 @@ def test_validate_pdf_file_missing():
         validate_pdf_file("__not_exist__.pdf")
 
 
+@pytest.mark.skipif(not __import__("services.pdf_service", fromlist=["is_pdf_available"])
+                    .is_pdf_available(), reason="PyMuPDF 未安装")
 def test_validate_pdf_file_corrupted(tmp_path):
+    # 阶段 206 修：`validate_pdf_file` 在缺 fitz 时抛的是 ImportError 而非
+    # CorruptedMediaError ⇒ 本用例需要 PyMuPDF 在位才有意义（原缺 skipif，
+    # CI 的 min 环境上直接失败）。
     pp = tmp_path / "broken.pdf"
     pp.write_bytes(b"%PDF-1.4 this is not a real pdf")
     with pytest.raises(CorruptedMediaError):
         validate_pdf_file(str(pp))
 
 
+@pytest.mark.skipif(not __import__("services.pdf_service", fromlist=["is_pdf_available"])
+                    .is_pdf_available(), reason="PyMuPDF 未安装")
 def test_validate_pdf_file_too_large(tmp_path, monkeypatch):
     """把体积上限压到 -1，任何（体积>=0）的 PDF 都应触发 MediaTooLargeError。"""
     monkeypatch.setattr(config, "MAX_PDF_FILE_MB", -1)

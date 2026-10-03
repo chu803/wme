@@ -8,14 +8,21 @@
 本测试用 monkeypatch 把 torch.cuda 伪装成「可用显卡」，对 auto/cuda/cpu 三种模式、
 显存安全水位降级、半精度门控逐一断言，把 CUDA 分支钉成可机器判定的契约。
 
-注意：本测试**不依赖真实显卡**，只在 CPU 版 torch 上伪造 CUDA 行为，沙箱/CI 均可跑。
+⚠ 依赖边界（阶段 206 修正）：本测试**不需要真实显卡**，但**需要 torch 在位**
+（用 CPU 版 torch 伪造 CUDA 行为）。原文案写「沙箱/CI 均可跑」**不准确**——
+项目的 CI 只装 `requirements-min.txt`（**刻意不含 torch**），那里本模块会
+`ModuleNotFoundError` ⇒ 之前 4 个用例在 CI 上直接 ERROR（收集期 fixture 失败）。
+现加模块级 `pytest.importorskip("torch")`：**torch 在位就跑（完整环境/真机），
+不在位就 skip（min 环境 CI）**——这既保住了原意，又让「CI 绿」名副其实。
 """
 
 import config
 import pytest
 
-import core.device_manager as dm
-from core.device_manager import (
+pytest.importorskip("torch")          # 见模块 docstring 的「依赖边界」
+
+import core.device_manager as dm       # noqa: E402
+from core.device_manager import (      # noqa: E402
     select_device,
     use_fp16,
     reset_cache,

@@ -14,6 +14,7 @@ import tempfile
 
 import numpy as np
 import cv2
+import pytest
 
 from services.report_service import (
     ReportSource,
@@ -101,6 +102,10 @@ def test_generate_html_self_contained():
 
 
 def test_generate_pdf_real_file():
+    # 阶段 206 修：本用例生成**真实 PDF**（`generate_pdf` 惰性 import fitz），
+    # 而 fitz（PyMuPDF）是可选依赖（requirements-min 不含）⇒ 缺它就 skip，
+    # 否则 CI 的 min 环境上直接 `ModuleNotFoundError` 失败。
+    pytest.importorskip("fitz")
     o = _save(np.full((400, 600, 3), 235, np.uint8))
     r = _save(np.full((400, 600, 3), 60, np.uint8))
     out = tempfile.NamedTemporaryFile(suffix=".pdf", delete=False)
