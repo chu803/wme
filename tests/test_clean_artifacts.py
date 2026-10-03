@@ -168,3 +168,70 @@ def test_delete_orchestration_via_mock(tmp_path, monkeypatch):
     assert failed == []
     assert ok == 120
     assert len(removed) == 120
+
+
+# ---------------------------------------------------------------------------
+# 阶段 204：分类器与处理器必须**一致**（LESSONS 216/217）
+# ---------------------------------------------------------------------------
+# 真缺陷：`classify_file` 早就产出了 `stray_nul` 类别（Windows 误建的保留名文件），
+# 但 `archive()` 没处理它 ⇒ `os.path.relpath("D:\\...\\NUL", root)` 抛
+#   ValueError: path is on mount '\\\\\\\\.\\\\NUL', start on mount 'D:'
+# （ntpath 把保留设备名当**设备路径**），且该调用在 try 之外 ⇒
+# **一个坏条目让整轮归档当场中断**（前面成功的白做一半）。
+
+def test_archive_skips_registered_non_archivable_without_crashing(tmp_path: Path):
+    """登记为「不可归档」的类别必须被**跳过**（而不是崩溃）。
+
+    ⚠ 不能断言 `not (tmp_path/"NUL").exists()`：Windows 上 `NUL` 是**空设备**，
+    `Path("NUL").exists()` **恒为 True**（无论文件是否存在）——这正是保留设备名
+    的特殊性，也是本缺陷的根源。故改为检查「归档目录里没出现它」。
+    """
+    root = str(tmp_path)
+    hits = {"stray_nul": [f"{root}/NUL"]}
+    ok, failed = archive(hits, root)
+    assert ok == 0, "不可归档类别不应计入成功"
+    assert failed == [], "跳过 ≠ 失败（它是已知不可归档，不是错误）"
+    # 归档目录里不应产生任何**文件**（ok==0 ⇒ 一条都没被 move；
+    # 归档根目录自身会被 makedirs 创建，故只检查文件）
+    arch_root = tmp_path / ".scratch" / "cleaned"
+    files = [p for p in arch_root.rglob("*") if p.is_file()] if arch_root.exists() else []
+    assert files == [], f"跳过的条目不应产生任何归档文件：{files}"
+
+
+def test_archive_isolates_per_item_failure(tmp_path: Path):
+    """**单条坏路径不得中断整轮**——这是本缺陷的核心修法。
+
+    反例（修复前）：一个 `NUL` 条目让整轮 `archive()` 抛异常退出，
+    其余本可成功归档的条目全部白费（实测：`build/` 之后的条目都没被处理）。
+    """
+    root = tmp_path
+    good1 = root / "a.out"
+    good2 = root / "b.out"
+    _touch(good1)
+    _touch(good2)
+    # 中间插一个 relpath 必然失败的名字（Windows 保留设备名；不创建真实文件）
+    hits = {"stray_out": [str(good1), "NUL", str(good2)]}
+    ok, failed = archive(hits, str(root))
+    assert ok == 2, f"两条正常条目都应归档成功，实际 {ok}"
+    assert len(failed) == 1, f"坏条目应单独记入失败，实际 {failed}"
+    assert "NUL" in failed[0]
+    # 两条好的确实被移走了（证明隔离是"继续处理"，不是"提前 return"）
+    assert not good1.exists() and not good2.exists()
+
+
+def test_non_archivable_keys_are_real_categories():
+    """`_NON_ARCHIVABLE` 的键必须是分类器**真的会产出**的类别（防幽灵登记，同 217）。
+
+    否则该豁免就是「幽灵」——不仅无用，还会在未来某个真实类别重名时**静默跳过**它。
+    """
+    table = _mod._NON_ARCHIVABLE
+    assert table, "_NON_ARCHIVABLE 不应为空（stray_nul 必须登记）"
+    assert "stray_nul" in table, "stray_nul 必须登记为不可归档（否则 archive 会崩）"
+    # 用代表性文件名回放分类器，确认每个登记的键都真能产出
+    probes = {"stray_nul": "NUL"}
+    for key, probe in probes.items():
+        assert classify_file(probe, True) == key
+    # 反向：登记表里若出现无法由上面探针产出的键，说明是幽灵条目
+    assert set(table) <= set(probes), (
+        f"_NON_ARCHIVABLE 含未验证的键（可能是幽灵登记）：{set(table) - set(probes)}"
+    )

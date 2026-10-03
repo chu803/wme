@@ -69,6 +69,17 @@ _ARCHIVE_SUB = "cleaned"
 #: 删除单批上限（≤ 沙箱护栏阈值，见 LESSONS 202），规避「单次 >50 即拒 + 会话闩锁」。
 _DELETE_BATCH_LIMIT = 50
 
+#: 已知**不可归档**的类别 → 理由。这些条目**必须仍被报告**（用户要知道它存在），
+#: 但 `archive()` 必须**跳过**它们、而不是崩溃（阶段 204 修的真实缺陷）：
+#:   · `stray_nul`：Windows 保留设备名。ntpath 把它识别为**设备路径**
+#:     （`\\.\NUL`），与项目所在盘符不是同一 mount ⇒
+#:     `os.path.relpath` 抛 `ValueError`、`shutil.move` 亦不可用。
+#: 判据：分类器产出的**每个**类别，处理器都必须有明确处置——否则就是
+#: 「分类器与处理器不一致」，一个条目即可中断整轮（同 LESSONS 216）。
+_NON_ARCHIVABLE = {
+    "stray_nul": "Windows 保留设备名，无法求相对路径 / 移动，需手工处置",
+}
+
 
 # ------------------------------------------------------------------------------
 # 分类单一真值来源
@@ -274,34 +285,60 @@ def print_report(rep: dict, *, verbose: bool = False) -> None:
 
 
 def archive(hits: "dict[str, list[str]]", root: str) -> "tuple[int, list[str]]":
-    """把命中产物 rename 到 `.scratch/cleaned/<ts>/<相对路径>`。返回 (成功数, 失败列表)。"""
+    """把命中产物 rename 到 `.scratch/cleaned/<ts>/<相对路径>`。返回 (成功数, 失败列表)。
+
+    阶段 204 修（**分类器与处理器不一致** —— 一个坏条目毁掉整轮归档）：
+        `classify_file` 早就产出了 `stray_nul` 类别（Windows 误建的保留名文件 `NUL`），
+        但本函数**没处理它**。结果 `_os.path.relpath("D:\\...\\NUL", root)` 抛
+
+            ValueError: path is on mount '\\\\.\\NUL', start on mount 'D:'
+
+        （ntpath 把保留设备名识别为**设备路径** ⇒ 与项目所在盘符不同 mount），
+        而该调用**在 try 之外** ⇒ **整个归档轮次当场中断**，前面成功的都白做一半。
+
+    修法三条：
+        ① **逐条目错误隔离**：单条失败只记入 `failed`，绝不中断整轮；
+        ② **已知不可归档的类别显式登记**（`_NON_ARCHIVABLE`）并单独计为「跳过」——
+           它们**必须仍被报告**（用户要知道它存在），但归档/删除对它们无意义；
+        ③ `print` 移到 `shutil.move` **之后**——原实现在 move 之前就打印「归档 →」，
+           失败时输出与真实状态矛盾（同源经验：成功路径的展示性输出不可先行）。
+    """
     ts = time.strftime("%Y%m%d_%H%M%S")
     archive_root = _os.path.join(root, _ARCHIVE_TOP, _ARCHIVE_SUB, ts)
     _os.makedirs(archive_root, exist_ok=True)
     ok = 0
     failed = []
+    skipped = []
     for cat in sorted(hits):
+        skip_reason = _NON_ARCHIVABLE.get(cat)
         for src in hits[cat]:
-            rel = _os.path.relpath(src, root)
-            dest = _os.path.join(archive_root, rel)
-            # 同文件系统 rename（零拷贝）；跨文件系统 shutil.move 退化为复制 + 删除原。
-            dest_dir = _os.path.dirname(dest)
-            _os.makedirs(dest_dir, exist_ok=True)
-            # 目标已存在则追加序号，避免覆盖。
-            real_dest = dest
-            if _os.path.exists(real_dest):
-                base, ext = _os.path.splitext(dest)
-                i = 2
-                while _os.path.exists(f"{base}_{i}{ext}"):
-                    i += 1
-                real_dest = f"{base}_{i}{ext}"
-            print(f"  归档 → {real_dest}")
+            if skip_reason is not None:
+                skipped.append(f"{src}（{skip_reason}）")
+                continue
             try:
+                rel = _os.path.relpath(src, root)
+                dest = _os.path.join(archive_root, rel)
+                # 同文件系统 rename（零拷贝）；跨文件系统 shutil.move 退化为复制 + 删除原。
+                _os.makedirs(_os.path.dirname(dest), exist_ok=True)
+                # 目标已存在则追加序号，避免覆盖。
+                real_dest = dest
+                if _os.path.exists(real_dest):
+                    base, ext = _os.path.splitext(dest)
+                    i = 2
+                    while _os.path.exists(f"{base}_{i}{ext}"):
+                        i += 1
+                    real_dest = f"{base}_{i}{ext}"
                 shutil.move(src, real_dest)
-                ok += 1
-            except OSError as e:
-                failed.append(f"{src} ({e})")
-    print(f"\n归档完成：成功 {ok} 项，失败 {len(failed)} 项 → {archive_root}")
+            except (OSError, ValueError) as e:      # noqa: BLE001 - 单条失败不中断整轮
+                failed.append(f"{src} ({type(e).__name__}: {e})")
+                continue
+            ok += 1
+            print(f"  归档 → {real_dest}")
+    print(f"\n归档完成：成功 {ok} 项，失败 {len(failed)} 项，跳过 {len(skipped)} 项 → {archive_root}")
+    if skipped:
+        print("  （跳过 = 已知不可归档类别，仍需你手工处置：）")
+        for s in skipped:
+            print(f"    · {s}")
     return ok, failed
 
 
