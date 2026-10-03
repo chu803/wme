@@ -1,0 +1,25 @@
+[
+  {
+    "id": "single_123456_854059",
+    "ts": 1790854059.0803592,
+    "original_name": "single_123456",
+    "original_path": "D:\\work 111\\2026-08-03-17-38-51\\.pytest_191f2\\test_add_success_with_original0\\uploads\\single_123456.png",
+    "result_path": null,
+    "thumb_path": "D:\\work 111\\2026-08-03-17-38-51\\.pytest_191f2\\test_add_success_with_original0\\thumbs\\single_123456.png",
+    "mode": "manual",
+    "engine": "lama",
+    "status": "success",
+    "file_hash": "2b3bc7e0874e58a63023ba7f0e388686",
+    "params": "引擎=lama",
+    "kind": "image",
+    "video_path": null,
+    "duration": 0.0,
+    "fps": 0.0,
+    "frames": 0,
+    "width": 0,
+    "height": 0,
+    "upscaled": false,
+    "page_count": 0,
+    "file_size": 0
+  }
+]

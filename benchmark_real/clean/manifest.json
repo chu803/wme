@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "_note": "阶段 180 干净图集（与 benchmark_real/manifest.json 同构）。所有条目 clean:true 且真值 watermarks:[]，用于测量「补全先验在干净图上误发整牌」的误报率。当前为合成压力样本（syn_*），待替换为真实照片（用户在豆包/图库生成无 AI 水印的写实图，右下角可含招牌/文字/Logo 以压力测试）。",
+  "images": [
+    {"id": "syn_01_plain", "filename": "syn_01_plain.png", "path": "images/syn_01_plain.png", "ai_source": "synthetic", "watermark_style_hint": "none", "clean": true, "original_size": [1024, 1024], "sha256": "", "added_at": "2026-10-01T00:00:00Z", "source": "synthetic"},
+    {"id": "syn_02_corner_text", "filename": "syn_02_corner_text.png", "path": "images/syn_02_corner_text.png", "ai_source": "synthetic", "watermark_style_hint": "none", "clean": true, "original_size": [1024, 1024], "sha256": "", "added_at": "2026-10-01T00:00:00Z", "source": "synthetic"},
+    {"id": "syn_03_corner_logo", "filename": "syn_03_corner_logo.png", "path": "images/syn_03_corner_logo.png", "ai_source": "synthetic", "watermark_style_hint": "none", "clean": true, "original_size": [1024, 1024], "sha256": "", "added_at": "2026-10-01T00:00:00Z", "source": "synthetic"},
+    {"id": "syn_04_corner_translucent", "filename": "syn_04_corner_translucent.png", "path": "images/syn_04_corner_translucent.png", "ai_source": "synthetic", "watermark_style_hint": "none", "clean": true, "original_size": [1024, 1024], "sha256": "", "added_at": "2026-10-01T00:00:00Z", "source": "synthetic"},
+    {"id": "syn_05_natural", "filename": "syn_05_natural.png", "path": "images/syn_05_natural.png", "ai_source": "synthetic", "watermark_style_hint": "none", "clean": true, "original_size": [1024, 1024], "sha256": "", "added_at": "2026-10-01T00:00:00Z", "source": "synthetic"}
+  ]
+}

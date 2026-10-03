@@ -1,0 +1,738 @@
+{
+  "timestamp": "2026-09-13T08:20:16Z",
+  "n_images": 30,
+  "presets": [
+    "general"
+  ],
+  "per_image": [
+    {
+      "image_id": "01",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 24,
+          "fn": 1,
+          "precision": 0.04,
+          "recall": 0.5,
+          "mean_iou": 0.8733,
+          "mask_iou": 0.0511,
+          "mask_coverage": 0.1316,
+          "pred_count": 25,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "02",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 119,
+          "fn": 1,
+          "precision": 0.0083,
+          "recall": 0.5,
+          "mean_iou": 0.5938,
+          "mask_iou": 0.0257,
+          "mask_coverage": 0.1912,
+          "pred_count": 120,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "03",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 31,
+          "fn": 0,
+          "precision": 0.0606,
+          "recall": 1.0,
+          "mean_iou": 0.6943,
+          "mask_iou": 0.093,
+          "mask_coverage": 0.0568,
+          "pred_count": 33,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "04",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 29,
+          "fn": 0,
+          "precision": 0.0645,
+          "recall": 1.0,
+          "mean_iou": 0.6856,
+          "mask_iou": 0.0665,
+          "mask_coverage": 0.0496,
+          "pred_count": 31,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "05",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 206,
+          "fn": 0,
+          "precision": 0.0096,
+          "recall": 1.0,
+          "mean_iou": 0.5781,
+          "mask_iou": 0.0369,
+          "mask_coverage": 0.2534,
+          "pred_count": 208,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "06",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 123,
+          "fn": 0,
+          "precision": 0.016,
+          "recall": 1.0,
+          "mean_iou": 0.6856,
+          "mask_iou": 0.0324,
+          "mask_coverage": 0.251,
+          "pred_count": 125,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "07",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 47,
+          "fn": 1,
+          "precision": 0.0208,
+          "recall": 0.5,
+          "mean_iou": 0.5938,
+          "mask_iou": 0.0493,
+          "mask_coverage": 0.1359,
+          "pred_count": 48,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "08",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 114,
+          "fn": 0,
+          "precision": 0.0172,
+          "recall": 1.0,
+          "mean_iou": 0.5583,
+          "mask_iou": 0.0603,
+          "mask_coverage": 0.1382,
+          "pred_count": 116,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "09",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 146,
+          "fn": 1,
+          "precision": 0.0068,
+          "recall": 0.5,
+          "mean_iou": 0.5836,
+          "mask_iou": 0.0175,
+          "mask_coverage": 0.2816,
+          "pred_count": 147,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "10",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 123,
+          "fn": 0,
+          "precision": 0.016,
+          "recall": 1.0,
+          "mean_iou": 0.6805,
+          "mask_iou": 0.0342,
+          "mask_coverage": 0.188,
+          "pred_count": 125,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "11",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 52,
+          "fn": 1,
+          "precision": 0.0189,
+          "recall": 0.5,
+          "mean_iou": 0.5887,
+          "mask_iou": 0.0403,
+          "mask_coverage": 0.1539,
+          "pred_count": 53,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "12",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 74,
+          "fn": 0,
+          "precision": 0.0263,
+          "recall": 1.0,
+          "mean_iou": 0.5124,
+          "mask_iou": 0.0375,
+          "mask_coverage": 0.1924,
+          "pred_count": 76,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "13",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 126,
+          "fn": 0,
+          "precision": 0.0156,
+          "recall": 1.0,
+          "mean_iou": 0.6827,
+          "mask_iou": 0.0354,
+          "mask_coverage": 0.2698,
+          "pred_count": 128,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "14",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 116,
+          "fn": 0,
+          "precision": 0.0169,
+          "recall": 1.0,
+          "mean_iou": 0.7013,
+          "mask_iou": 0.0646,
+          "mask_coverage": 0.1376,
+          "pred_count": 118,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "15",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 144,
+          "fn": 1,
+          "precision": 0.0069,
+          "recall": 0.5,
+          "mean_iou": 0.5315,
+          "mask_iou": 0.0594,
+          "mask_coverage": 0.1626,
+          "pred_count": 145,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "16",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 53,
+          "fn": 0,
+          "precision": 0.0364,
+          "recall": 1.0,
+          "mean_iou": 0.6943,
+          "mask_iou": 0.0347,
+          "mask_coverage": 0.2303,
+          "pred_count": 55,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "17",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 62,
+          "fn": 1,
+          "precision": 0.0159,
+          "recall": 0.5,
+          "mean_iou": 0.4754,
+          "mask_iou": 0.0444,
+          "mask_coverage": 0.2002,
+          "pred_count": 63,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "18",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 0,
+          "fp": 120,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "mean_iou": 0.0,
+          "mask_iou": 0.0278,
+          "mask_coverage": 0.2896,
+          "pred_count": 120,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "19",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 54,
+          "fn": 1,
+          "precision": 0.0182,
+          "recall": 0.5,
+          "mean_iou": 0.5938,
+          "mask_iou": 0.0414,
+          "mask_coverage": 0.1336,
+          "pred_count": 55,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "20",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 69,
+          "fn": 1,
+          "precision": 0.0143,
+          "recall": 0.5,
+          "mean_iou": 0.5938,
+          "mask_iou": 0.0437,
+          "mask_coverage": 0.1763,
+          "pred_count": 70,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "21",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 65,
+          "fn": 1,
+          "precision": 0.0152,
+          "recall": 0.5,
+          "mean_iou": 0.5836,
+          "mask_iou": 0.0368,
+          "mask_coverage": 0.1437,
+          "pred_count": 66,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "22",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 0,
+          "fp": 5,
+          "fn": 2,
+          "precision": 0.0,
+          "recall": 0.0,
+          "mean_iou": 0.0,
+          "mask_iou": 0.0419,
+          "mask_coverage": 0.007,
+          "pred_count": 5,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "23",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 116,
+          "fn": 1,
+          "precision": 0.0085,
+          "recall": 0.5,
+          "mean_iou": 0.9497,
+          "mask_iou": 0.0277,
+          "mask_coverage": 0.2868,
+          "pred_count": 117,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "24",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 101,
+          "fn": 1,
+          "precision": 0.0098,
+          "recall": 0.5,
+          "mean_iou": 0.6754,
+          "mask_iou": 0.0197,
+          "mask_coverage": 0.1598,
+          "pred_count": 102,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "25",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 99,
+          "fn": 1,
+          "precision": 0.01,
+          "recall": 0.5,
+          "mean_iou": 0.5836,
+          "mask_iou": 0.0236,
+          "mask_coverage": 0.1476,
+          "pred_count": 100,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "26",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 129,
+          "fn": 0,
+          "precision": 0.0153,
+          "recall": 1.0,
+          "mean_iou": 0.4776,
+          "mask_iou": 0.0179,
+          "mask_coverage": 0.2579,
+          "pred_count": 131,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "27",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 73,
+          "fn": 0,
+          "precision": 0.0267,
+          "recall": 1.0,
+          "mean_iou": 0.7968,
+          "mask_iou": 0.0512,
+          "mask_coverage": 0.1671,
+          "pred_count": 75,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "28",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 84,
+          "fn": 0,
+          "precision": 0.0233,
+          "recall": 1.0,
+          "mean_iou": 0.7692,
+          "mask_iou": 0.04,
+          "mask_coverage": 0.2402,
+          "pred_count": 86,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "29",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 2,
+          "fp": 96,
+          "fn": 0,
+          "precision": 0.0204,
+          "recall": 1.0,
+          "mean_iou": 0.6943,
+          "mask_iou": 0.0334,
+          "mask_coverage": 0.1944,
+          "pred_count": 98,
+          "truth_count": 2
+        }
+      }
+    },
+    {
+      "image_id": "30",
+      "ai_source": "other",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "watermark_count": 2,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 1,
+          "fp": 187,
+          "fn": 1,
+          "precision": 0.0053,
+          "recall": 0.5,
+          "mean_iou": 0.5718,
+          "mask_iou": 0.0432,
+          "mask_coverage": 0.1838,
+          "pred_count": 188,
+          "truth_count": 2
+        }
+      }
+    }
+  ],
+  "per_preset_aggregate": {
+    "general": {
+      "n": 30,
+      "precision_mean": 0.0188,
+      "recall_mean": 0.7,
+      "mean_iou_mean": 0.6001,
+      "mask_iou_mean": 0.0411
+    }
+  }
+}

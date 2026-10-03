@@ -1,0 +1,49 @@
+# ==============================================================================
+#  项目名称 : AI 智能水印擦除工作台 (AI Watermark Eraser Workbench)
+#  文件名称 : requirements-min.txt
+#  文件说明 : 「最小可运行」依赖清单 —— 不安装 PyTorch / LaMa，仅用 OpenCV 方案。
+#  版权声明 : Copyright (c) 2026 AI 智能水印擦除工作台. All Rights Reserved.
+# ------------------------------------------------------------------------------
+#  适用场景：
+#    1. 只想快速体验「OpenCV 降级修复」（适合细小水印、处理速度要求不高）；
+#    2. 机器没有 NVIDIA 显卡，也不打算用 LaMa 神经网络引擎；
+#    3. 磁盘/网络受限，希望安装体积最小。
+#
+#  限制说明：
+#    不装 torch 意味着 LaMa 引擎不可用，自动检测降级为 OpenCV 方案，
+#    对「角落小字 / 半透明 logo」类水印的识别率低于 LaMa + EasyOCR 组合。
+#    若后续想要 LaMa 效果，直接另装 torch 即可（见 requirements-gpu.txt）。
+#
+#  安装命令（在项目根目录）：
+#    pip install -r requirements-min.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+# ==============================================================================
+
+# 【图像处理核心库】—— OpenCV 降级修复 + 自动检测（边缘/形态学/MSER）
+opencv-python==4.10.0.84
+numpy==1.26.4
+Pillow==10.4.0
+scikit-image==0.24.0
+scipy==1.14.1
+
+# 【Web 界面】—— 与完整版一致，界面功能不受最小依赖影响
+gradio>=6.0
+
+# 【模型下载与网络】（即便不装 torch，下载脚本仍可独立使用）
+requests==2.32.3
+tqdm==4.66.5
+urllib3==2.2.3
+certifi==2024.8.30
+
+# 【系统资源监控与硬件自适应】
+psutil==6.0.0
+py-cpuinfo==9.0.0
+
+# 【日志、配置与工程化工具】
+colorama==0.4.6
+python-dotenv==1.0.1
+pydantic==2.9.2
+
+# 注意：本清单刻意不含 torch / torchvision / opencv-contrib-python / easyocr /
+# pyinstaller。如需要这些能力，请改用 requirements.txt（完整版）或按对应说明补充。
+# 另：PDF 文档处理需额外安装 pymupdf（可选增强，未装则仅 PDF 入口不可用，
+# 图片与视频功能不受影响）；视频处理依赖上方已包含的 opencv-python。

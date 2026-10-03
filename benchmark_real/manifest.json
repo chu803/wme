@@ -1,0 +1,565 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "01",
+      "filename": "01_山湖日出.jpg",
+      "path": "images/01_山湖日出.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "ab95aa74e4d9d89e599269d1d5c5b06b51c6b023341b6bd81211a5ec2867a315",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "02",
+      "filename": "02_森林光影.jpg",
+      "path": "images/02_森林光影.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "3eb10e9eb59299b26409555d09f7abfd069344520794e0a4737262431958cfaa",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "03",
+      "filename": "03_沙漠日落.jpg",
+      "path": "images/03_沙漠日落.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "53543f18c417cbbbc4292c4c442fc8b24c6be03da4854b16e9ce4d9aeb52b17c",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "04",
+      "filename": "04_极光夜空.jpg",
+      "path": "images/04_极光夜空.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "1b2e6054a5dbfe45f905ec9b28db84eb6d6ebe123a92596fd9a0a6551b0a9319",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "05",
+      "filename": "05_海浪礁石.jpg",
+      "path": "images/05_海浪礁石.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "aeccbb1c005fba5100046fb0ee44cf88762eeab36f330591ec24443c7f946c44",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "06",
+      "filename": "06_城市夜景.jpg",
+      "path": "images/06_城市夜景.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "c0d49cb3aa25f5acf69ea30efdb80f9de9a918238e42c86f97ca1084003679b1",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "07",
+      "filename": "07_江南古镇.jpg",
+      "path": "images/07_江南古镇.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "eaef2ea9605531e52f2a92f471c88ef78e5b604e100885cad56e0d91e57435d4",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "08",
+      "filename": "08_欧式城堡.jpg",
+      "path": "images/08_欧式城堡.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "a30421a4eabd2d5f4d1be853d7512b3dd1d6697f10d8e49657eb509b7dc77e67",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "09",
+      "filename": "09_现代图书馆.jpg",
+      "path": "images/09_现代图书馆.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "6c696531ca5e437275d9b7159e93f9d943d56bb5bd7e90fd52e10ef200546bb9",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "10",
+      "filename": "10_东京街头.jpg",
+      "path": "images/10_东京街头.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "4ce2318ab6f6eccc6c60753f2522ecf02d2e718715fd4a20c37185ecde8db9d1",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "11",
+      "filename": "11_橘猫.jpg",
+      "path": "images/11_橘猫.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "4672876e568d0c367e4fbf9a8869e618a4673c63837bd1dfbf7f76bf5cbefda7",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "12",
+      "filename": "12_白鹿.jpg",
+      "path": "images/12_白鹿.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "37033360d4dea88a32739bf89b0496dcef98571b8ed17dbb4ee60d9a3020c9ab",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "13",
+      "filename": "13_金刚鹦鹉.jpg",
+      "path": "images/13_金刚鹦鹉.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "b1f5babc9c99964740527d8566e8aeac32bb648c40900b9bc5e13e09bf07a122",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "14",
+      "filename": "14_海鸥飞翔.jpg",
+      "path": "images/14_海鸥飞翔.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "e192df28faf58c6848cf9951a375e129ea6ec40345318a57daa8b36555f38224",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "15",
+      "filename": "15_锦鲤.jpg",
+      "path": "images/15_锦鲤.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "6e0379042ffd1685c9a08c72fa126393b1780f984811f644a88ad972dab6dedb",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "16",
+      "filename": "16_拿铁咖啡.jpg",
+      "path": "images/16_拿铁咖啡.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "0c5e8bb0eec2b62b33f2974cdf7568b95b57caa4a6af1a3705607d1ff487c1f1",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "17",
+      "filename": "17_向日葵.jpg",
+      "path": "images/17_向日葵.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "d603a8ed5151172437ebed0142806d9c556be5637d5436a5a922d113397a2912",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "18",
+      "filename": "18_水果拼盘.jpg",
+      "path": "images/18_水果拼盘.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "f0faccd4b26459ae6367cd2d2f68f700f6f5b7cc5ab11062d18aa6c704cf74c1",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "19",
+      "filename": "19_老式打字机.jpg",
+      "path": "images/19_老式打字机.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "2b72bbc2d8523579e452e59689b950a42e6ca082fe3780d2932e11905a5f7e1e",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "20",
+      "filename": "20_阅读角.jpg",
+      "path": "images/20_阅读角.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "84f682709d8e8909527bbdea317177d0ba526aedcb1d9703aac87c866694b485",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "21",
+      "filename": "21_抽象流体.jpg",
+      "path": "images/21_抽象流体.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "9be0887d786608dabbbc33995f07328060dc3b4adecbce371ad33e1540712ab2",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "22",
+      "filename": "22_包豪斯几何.jpg",
+      "path": "images/22_包豪斯几何.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "82e52480407fa12c4c3bc6eee7afbca26ac0dc93b9af2df3685bc535deec4381",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "23",
+      "filename": "23_水墨山水.jpg",
+      "path": "images/23_水墨山水.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "30cfcc9830b7488b6a4fb210511c310646b6d4ac62a85a2c33176f4916962558",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "24",
+      "filename": "24_热带叶片.jpg",
+      "path": "images/24_热带叶片.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "9d8ae73d61a40e2ca433270f95782d440e89cef7a6c043f2a2acde17a7dbe66f",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "25",
+      "filename": "25_薰衣草花田.jpg",
+      "path": "images/25_薰衣草花田.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "678a4d96bc50f349552639e0c5503ab132033ecffde220a43eec89208353a182",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "26",
+      "filename": "26_热气球.jpg",
+      "path": "images/26_热气球.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "ddffb91a18c1d83fca5d8ae269cfd2f6bb2bed82836e88060f9c872a6551bb7a",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "27",
+      "filename": "27_雪地木屋.jpg",
+      "path": "images/27_雪地木屋.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "2e4a0e72f9869357d33d2bb3bc648c8ba049f05b5d69fee05787a21b99cb7c87",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "28",
+      "filename": "28_复古摩托车.jpg",
+      "path": "images/28_复古摩托车.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "c00dce2fe3cd03aea3387dd7dbf152484e7ce99e3b519f80028ec52d50f89cbf",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "29",
+      "filename": "29_海边灯塔.jpg",
+      "path": "images/29_海边灯塔.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "cc5099b73e78c1361afd805e9a0c78106930651d58fe6d6beb1c1d94e5e78366",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "30",
+      "filename": "30_樱花野餐.jpg",
+      "path": "images/30_樱花野餐.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "mixed",
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "1575ab3349dca020442d808672a3922392402279c1fbe4f601a0dbda337c7de4",
+      "added_at": "2026-09-13T06:27:20Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_02_snow_mountain",
+      "filename": "ai_logo_02_snow_mountain_lake.jpg",
+      "path": "images/ai_logo_02_snow_mountain_lake.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "b9e949eb8fab3e155e0d98a3cfd33875b97460a56446f2fb98699294e35d1fed",
+      "added_at": "2026-09-30T08:06:50Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_03_white_coffee_",
+      "filename": "ai_logo_03_white_coffee_cup.jpg",
+      "path": "images/ai_logo_03_white_coffee_cup.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "9a74c94f5f72845c68582a52164f0db3a4654ec5fed5e3aee39789bc917f8821",
+      "added_at": "2026-09-30T08:06:51Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_04_neon_street_n",
+      "filename": "ai_logo_04_neon_street_night.jpg",
+      "path": "images/ai_logo_04_neon_street_night.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "236a06c978fe9cb60816ff9329cdf99ee49e71c69c0792fa1145670d7e5af451",
+      "added_at": "2026-09-30T08:06:51Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_05_fruit_platter",
+      "filename": "ai_logo_05_fruit_platter.jpg",
+      "path": "images/ai_logo_05_fruit_platter.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "e15d863a51df220c717eaa90cf17f97943b976e4583bacc230b0aae2045b8975",
+      "added_at": "2026-09-30T08:06:52Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_06_flower_field_",
+      "filename": "ai_logo_06_flower_field_portrait.jpg",
+      "path": "images/ai_logo_06_flower_field_portrait.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "ee351f9613050479e7f9692b5cb6f77ba2364acc0420c799675c31a61f38da37",
+      "added_at": "2026-09-30T08:06:53Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_07_glass_curtain",
+      "filename": "ai_logo_07_glass_curtain_building.jpg",
+      "path": "images/ai_logo_07_glass_curtain_building.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "33ed82a9edc33dab7d8af1a41a5d43663950028a64aa025e0bd44ba3f1046874",
+      "added_at": "2026-09-30T08:06:54Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_08_abstract_flui",
+      "filename": "ai_logo_08_abstract_fluid.jpg",
+      "path": "images/ai_logo_08_abstract_fluid.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "ae41012a10a8c3cbbeadb7d80466a308ac79540af6bc9eed5eb86123f3b45f48",
+      "added_at": "2026-09-30T08:06:54Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_09_vintage_typew",
+      "filename": "ai_logo_09_vintage_typewriter.jpg",
+      "path": "images/ai_logo_09_vintage_typewriter.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "b3e01de0743d17ae17ca050fc4c655a2e7a3d6cbf443e8a1b89d037fa242fb67",
+      "added_at": "2026-09-30T08:06:55Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_10_lavender_hot_",
+      "filename": "ai_logo_10_lavender_hot_air_balloon.jpg",
+      "path": "images/ai_logo_10_lavender_hot_air_balloon.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "9e72cacce2aa9fb7257b306e1c1c4ea9f36e310213045fe969d335d2403d7031",
+      "added_at": "2026-09-30T08:06:56Z",
+      "source": "local"
+    },
+    {
+      "id": "ai_logo_test_01_orange_c",
+      "filename": "ai_logo_test_01_orange_cat.jpg",
+      "path": "images/ai_logo_test_01_orange_cat.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "c76928c9c23fcd01c993fa5dc73478433cedbf35857f9dc697fc42761f7c7ca4",
+      "added_at": "2026-09-30T08:06:56Z",
+      "source": "local"
+    }
+  ]
+}

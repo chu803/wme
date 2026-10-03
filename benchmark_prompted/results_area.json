@@ -1,0 +1,152 @@
+{
+  "assessed_at": "2026-09-25T06:35:54Z",
+  "red_lines": {
+    "ai_text_heavy": 0.0425,
+    "ai_grid": 0.125,
+    "ai_faint_tiled": 0.075,
+    "ai_gradient": 0.05
+  },
+  "results": [
+    {
+      "image_id": "p01",
+      "file": "txt_01_城市夜景.png",
+      "preset": "ai_text_heavy",
+      "regions": 15,
+      "coverage": 0.0085
+    },
+    {
+      "image_id": "p02",
+      "file": "txt_02_森林溪流.png",
+      "preset": "ai_text_heavy",
+      "regions": 1,
+      "coverage": 0.0008
+    },
+    {
+      "image_id": "p03",
+      "file": "txt_03_咖啡馆静物.png",
+      "preset": "ai_text_heavy",
+      "regions": 6,
+      "coverage": 0.0108
+    },
+    {
+      "image_id": "p04",
+      "file": "txt_04_海边灯塔.jpg",
+      "preset": "ai_text_heavy",
+      "regions": 4,
+      "coverage": 0.0205
+    },
+    {
+      "image_id": "p05",
+      "file": "txt_05_秋日枫林.jpg",
+      "preset": "ai_text_heavy",
+      "regions": 0,
+      "coverage": 0.0
+    },
+    {
+      "image_id": "p06",
+      "file": "grid_01_雪山湖泊.png",
+      "preset": "ai_grid",
+      "regions": 14,
+      "coverage": 0.0433
+    },
+    {
+      "image_id": "p07",
+      "file": "grid_02_海边日落.png",
+      "preset": "ai_grid",
+      "regions": 207,
+      "coverage": 0.0138
+    },
+    {
+      "image_id": "p08",
+      "file": "grid_03_古建筑街巷.png",
+      "preset": "ai_grid",
+      "regions": 321,
+      "coverage": 0.0268
+    },
+    {
+      "image_id": "p09",
+      "file": "grid_04_城市天际线.jpg",
+      "preset": "ai_grid",
+      "regions": 115,
+      "coverage": 0.0346
+    },
+    {
+      "image_id": "p10",
+      "file": "grid_05_草原牧马.jpg",
+      "preset": "ai_grid",
+      "regions": 15,
+      "coverage": 0.0077
+    },
+    {
+      "image_id": "p11",
+      "file": "tile_01_花海.png",
+      "preset": "ai_faint_tiled",
+      "regions": 28,
+      "coverage": 0.0276
+    },
+    {
+      "image_id": "p12",
+      "file": "tile_02_山间公路.png",
+      "preset": "ai_faint_tiled",
+      "regions": 22,
+      "coverage": 0.0097
+    },
+    {
+      "image_id": "p13",
+      "file": "tile_03_室内书房.png",
+      "preset": "ai_faint_tiled",
+      "regions": 52,
+      "coverage": 0.0746
+    },
+    {
+      "image_id": "p14",
+      "file": "tile_04_湖上日出.jpg",
+      "preset": "ai_faint_tiled",
+      "regions": 36,
+      "coverage": 0.0087
+    },
+    {
+      "image_id": "p15",
+      "file": "tile_05_雪山森林.jpg",
+      "preset": "ai_faint_tiled",
+      "regions": 7,
+      "coverage": 0.0011
+    },
+    {
+      "image_id": "p16",
+      "file": "grad_04_海面波光.jpg",
+      "preset": "ai_gradient",
+      "regions": 0,
+      "coverage": 0.0
+    },
+    {
+      "image_id": "p17",
+      "file": "grad_05_都市霓虹夜.jpg",
+      "preset": "ai_gradient",
+      "regions": 0,
+      "coverage": 0.0
+    },
+    {
+      "image_id": "p18",
+      "file": "grad_06_沙漠暮色.png",
+      "preset": "ai_gradient",
+      "regions": 0,
+      "coverage": 0.0
+    },
+    {
+      "image_id": "p19",
+      "file": "grad_07_深海潜水.png",
+      "preset": "ai_gradient",
+      "regions": 0,
+      "coverage": 0.0
+    },
+    {
+      "image_id": "p20",
+      "file": "grad_08_极地冰川.png",
+      "preset": "ai_gradient",
+      "regions": 0,
+      "coverage": 0.0
+    }
+  ],
+  "note": "本档只用「掩码面积」度量（bbox 度量对全图型水印无意义；txt 精确框待人工确认）。"
+}

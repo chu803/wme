@@ -1,0 +1,840 @@
+[2026-08-03 21:06:15] [ERROR   ] [test:231] 这是 ERROR 级（同时写入 error.log）
+[2026-08-03 21:07:26] [ERROR   ] [main:191] 核心管线自测失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\main.py", line 165, in run_selftest
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+[2026-08-03 21:07:26] [ERROR   ] [main:191] 核心管线自测失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\main.py", line 210, in launch_ui
+    from ui.app import build_app, launch_app
+ModuleNotFoundError: No module named 'ui.app'
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\main.py", line 165, in run_selftest
+    import numpy as np
+ModuleNotFoundError: No module named 'numpy'
+[2026-08-03 21:51:08] [ERROR   ] [core.detector:767] 半透明水印检测失败，已跳过：'bool' object is not callable
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\core\detector.py", line 756, in detect_watermark_mask
+    t_mask, t_regions = detect_translucent(
+                        ~~~~~~~~~~~~~~~~~~^
+        rgb_small, s, dh * dw, min_area_ratio, max_area_ratio
+        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    )
+    ^
+TypeError: 'bool' object is not callable
+[2026-08-03 22:44:50] [ERROR   ] [services.queue_worker:328] 任务 img_05.jpg 最终失败：模拟的偶发失败
+[2026-08-04 12:10:41] [ERROR   ] [services.pdf:346] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_awhd0fmx\不存在.pdf
+[2026-08-04 12:13:59] [ERROR   ] [services.video:310] 找不到文件：C:\Users\HP\AppData\Local\Temp\video_selftest_lzev2nir\不存在.mp4
+[2026-08-06 16:33:23] [ERROR   ] [services.video:367] 找不到文件：C:\Users\HP\AppData\Local\Temp\video_selftest_nc0qx_43\不存在.mp4
+[2026-08-13 11:36:19] [ERROR   ] [ui.tab_history:359] 按类型导出 ZIP 失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_history.py", line 354, in export_history_filtered_zip
+    path = export_history_as_zip(_CACHE, kind=kind, query=q)
+TypeError: test_tab_history_export_filtered_zip_passthrough.<locals>.fake_export() got an unexpected keyword argument 'query'
+[2026-09-14 16:48:17] [ERROR   ] [services.queue_worker:328] 任务 c.png 最终失败：【任务已取消】
+原因：用户主动取消
+建议：
+  1. 这是您主动取消的操作，无需处理。
+[2026-09-14 16:48:30] [ERROR   ] [services.queue_worker:328] 任务 c.png 最终失败：【任务已取消】
+原因：用户主动取消
+建议：
+  1. 这是您主动取消的操作，无需处理。
+[2026-09-14 16:49:28] [ERROR   ] [services.queue_worker:328] 任务 c.png 最终失败：【任务已取消】
+原因：用户主动取消
+建议：
+  1. 这是您主动取消的操作，无需处理。
+[2026-09-14 17:02:29] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-14 17:03:37] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-14 17:04:23] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-14 17:04:56] [ERROR   ] [services.queue_worker:363] 任务 c.png 最终失败：【任务已取消】
+原因：用户主动取消
+建议：
+  1. 这是您主动取消的操作，无需处理。
+[2026-09-14 17:04:56] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-14 17:08:52] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-15 19:45:43] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-15 19:53:57] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-15 19:57:55] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-15 20:27:28] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-15 20:45:50] [ERROR   ] [test:298] 这是 ERROR 级（同时写入 error.log）
+[2026-09-16 12:50:30] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-16 16:44:29] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-16 17:00:03] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-17 13:15:52] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-17 13:27:59] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-17 13:59:57] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-17 15:36:57] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-17 15:46:38] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-17 16:58:04] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-17 16:58:21] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-17 17:01:59] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-17 17:03:15] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-17 17:32:55] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-17 17:38:33] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-18 18:11:51] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-18 18:11:58] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-18 18:39:20] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-18 18:39:28] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-18 18:43:11] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-18 18:43:18] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-18 18:47:29] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-18 18:47:36] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-18 19:21:00] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-18 19:21:15] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-18 20:07:42] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-18 20:07:49] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-18 20:16:52] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-18 20:17:06] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-18 20:23:17] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-18 20:23:25] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-22 18:16:50] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-22 18:17:05] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-22 18:21:26] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-22 18:21:35] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-22 18:25:46] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-22 18:26:00] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-22 19:14:08] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-22 19:14:22] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-22 19:22:04] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-22 19:22:18] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-22 20:07:44] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-22 20:08:15] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-22 20:09:39] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-22 20:09:49] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-22 20:24:11] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-22 20:24:23] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-22 21:30:15] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-22 21:30:26] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-23 13:45:09] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-23 13:45:23] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-23 13:57:21] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-23 13:57:36] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-24 12:27:14] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-24 12:27:36] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-24 12:33:53] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-24 12:34:16] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-24 12:45:33] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-24 12:46:02] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-24 12:55:36] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-24 12:56:06] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-24 13:11:44] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-24 13:11:57] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-24 13:48:29] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-24 13:48:50] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-24 13:55:01] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-24 13:55:13] [ERROR   ] [ui.tab_auto:502] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 493, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-24 14:14:12] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-24 14:22:54] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-24 14:23:24] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-25 11:43:45] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-25 11:43:59] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-25 20:18:10] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-26 09:28:42] [ERROR   ] [services.pdf:373] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_ew6skffz\不存在.pdf
+[2026-09-26 09:30:36] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_iaavzzsz\不存在.pdf
+[2026-09-26 09:31:04] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_qoza5kuw\不存在.pdf
+[2026-09-26 09:31:38] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_z22gcx0q\不存在.pdf
+[2026-09-26 10:32:33] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_3pz7og_z\不存在.pdf
+[2026-09-26 10:51:14] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_9jlbjni4\不存在.pdf
+[2026-09-26 11:07:10] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_7kdltoy4\不存在.pdf
+[2026-09-26 11:14:55] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_4dvqvjyo\不存在.pdf
+[2026-09-26 11:16:28] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_5pc0qlv3\不存在.pdf
+[2026-09-26 11:20:47] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest__r1u72w2\不存在.pdf
+[2026-09-26 11:28:32] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_6mtlmuf7\不存在.pdf
+[2026-09-26 11:29:56] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_7kuvexan\不存在.pdf
+[2026-09-27 19:03:32] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 19:16:05] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_btqwtwtj\不存在.pdf
+[2026-09-27 19:20:43] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 19:20:59] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 19:33:52] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_69jz7gm0\不存在.pdf
+[2026-09-27 19:51:12] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_p7jg_9ny\不存在.pdf
+[2026-09-27 19:56:16] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 19:56:35] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 20:07:56] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_tbswd1hr\不存在.pdf
+[2026-09-27 20:12:24] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 20:12:39] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 20:19:20] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_umb33pil\不存在.pdf
+[2026-09-27 20:25:08] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 20:25:24] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 20:34:34] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 20:34:49] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 20:42:40] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 20:43:08] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 21:07:27] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 21:07:43] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 21:20:22] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_rmq5sbyp\不存在.pdf
+[2026-09-27 21:32:12] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 21:32:28] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 21:51:06] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 21:51:28] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 22:27:45] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_2e3qa5_a\不存在.pdf
+[2026-09-27 22:44:07] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_pkks2_vt\不存在.pdf
+[2026-09-27 22:47:42] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 22:48:09] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-27 22:55:28] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_cfvttr_e\不存在.pdf
+[2026-09-27 22:58:49] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-27 22:59:16] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-28 11:57:29] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_q0a79zj5\不存在.pdf
+[2026-09-28 12:00:17] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_wdcm3i2c\不存在.pdf
+[2026-09-28 12:04:25] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_28iy3q36\不存在.pdf
+[2026-09-28 12:05:58] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_9wxabowq\不存在.pdf
+[2026-09-28 12:07:24] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_96eo476n\不存在.pdf
+[2026-09-28 12:09:07] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_dwteskcd\不存在.pdf
+[2026-09-28 12:10:25] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_59_w2xno\不存在.pdf
+[2026-09-28 12:11:12] [ERROR   ] [services.queue_worker:363] 任务 img_05.jpg 最终失败：模拟的偶发失败
+[2026-09-28 12:11:45] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_li6__2nc\不存在.pdf
+[2026-09-28 12:13:04] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_ruioinkf\不存在.pdf
+[2026-09-28 12:17:52] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_sloogocn\不存在.pdf
+[2026-09-28 12:20:56] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-28 12:21:23] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-28 12:28:47] [ERROR   ] [services.pdf:390] 找不到文件：C:\Users\HP\AppData\Local\Temp\pdf_selftest_hn0nlmdt\不存在.pdf
+[2026-09-28 12:29:32] [ERROR   ] [services.queue_worker:363] 任务 img_00.jpg 最终失败：模拟的偶发失败
+[2026-09-28 12:32:27] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-28 12:32:53] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-28 12:44:03] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-28 12:44:19] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-28 12:56:53] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-28 12:57:14] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-28 13:06:21] [ERROR   ] [services.queue_worker:363] 任务 e.png 最终失败：偶发故障
+[2026-09-28 13:06:42] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-09-29 13:39:03] [ERROR   ] [services.queue_worker:363] 任务 x.png 最终失败：always fails
+[2026-09-29 13:39:56] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-09-29 13:39:57] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-09-29 13:40:26] [ERROR   ] [services.queue_worker:363] 任务 x.png 最终失败：always fails
+[2026-09-29 13:40:29] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-09-29 13:40:41] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-09-29 13:40:42] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-09-29 18:56:43] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-09-29 18:56:44] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-10-01 14:21:49] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-10-01 14:21:55] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-10-01 14:22:15] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-10-01 14:52:32] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-10-01 14:52:37] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-10-01 14:52:57] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-10-01 15:02:25] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-10-01 15:02:30] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-10-01 15:02:51] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-10-01 15:18:17] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-10-01 15:18:26] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-10-01 15:19:00] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-10-01 16:10:23] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-10-01 16:10:37] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-10-01 16:11:09] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-10-01 19:33:53] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-10-01 19:34:07] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-10-01 19:34:38] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "D:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure
+[2026-10-02 11:58:48] [ERROR   ] [ui.tab_media:302] PDF 处理异常
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_media.py", line 250, in run_pdf
+    _pdf_elapsed = _time.perf_counter() - _t0
+                                          ^^^
+NameError: name '_t0' is not defined
+[2026-10-02 11:58:48] [ERROR   ] [ui.tab_media:546] 视频处理异常
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_media.py", line 495, in run_video
+    _video_elapsed = _time.perf_counter() - _t0
+                                            ^^^
+NameError: name '_t0' is not defined
+[2026-10-02 12:04:57] [ERROR   ] [ui.tab_media:302] PDF 处理异常
+Traceback (most recent call last):
+  File "D:\work 111\2026-08-03-17-38-51\ui\tab_media.py", line 250, in run_pdf
+    _pdf_elapsed = _time.perf_counter() - _t0
+                                          ^^^
+NameError: name '_t0' is not defined
+[2026-10-02 12:44:24] [ERROR   ] [services.queue_worker:380] 任务 x.png 最终失败：always fails
+[2026-10-02 12:44:31] [ERROR   ] [services.queue_worker:380] 任务 e.png 最终失败：偶发故障
+[2026-10-02 12:44:56] [ERROR   ] [ui.tab_auto:512] 增强对比视图生成失败
+Traceback (most recent call last):
+  File "d:\work 111\2026-08-03-17-38-51\ui\tab_auto.py", line 503, in on_enhance
+    html = _cs.render_compare_html(
+        orig_arr, result_arr, mode,
+    ...<2 lines>...
+        heatmap_caption=t("compare.heatmap_label"),
+    )
+  File "d:\work 111\2026-08-03-17-38-51\tests\test_ui_audit96.py", line 38, in _boom
+    raise RuntimeError("injected render failure")
+RuntimeError: injected render failure

@@ -1,0 +1,7 @@
+[2026-10-01 15:20:31] [INFO    ] [core.plugins:335] 已注册自定义修复引擎：lama（显示名：LaMa 深度学习）
+[2026-10-01 15:20:31] [INFO    ] [core.plugins:335] 已注册自定义修复引擎：opencv（显示名：OpenCV 传统算法）
+[2026-10-01 15:20:33] [INFO    ] [core.device_manager:139] torch.cuda.is_available() 返回 False，系统无可用 NVIDIA 显卡。
+[2026-10-01 15:20:33] [INFO    ] [core.device_manager:253] 自动选择设备：CPU（未检测到 NVIDIA 显卡，自动退回 CPU）
+[2026-10-01 15:20:33] [INFO    ] [core.plugins:335] 已注册自定义修复引擎：demo_model（显示名：示例·自定义模型）
+[2026-10-01 15:20:33] [INFO    ] [core.plugins:551] 已加载插件文件：D:\work 111\2026-08-03-17-38-51\plugins\sample_model_plugin.py
+[2026-10-01 15:20:33] [INFO    ] [core.inpainter:255] 图像长边 2500 超过 2048，启用分块处理。

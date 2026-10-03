@@ -1,0 +1,62 @@
+# ==============================================================================
+#  AI 智能水印擦除工作台 —— GitHub Actions 持续集成
+#  说明：
+#    本工作流补齐项目此前缺失的「机器可判定质量门禁」（阶段 116 新增）。
+#    pytest.ini 早已声明 torch_required / network 两个标记（用于「离线 CI 跳过」），
+#    但仓库一直没有 CI —— 本文件把那一约定真正落地。
+#
+#  阶段 184 修正：**改为调用统一验证入口** `scripts/run_all_checks.py`。
+#    起因：阶段 183 首次跑全库，暴露 6 处跨阶段锚点腐化（守卫常红 / 断言停在旧世界 /
+#    新模块漏登记）。根因是「没有任何一个命令要求全都跑一遍」——
+#    本工作流虽在 116 就写好，但项目**尚未纳入版本控制**（无 .git）⇒ 从未执行；
+#    而本地也没有等价入口 ⇒ 红灯被隔离在视野之外。
+#    现在 CI 与本地跑**同一套步骤**（测试 + 静态扫描），marker 选择只有一处真值来源，
+#    避免「CI 与本地各写一遍、慢慢漂移」。
+#
+#  策略：
+#    · 安装最小依赖 + 测试依赖（不装 torch，保持 CI 轻量快速）；
+#    · 由入口脚本按 pytest.ini 约定跳过 torch_required / network 标记的用例；
+#    · 在 Python 3.11 上跑「CI 等价子集」。
+#  注意：本 CI 覆盖的是「无 torch 环境下的逻辑正确性」；真实超分 / LaMa 权重
+#        相关用例需在带 torch 的环境单独跑（见 docs/108、docs/115、docs/184）。
+# ==============================================================================
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        python-version: ["3.11"]
+
+    steps:
+      - name: 拉取代码
+        uses: actions/checkout@v4
+
+      - name: 安装 Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+          cache: pip
+
+      - name: 系统依赖（OpenCV / Gradio 运行时）
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y --no-install-recommends \
+            libgl1 libglib2.0-0 libsm6 libxext6 libxrender1
+
+      - name: 安装依赖（最小集 + 测试依赖）
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements-min.txt
+          pip install -r requirements-dev.txt
+
+      - name: 运行验证入口（测试 + 静态扫描，与本地同一入口）
+        run: python scripts/run_all_checks.py

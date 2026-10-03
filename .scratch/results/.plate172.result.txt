@@ -1,0 +1,62 @@
+{
+ "ai_logo_02_snow_mountain_lake.jpg": [
+  1621,
+  1907,
+  1685,
+  1943
+ ],
+ "ai_logo_03_white_coffee_cup.jpg": [
+  1842,
+  1917,
+  2005,
+  1973
+ ],
+ "ai_logo_04_neon_street_night.jpg": [
+  1634,
+  1859,
+  1998,
+  1992
+ ],
+ "ai_logo_05_fruit_platter.jpg": [
+  1781,
+  1884,
+  2048,
+  1938
+ ],
+ "ai_logo_06_flower_field_portrait.jpg": [
+  1784,
+  1852,
+  1935,
+  1996
+ ],
+ "ai_logo_07_glass_curtain_building.jpg": [
+  1665,
+  1875,
+  2048,
+  2002
+ ],
+ "ai_logo_08_abstract_fluid.jpg": [
+  1836,
+  1882,
+  1873,
+  1978
+ ],
+ "ai_logo_09_vintage_typewriter.jpg": [
+  1961,
+  1864,
+  2048,
+  2004
+ ],
+ "ai_logo_10_lavender_hot_air_balloon.jpg": [
+  1657,
+  1880,
+  2004,
+  2018
+ ],
+ "ai_logo_test_01_orange_cat.jpg": [
+  1775,
+  1886,
+  2003,
+  1995
+ ]
+}

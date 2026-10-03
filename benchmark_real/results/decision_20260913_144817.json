@@ -1,0 +1,1091 @@
+{
+  "timestamp": "2026-09-13T06:48:17Z",
+  "n_images": 30,
+  "presets": [
+    "general",
+    "ai_signature"
+  ],
+  "note": "无 GT；以「掩码区修复前后 PSNR」（越高越没改坏）+「NIQE」（越低越好）衡量",
+  "results": [
+    {
+      "image_id": "01",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 156071,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 16.07372684333733,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.415588857364307,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 152120,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 16.037681248920595,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.3552768381366023,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "02",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 205074,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.574004613929882,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 2.6592768855342053,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 203614,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.546149214343375,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 2.718907468631225,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "03",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 74895,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 15.93354528376144,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 2.7598899388160936,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 64442,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 15.39015466056859,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 2.8491491950470724,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "04",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 59440,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.832327963979777,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 5.895724545824357,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 52600,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.46339562120065,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 5.929660899802638,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "05",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 275362,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.326849063164032,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.1761605395917885,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 272333,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.297964399002074,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.14629339062011,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "06",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 271041,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.995824925592355,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.110692871972894,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 264265,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.018967016667489,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.0023967030167915,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "07",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 148740,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 15.340704408841743,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.797627217743119,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 143872,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 15.389634023438344,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.770124364482627,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "08",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 154263,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.976240221720476,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.619877811151146,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 148528,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.065196759309325,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.5449998885548073,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "09",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 313755,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.748838423885008,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 5.153858758216888,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 308785,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.84302017757706,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 5.159431165761799,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "10",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 202617,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.135613889767455,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.854508750557345,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 199542,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.143269215864189,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.824142921531249,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "11",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 191878,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.376226658485828,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.751330266381296,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 185775,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.307785936444676,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.783773562008116,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "12",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 205593,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.988420479984248,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 6.477293376718887,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 198461,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.894533501974609,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 6.457321273604317,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "13",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 290715,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.836980783617838,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.429896680497971,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 287135,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.815912650423904,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.404545074135167,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "14",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 150069,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.216635634912363,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 11.933324892580558,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 144016,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.153949386360239,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 12.002360977221162,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "15",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 177137,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.417905629716376,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.81231553640263,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 171569,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.396682459321399,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.787556726806893,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "16",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 271631,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.256779949022485,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.427418316753419,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 262914,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.235671222647499,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.378083598908517,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "17",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 224728,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.60923054810813,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 6.2651547469985305,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 213956,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.395307656419028,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 6.213933903962058,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "18",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 310789,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.446332588070492,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 5.216741742276056,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 308905,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.467026450068312,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 5.193044631283166,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "19",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 210186,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.554551277409406,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.16260024138987,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 209333,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.436279115817648,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.1789836653768337,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "20",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 217728,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.176246189725914,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.0383553407094466,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 209401,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.1475207823844,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 2.985904578109299,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "21",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 155894,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 15.987131286018737,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 10.742525949894722,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 154977,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 15.98830875290439,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 10.743551034720259,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "22",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 24097,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 10.667590029073068,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 5.3170454975964105,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 24012,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 10.667465290547069,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 5.315400383565562,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "23",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 301583,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.681918264163267,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 9.276674548105904,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 295785,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 11.638053199025434,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 9.256692890540014,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "24",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 175993,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.921149917449867,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.656105346695375,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 168825,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.828024460082261,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.5490475620886435,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "25",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 161878,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 16.105476788883465,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.4014433496734897,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 160323,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 16.13222446776096,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.383301532230898,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "26",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 266631,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.304068134069784,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.9297981672541535,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 259539,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.31372740910741,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.874344758271828,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "27",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 185674,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.163749171582179,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.925250075851266,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 180854,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 13.207081907194876,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.9098371123262767,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "28",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 255729,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.11614962485794,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.771234509003056,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 252514,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 12.14587825473558,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 3.8480737141958037,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "29",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 216861,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.751163540719949,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 5.010983234490772,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 209690,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 14.680263665516458,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 4.968608625730547,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "30",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 206345,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 10.541967684015546,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.819656023336265,
+            "niqe": null
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 203239,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 10.533288074938696,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.85400625870505,
+            "niqe": null
+          }
+        }
+      }
+    }
+  ]
+}

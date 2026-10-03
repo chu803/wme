@@ -1,0 +1,6 @@
+[2026-10-01 14:41:10] [INFO    ] [services.cache_service:627] 已清空 0 条历史记录。
+[2026-10-01 14:41:10] [INFO    ] [services.file_service:93] 上传文件已落盘：C:\Users\HP\AppData\Local\Temp\cache_selftest_w4_tkpm8\uploads\a.png
+[2026-10-01 14:41:10] [INFO    ] [services.cache_service:329] 历史记录已登记：a.png
+[2026-10-01 14:41:10] [INFO    ] [services.file_service:93] 上传文件已落盘：C:\Users\HP\AppData\Local\Temp\cache_selftest_w4_tkpm8\uploads\b.png
+[2026-10-01 14:41:10] [INFO    ] [services.cache_service:329] 历史记录已登记：b.png
+[2026-10-01 14:41:10] [INFO    ] [services.cache_service:627] 已清空 1 条历史记录。

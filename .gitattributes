@@ -1,0 +1,52 @@
+# ==============================================================================
+#  项目名称 : AI 智能水印擦除工作台 (AI Watermark Eraser Workbench)
+#  文件名称 : .gitattributes
+#  文件说明 : 行尾与二进制文件规范化（阶段 186 新增）
+#  版权声明 : Copyright (c) 2026 AI 智能水印擦除工作台. All Rights Reserved.
+#
+#  为什么需要它
+#  ------------
+#  本仓库在 Windows 上开发。若交给 git 的默认 `core.autocrlf` 处理，检出时会把
+#  所有文本文件改写成 CRLF，于是：① 同一文件在不同机器上 diff 全红；
+#  ② 每次编辑都可能混入行尾变更（项目历史上专门写过 fix_line_endings.py 来擦屁股）。
+#  这里把**仓库内统一为 LF**、二进制显式标注，避免行尾成为噪声。
+#
+#  配套（本地已设，供 clone 后参照）
+#  --------------------------------
+#      git config core.autocrlf false
+#      git config core.eol lf
+# ==============================================================================
+
+# 默认：由 git 判文本/二进制，文本在仓库内一律 LF。
+* text=auto eol=lf
+
+# ---- 源码与文本（显式 LF）----
+*.py    text eol=lf
+*.md    text eol=lf
+*.txt   text eol=lf
+*.json  text eol=lf
+*.yml   text eol=lf
+*.yaml  text eol=lf
+*.toml  text eol=lf
+*.ini   text eol=lf
+*.cfg   text eol=lf
+*.sh    text eol=lf
+# Windows 批处理必须 CRLF（cmd.exe 对 LF-only 的 .bat 有历史兼容问题）
+*.bat   text eol=crlf
+*.cmd   text eol=crlf
+Dockerfile text eol=lf
+
+# ---- 二进制：不做行尾转换，也不做 diff（避免把 PNG/权重当文本处理）----
+*.png   binary
+*.jpg   binary
+*.jpeg  binary
+*.webp  binary
+*.bmp   binary
+*.pt    binary
+*.pth   binary
+*.onnx  binary
+*.safetensors binary
+
+# ---- 语言统计：把这些目录排除在 GitHub linguist 之外 ----
+docs/**     linguist-documentation
+*.md        linguist-documentation

@@ -1,0 +1,6 @@
+# 测试依赖（阶段 13 引入）
+# 用本地 CI 脚本（test.bat / test.sh）或手动安装：
+#   python -m pip install -r requirements-dev.txt
+pytest>=8
+pytest-timeout
+pytest-cov

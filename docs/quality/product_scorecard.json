@@ -1,0 +1,128 @@
+{
+  "project": "AI 智能水印擦除工作台 (AI Watermark Eraser Workbench)",
+  "version": "1.0.0",
+  "assessed_at": "2026-09-25",
+  "assessment_stage": 116,
+  "purpose": "自我质检记分卡（机器可读）。供每个阶段后刷新，量化「向龙头迈进」的进度。",
+  "grades": {
+    "overall": "B",
+    "engineering": "A",
+    "core_quality": "B-",
+    "productization": "D",
+    "ecosystem": "F"
+  },
+  "scale": {
+    "src_loc": 33200,
+    "test_loc": 22500,
+    "test_files": 107,
+    "test_cases_approx": 1516,
+    "docs": 118,
+    "runtime": "torch 2.9.1+cpu (installed) / requirements pins 2.3.1 (stale)"
+  },
+  "dimensions": [
+    {
+      "id": "detection",
+      "name": "水印检测质量",
+      "grade": "B-",
+      "metrics": {
+        "synthetic_fp_rate": 0.0036,
+        "synthetic_precision": 0.661,
+        "synthetic_recall": 0.798,
+        "synthetic_iou": 0.602,
+        "real_precision": 0.1552,
+        "real_mask_iou": 0.1705,
+        "real_mask_coverage": 0.0365,
+        "real_coverage_ratio": 3.75,
+        "real_recall_committed_only": 1.0
+      },
+      "note": "真实精确率 0.155 / 掩码 IoU 0.170 ⇒ 过检约 3.75×（框太多而非框偏）。残余为半透明通路固有误报，受连通域守卫保护，不宜再砍。"
+    },
+    {
+      "id": "repair",
+      "name": "修复（去痕）质量",
+      "grade": "A-",
+      "metrics": {
+        "synthetic_delta_psnr_db": 13.21,
+        "delivery_chain_delta_psnr_db": 11.37,
+        "e2e_corner_logo_removal": 0.3555,
+        "e2e_corner_logo_spill": 0.007,
+        "e2e_faint_tiled_delta": 0.0041
+      },
+      "note": "LaMa/OpenCV 双引擎 + 相位一致的掩码预处理；外溢 ≤1.2%。faint_tiled 去痕率仍偏低。"
+    },
+    {
+      "id": "coverage",
+      "name": "水印类型覆盖（真值）",
+      "grade": "D",
+      "metrics": {
+        "real_images": 30,
+        "real_ground_truth_watermarks": 60,
+        "committed_types": ["ai_logo"],
+        "unknown_types": ["ai_text_heavy", "ai_grid", "ai_faint_tiled", "ai_gradient"],
+        "benchmark_types_total": 8
+      },
+      "note": "P0：真实基准 30 图全为 corner_logo；另 4 类真实召回【未知，不是 100%】。合成基准已覆盖 5 类。"
+    },
+    {
+      "id": "performance",
+      "name": "性能与吞吐",
+      "grade": "C-",
+      "metrics": {
+        "device": "CPU-only default",
+        "lama_seconds_per_image": "3~4",
+        "video": "逐帧，极慢（30s@30fps ≈ 900 帧）",
+        "gpu_path": "Dockerfile 注释提供 CUDA recipe，未集成 CI/基准"
+      },
+      "note": "竞品云端 GPU 2s/2K。本项目本地 CPU 保隐私但慢；缺 GPU 后端集成与批推理优化。"
+    },
+    {
+      "id": "engineering",
+      "name": "工程与质量体系",
+      "grade": "A",
+      "metrics": {
+        "test_cases_approx": 1516,
+        "docs": 118,
+        "gates": ["scripts/quality_gate.py", "scripts/real_gate.py", "scripts/e2e_real_probe.py --gate", "scripts/mask_param_audit.py"],
+        "injection_counterexamples": true,
+        "ci": "missing (added 116).github/workflows/ci.yml",
+        "license": "added 116 (proprietary)",
+        "packaging": "missing pyproject.toml"
+      },
+      "note": "注入式反例 + 三条门禁 + AUDITED_SINCE 审计体系，工程标准远超同类开源项目。缺 CI/打包/许可（116 已补 CI 与 LICENSE）。"
+    },
+    {
+      "id": "product_ecosystem",
+      "name": "产品化与生态",
+      "grade": "F",
+      "metrics": {
+        "hosted_saas": false,
+        "user_accounts": false,
+        "billing": false,
+        "api_auth": false,
+        "plugin_marketplace": "目录已存在 (plugins/)，无市场/分发",
+        "desktop_build": "PyInstaller build.spec 已备，未发布",
+        "i18n": "zh-CN + en-US"
+      },
+      "note": "具备 Service/API/CLI/UI/插件 五入口的技术内核，但无账号/计费/鉴权/托管/分发。这是与商业竞品的最大差距。"
+    }
+  ],
+  "differentiators": [
+    "全本地离线推理（隐私，不上传云端）——竞品多为云端 SaaS",
+    "免手涂自动检测 + 8 类水印预设（竞品多为通用或需手涂）",
+    "PDF / 视频 / 图片 全输入源支持（多数竞品仅图片）",
+    "合规定位（仅去除本人生成内容）——差异化信任标签"
+  ],
+  "gaps_by_priority": [
+    {"p": "P0", "id": "real_data", "desc": "真实水印图覆盖（4 类未知）", "blocked_on": "user"},
+    {"p": "P0", "id": "precision", "desc": "真实精确率 0.155 / 掩码 IoU 0.170（过检 3.75×）", "blocked_on": "real_data"},
+    {"p": "P1", "id": "performance", "desc": "CPU-only、无 GPU 集成、视频慢", "blocked_on": "infra"},
+    {"p": "P1", "id": "productization", "desc": "无账号/计费/鉴权/托管部署", "blocked_on": "product"},
+    {"p": "P2", "id": "model_gap", "desc": "LaMa(2021) vs 扩散(2024)，复杂背景天花板", "blocked_on": "research"},
+    {"p": "P2", "id": "repo_shell", "desc": "缺 pyproject/CHANGELOG；根目录残留 NUL 等", "blocked_on": "none"}
+  ],
+  "roadmap": [
+    {"phase": 1, "window": "0-3 月", "theme": "数据与质量", "goal": "真实 precision ≥0.35 / mask_iou ≥0.35；5 类真实 recall ≥0.85"},
+    {"phase": 2, "window": "3-6 月", "theme": "产品化与性能", "goal": "GPU 后端；单图 P95 <1.5s；API 鉴权+限流；Docker Compose 一键部署；发布 v1.0"},
+    {"phase": 3, "window": "6-12 月", "theme": "生态与商业化", "goal": "插件/模型市场；多语言站；账号+配额；可选扩散细化后端"}
+  ]
+}

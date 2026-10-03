@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "dup",
+      "filename": "dup.png",
+      "path": "images/dup.png",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        64,
+        64
+      ],
+      "sha256": "6e35e4c2d632339a28e9d33792e5135892dd7292f450041988f7b30c5aced00f",
+      "added_at": "2026-10-01T10:53:14Z",
+      "source": "local"
+    }
+  ]
+}

@@ -1,0 +1,60 @@
+{
+  "engine": "lama",
+  "side": 640,
+  "limit": 10,
+  "aggregate": [
+    {
+      "case": "faint_tiled",
+      "preset": "ai_faint_tiled",
+      "n": 10,
+      "n_total": 10,
+      "truth_cov": 0.05436,
+      "pred_cov": 0.06467,
+      "overdraw": 1.1869,
+      "removal": 0.0041,
+      "collateral": 1.8147,
+      "spill": 0.0085,
+      "gain_db": -12.6474
+    },
+    {
+      "case": "corner_logo",
+      "preset": "ai_logo",
+      "n": 10,
+      "n_total": 10,
+      "truth_cov": 0.02905,
+      "pred_cov": 0.02574,
+      "overdraw": 0.8859,
+      "removal": 0.3555,
+      "collateral": 1.0526,
+      "spill": 0.0073,
+      "gain_db": 0.8166
+    },
+    {
+      "case": "edge_text",
+      "preset": "ai_text_heavy",
+      "n": 10,
+      "n_total": 10,
+      "truth_cov": 0.00831,
+      "pred_cov": 0.03162,
+      "overdraw": 3.799,
+      "removal": 0.2415,
+      "collateral": 1.0236,
+      "spill": 0.0119,
+      "gain_db": -1.9543
+    },
+    {
+      "case": "grid",
+      "preset": "ai_grid",
+      "n": 10,
+      "n_total": 10,
+      "truth_cov": 0.01212,
+      "pred_cov": 0.0608,
+      "overdraw": 5.0148,
+      "removal": 0.5063,
+      "collateral": 1.5154,
+      "spill": 0.0067,
+      "gain_db": -9.4825
+    }
+  ],
+  "note": "e2e 修复侧基线；红线 E2E_LIMITS 由本快照标定。用 --update-baseline 刷新（刷新前必须确认新值是有意为之）。"
+}

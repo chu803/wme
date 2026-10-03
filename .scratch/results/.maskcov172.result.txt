@@ -1,0 +1,12 @@
+ai_logo_02_snow_mountain: mask_recall=0.369 mask_cov=0.0205 truth_cov=0.0104 (inter=16078/43520, pred=86026)
+ai_logo_03_white_coffee_: mask_recall=0.949 mask_cov=0.0100 truth_cov=0.0104 (inter=41302/43520, pred=41981)
+ai_logo_04_neon_street_n: mask_recall=0.442 mask_cov=0.0792 truth_cov=0.0104 (inter=19217/43520, pred=332008)
+ai_logo_05_fruit_platter: mask_recall=0.150 mask_cov=0.0030 truth_cov=0.0104 (inter=6517/43520, pred=12524)
+ai_logo_06_flower_field_: mask_recall=0.389 mask_cov=0.0123 truth_cov=0.0104 (inter=16948/43520, pred=51459)
+ai_logo_07_glass_curtain: mask_recall=0.272 mask_cov=0.0289 truth_cov=0.0104 (inter=11848/43520, pred=121092)
+ai_logo_08_abstract_flui: mask_recall=0.030 mask_cov=0.0056 truth_cov=0.0104 (inter=1299/43520, pred=23435)
+ai_logo_09_vintage_typew: mask_recall=0.226 mask_cov=0.0612 truth_cov=0.0104 (inter=9835/43520, pred=256646)
+ai_logo_10_lavender_hot_: mask_recall=0.400 mask_cov=0.0423 truth_cov=0.0104 (inter=17426/43520, pred=177628)
+ai_logo_test_01_orange_c: mask_recall=0.307 mask_cov=0.0055 truth_cov=0.0104 (inter=13361/43520, pred=23232)
+
+MICRO mask_recall = 0.3535  (sum inter 153831 / sum truth 435200)

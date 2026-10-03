@@ -1,0 +1,10 @@
+ai_logo_02_snow_mountain_lake.jpg	bg=175	plate_x=[1730,1740] w=10
+    col x=1760: plate_y=[1903,1919] h=16
+ai_logo_04_neon_street_night.jpg	bg=58	plate_x=[1689,1709] w=20
+    col x=1719: plate_y=[1899,1957] h=58
+ai_logo_09_vintage_typewriter.jpg	bg=94	plate_x=[2000,2048] w=48
+    col x=2030: plate_y=[1851,1864] h=13
+ai_logo_10_lavender_hot_air_balloon.jpg	bg=73	plate_x=[1806,1843] w=37
+    col x=1836: plate_y=[1946,1965] h=19
+ai_logo_05_fruit_platter.jpg	bg=95	plate_x=[1638,1662] w=24
+    col x=1668: plate_y=[1991,2027] h=36

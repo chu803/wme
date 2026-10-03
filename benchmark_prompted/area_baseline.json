@@ -1,0 +1,54 @@
+{
+  "version": 1,
+  "assessed_at": "2026-09-25T06:48:06Z",
+  "config": {
+    "n_images": 20,
+    "by_style": {
+      "edge_text": 5,
+      "grid_watermark": 5,
+      "translucent": 5,
+      "gradient_watermark": 5
+    },
+    "presets": [
+      "ai_text_heavy",
+      "ai_grid",
+      "ai_faint_tiled",
+      "ai_gradient"
+    ],
+    "sha_digest": "ab73da1364354093"
+  },
+  "per_preset": {
+    "ai_text_heavy": {
+      "n": 20,
+      "mask_coverage_mean": 0.0069,
+      "mask_coverage_p90": 0.0201,
+      "mask_coverage_max": 0.0324,
+      "n_with_mask": 17,
+      "pred_count_mean": 5.3
+    },
+    "ai_grid": {
+      "n": 20,
+      "mask_coverage_mean": 0.0359,
+      "mask_coverage_p90": 0.0986,
+      "mask_coverage_max": 0.147,
+      "n_with_mask": 20,
+      "pred_count_mean": 234.7
+    },
+    "ai_faint_tiled": {
+      "n": 20,
+      "mask_coverage_mean": 0.0182,
+      "mask_coverage_p90": 0.0408,
+      "mask_coverage_max": 0.0746,
+      "n_with_mask": 20,
+      "pred_count_mean": 24.9
+    },
+    "ai_gradient": {
+      "n": 20,
+      "mask_coverage_mean": 0.0,
+      "mask_coverage_p90": 0.0,
+      "mask_coverage_max": 0.0,
+      "n_with_mask": 0,
+      "pred_count_mean": 0.0
+    }
+  }
+}

@@ -1,0 +1,67 @@
+# ==============================================================================
+#  AI 智能水印擦除工作台 —— 项目元数据（阶段 188 · 优化清单 C2）
+#
+#  本文件的定位（先读这段，避免误解）
+#  --------------------------------
+#  · 本文件提供**项目元数据**（名称 / 版本 / 描述 / 许可 / 所需 Python），
+#    使工具链（打包、依赖扫描、编辑器、GitHub 等）能读到统一的项目身份。
+#  · **依赖清单的真值来源仍是 `requirements*.txt`**（安装方式与清华镜像说明都在那里），
+#    此处**刻意不复制**一份 `dependencies`，避免两处清单慢慢漂移（LESSONS 187/195）。
+#  · 版本号唯一真值来源是 `config.APP_VERSION`；此处写同一数值并由
+#    `tests/test_packaging_meta.py` 断言两者一致（不采用 setuptools 的
+#    `dynamic = {attr = ...}`，因为那会在**构建时导入 config.py**，而 config.py
+#    在导入期会读环境变量并解析目录 ⇒ 构建副作用，得不偿失）。
+#
+#  尚未启用（显式登记为待决策，不是遗漏）
+#  ------------------------------------
+#  · `[project.scripts]` 控制台入口：需要先定「命令名 / 入口模块」，
+#    当前启动方式为 `python main.py` 与 Docker（见 README / Dockerfile）。
+#  · 发布到 PyPI / 打 wheel 分发：需先定「哪些模块随包发布」的口径。
+#    本文件的 `py-modules` / `packages.find` 已按仓库现状显式声明，
+#    足以支撑**本地可安装**（`pip install .`）与元数据读取。
+# ==============================================================================
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "wme-watermark-eraser"
+version = "1.0.0"
+description = "AI 智能水印擦除工作台：本地离线、免手涂的 AI 图片/PDF/视频可见水印检测与修复工具"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { file = "LICENSE" }
+authors = [{ name = "AI Watermark Eraser Workbench" }]
+keywords = ["watermark", "inpainting", "lama", "opencv", "gradio", "offline"]
+classifiers = [
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: 3.13",
+    "Topic :: Multimedia :: Graphics",
+    "Topic :: Scientific/Engineering :: Image Processing",
+    "Environment :: Console",
+    "Operating System :: OS Independent",
+]
+
+[tool.setuptools]
+# 顶层单文件模块（与仓库现状一一对应；`conftest.py` 是测试夹具，不发布）
+py-modules = [
+    "api",
+    "cli",
+    "config",
+    "download_model",
+    "main",
+    "server",
+]
+
+[tool.setuptools.packages.find]
+# 顶层包（均带 `__init__.py`，setuptools 才能发现）。
+# ⚠ 刻意**不含** `scripts*`：该目录没有 `__init__.py`，`find` 根本发现不了它
+#   （写了等于声明与实现不符，`tests/test_packaging_meta.py` 会报错拦住）。
+#   门禁/探针脚本是项目的**可复现资产、留在仓库里**，不随分发包发布。
+# ⚠ 也**不含** `tests`：测试套件不随分发发布。
+include = ["core*", "services*", "ui*", "utils*"]
+
+# 注：覆盖率口径的**权威文件是 `.coveragerc`**（含 `parallel = False` 的环境说明）。
+# 此处**刻意不写** `[tool.coverage.*]`——coverage 只读它找到的第一个配置文件，
+# 两处都写会造成「改了一处不生效」的静默陷阱。

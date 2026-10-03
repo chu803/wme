@@ -1,0 +1,4 @@
+[2026-10-01 14:57:58] [INFO    ] [core.plugins:335] 已注册自定义修复引擎：lama（显示名：LaMa 深度学习）
+[2026-10-01 14:57:58] [INFO    ] [core.plugins:335] 已注册自定义修复引擎：opencv（显示名：OpenCV 传统算法）
+[2026-10-01 14:57:58] [INFO    ] [core.plugins:335] 已注册自定义修复引擎：demo_model（显示名：示例·自定义模型）
+[2026-10-01 14:57:58] [INFO    ] [core.plugins:551] 已加载插件文件：D:\work 111\2026-08-03-17-38-51\plugins\sample_model_plugin.py

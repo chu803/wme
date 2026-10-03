@@ -1,0 +1,4 @@
+LIFT frac=0.00 d=10: MICRO=0.562 cov=0.029 | 02_snow_mo=0.72 03_white_c=0.95 04_neon_st=0.85 05_fruit_p=0.66 06_flower_=0.39 07_glass_c=0.27 08_abstrac=0.03 09_vintage=0.23 10_lavende=0.85 test_01_or=0.68
+LIFT frac=0.25 d=10: MICRO=0.388 cov=0.027 | 02_snow_mo=0.72 03_white_c=0.95 04_neon_st=0.44 05_fruit_p=0.15 06_flower_=0.39 07_glass_c=0.27 08_abstrac=0.03 09_vintage=0.23 10_lavende=0.40 test_01_or=0.31
+LIFT frac=0.25 d=16: MICRO=0.388 cov=0.027 | 02_snow_mo=0.72 03_white_c=0.95 04_neon_st=0.44 05_fruit_p=0.15 06_flower_=0.39 07_glass_c=0.27 08_abstrac=0.03 09_vintage=0.23 10_lavende=0.40 test_01_or=0.31
+LIFT frac=0.40 d=14: MICRO=0.388 cov=0.027 | 02_snow_mo=0.72 03_white_c=0.95 04_neon_st=0.44 05_fruit_p=0.15 06_flower_=0.39 07_glass_c=0.27 08_abstrac=0.03 09_vintage=0.23 10_lavende=0.40 test_01_or=0.31

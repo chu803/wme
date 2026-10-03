@@ -1,0 +1,164 @@
+.............s.......................................................... [  2%]
+........................................................................ [  5%]
+........................................................................ [  8%]
+...............................................................s........ [ 11%]
+........................................................................ [ 14%]
+........................................................................ [ 17%]
+........................................................................ [ 20%]
+........................................................................ [ 23%]
+........................................................................ [ 26%]
+........................................................................ [ 29%]
+........................................................................ [ 32%]
+........................................................................ [ 35%]
+........................................................................ [ 38%]
+........................................................................ [ 41%]
+........................................................................ [ 44%]
+........................................................................ [ 47%]
+.......................................................F...F............ [ 49%]
+........................................................................ [ 52%]
+........................................................................ [ 55%]
+........................................................................ [ 58%]
+........................................................................ [ 61%]
+........................................................................ [ 64%]
+........................................................................ [ 67%]
+..s..................................................................... [ 70%]
+........................................................................ [ 73%]
+........................................................................ [ 76%]
+........................................................................ [ 79%]
+.............................F..F...............................F....... [ 82%]
+.............................................s.s........................ [ 85%]
+........................................................................ [ 88%]
+........................................................................ [ 91%]
+........................................................................ [ 94%]
+..s..................................................................... [ 96%]
+....s................................................................... [ 99%]
+...                                                                      [100%]
+================================== FAILURES ===================================
+__________________ test_selfcheck_coverage_is_accounted_for ___________________
+
+    def test_selfcheck_coverage_is_accounted_for():
+        """磁盘上每个含 `__main__` 的模块，必须**要么已登记、要么有显式豁免理由**。
+    
+        这是把「漏登记」从**静默**变成**机械可发现**的那一步：
+        新增一个带自检的模块却两边都没记 ⇒ 本用例变红。
+        """
+        on_disk = set(_enumerate_modules_with_main())
+        covered = {m for m, _ in MODULES} | set(NOT_REGISTERED_BY_DESIGN)
+        unaccounted = sorted(on_disk - covered)
+>       assert not unaccounted, (
+            f"以下模块含 `__main__` 但既未登记为子进程守卫、也不在豁免清单里：\n"
+            f"  {unaccounted}\n"
+            f"处置：能离线安全跑 ⇒ 加进 MODULES（并跑一次确认 rc=0 + 无副作用）；"
+            f"否则加进 NOT_REGISTERED_BY_DESIGN 并写明理由。"
+        )
+E       AssertionError: 以下模块含 `__main__` 但既未登记为子进程守卫、也不在豁免清单里：
+E           ['scripts/a4_gradient_proof.py', 'scripts/clean_artifacts.py']
+E         处置：能离线安全跑 ⇒ 加进 MODULES（并跑一次确认 rc=0 + 无副作用）；否则加进 NOT_REGISTERED_BY_DESIGN 并写明理由。
+E       assert not ['scripts/a4_gradient_proof.py', 'scripts/clean_artifacts.py']
+
+tests\test_legacy_selfcheck.py:291: AssertionError
+______________________ test_no_undefined_names_repo_wide ______________________
+
+    def test_no_undefined_names_repo_wide():
+        """全仓不得有「引用了但从未定义」的名字。
+    
+        为什么必须**静态**查：`from __future__ import annotations` 会让**注解里的
+        未导入名**完全静默 —— 所有注解延迟为字符串、永不求值 ⇒ 运行时**永远不会**报错。
+        实测（本用例上线时）抓到 3 处：
+    
+          · `core/detector.py`   —— 注解用了 `Dict[...]`，只导入了 `List, Optional, Tuple`
+          · `services/validators.py` —— 注解用了 `_os.PathLike`，只 `import os`
+          · `ui/tab_history.py`  —— 注解用了 `Optional[str]`，**完全没导入 typing**
+    
+        它们只有 `typing.get_type_hints()` / 文档生成 / 类型检查器会炸。
+        ⇒ 静态枚举（AST）是**唯一**能发现这类缺陷的手段（经验 180）。
+        """
+        from scripts import undef_scan
+        hits = {}
+        for rel in undef_scan._all_py(ROOT):
+            missing, err = undef_scan.scan_file(os.path.join(ROOT, rel))
+            if err or missing:
+                hits[rel] = missing or [err]
+>       assert not hits, (
+            f"以下文件含「引用了但从未定义」的名字（注解里的也要修）：\n"
+            + "\n".join(f"  {k}: {v}" for k, v in sorted(hits.items()))
+        )
+E       AssertionError: 以下文件含「引用了但从未定义」的名字（注解里的也要修）：
+E           scripts\a4_gradient_proof.py: ['sys']
+E       assert not {'scripts\\a4_gradient_proof.py': ['sys']}
+
+tests\test_legacy_selfcheck.py:347: AssertionError
+_____________________ test_cov_config_points_to_repo_root _____________________
+
+    def test_cov_config_points_to_repo_root():
+        """`--cov` 的路径必须是**绝对**的：本项目的测试命令常以绝对路径调用，
+        相对 `source=.` 会按 cwd 解析 ⇒ 统计到空集或错目录。"""
+        argv = rac.build_steps(cov=True)[0].argv
+        cov_root = [a for a in argv if a.startswith("--cov=")][0].split("=", 1)[1]
+        assert os.path.isabs(cov_root)
+>       assert os.path.abspath(cov_root) == os.path.abspath(str(_ROOT))
+E       AssertionError: assert 'd:\\work 111...8-03-17-38-51' == 'D:\\work 111...8-03-17-38-51'
+E         
+E         - D:\work 111\2026-08-03-17-38-51
+E         ? ^
+E         + d:\work 111\2026-08-03-17-38-51
+E         ? ^
+
+tests\test_run_all_checks.py:114: AssertionError
+____________ test_pytest_basetemp_is_project_local_not_system_temp ____________
+
+monkeypatch = <_pytest.monkeypatch.MonkeyPatch object at 0x000002873F820440>
+
+    def test_pytest_basetemp_is_project_local_not_system_temp(monkeypatch):
+        steps = rac.build_steps()
+        argv = steps[0].argv
+        assert "--basetemp" in argv
+        base = argv[argv.index("--basetemp") + 1]
+>       assert os.path.abspath(base).startswith(os.path.abspath(str(_ROOT)) + os.sep), base
+E       AssertionError: d:\work 111\2026-08-03-17-38-51\.pytest_runall
+E       assert False
+E        +  where False = <built-in method startswith of str object at 0x000002873F945D10>(('D:\\work 111\\2026-08-03-17-38-51' + '\\'))
+E        +    where <built-in method startswith of str object at 0x000002873F945D10> = 'd:\\work 111\\2026-08-03-17-38-51\\.pytest_runall'.startswith
+E        +      where 'd:\\work 111\\2026-08-03-17-38-51\\.pytest_runall' = <function abspath at 0x00000287709E42C0>('d:\\work 111\\2026-08-03-17-38-51\\.pytest_runall')
+E        +        where <function abspath at 0x00000287709E42C0> = <module 'ntpath' (frozen)>.abspath
+E        +          where <module 'ntpath' (frozen)> = os.path
+E        +    and   'D:\\work 111\\2026-08-03-17-38-51' = <function abspath at 0x00000287709E42C0>('D:\\work 111\\2026-08-03-17-38-51')
+E        +      where <function abspath at 0x00000287709E42C0> = <module 'ntpath' (frozen)>.abspath
+E        +        where <module 'ntpath' (frozen)> = os.path
+E        +      and   'D:\\work 111\\2026-08-03-17-38-51' = str(WindowsPath('D:/work 111/2026-08-03-17-38-51'))
+E        +    and   '\\' = os.sep
+
+tests\test_run_all_checks.py:143: AssertionError
+________________ test_all_emoji_printing_scripts_are_hardened _________________
+
+    def test_all_emoji_printing_scripts_are_hardened():
+        """守卫：每个会打印非 GBK 字符的脚本都必须做 UTF-8 加固。"""
+        hits = _scripts_with_printed_non_gbk()
+        assert len(hits) >= _MIN_HITS, (
+            f"只扫到 {len(hits)} 个会打印非 GBK 字符的脚本（预期 ≥{_MIN_HITS}），"
+            f"扫描逻辑或目录结构可能已失效"
+        )
+        offenders = [p.name for p, src in hits
+                     if not any(m in src for m in _HARDEN_MARKERS)]
+>       assert not offenders, (
+            "以下脚本会打印非 GBK 字符却没做编码加固——在 GBK 管道下会把「通过」"
+            f"读成「退出码 1」：{offenders}"
+        )
+E       AssertionError: 以下脚本会打印非 GBK 字符却没做编码加固——在 GBK 管道下会把「通过」读成「退出码 1」：['a4_gradient_proof.py']
+E       assert not ['a4_gradient_proof.py']
+
+tests\test_scripts_console_encoding.py:76: AssertionError
+=========================== short test summary info ===========================
+SKIPPED [1] tests\test_api.py:40: LaMa 权重已就绪，跳过「模型缺失」行为验证
+SKIPPED [1] tests\test_cli.py:39: LaMa 权重已就绪，--verify-model 应通过，跳过「未通过」断言
+SKIPPED [1] tests\test_postprocess.py:100: torch 已安装，真实超分后端存在（会放大），跳过「形状不变」断言
+SKIPPED [1] tests\test_superres.py:42: torch 已安装，后端工厂行为反转，跳过「无后端」验证
+SKIPPED [1] tests\test_superres.py:82: torch 已安装，真实超分后端存在，跳过「无后端回退」验证
+SKIPPED [1] tests\test_utils_audit90.py:247: 本环境有 colorama
+SKIPPED [1] tests\test_video_superres.py:75: torch 已安装，真实超分后端存在，跳过「无后端回退」验证
+FAILED tests/test_legacy_selfcheck.py::test_selfcheck_coverage_is_accounted_for
+FAILED tests/test_legacy_selfcheck.py::test_no_undefined_names_repo_wide - As...
+FAILED tests/test_run_all_checks.py::test_cov_config_points_to_repo_root - As...
+FAILED tests/test_run_all_checks.py::test_pytest_basetemp_is_project_local_not_system_temp
+FAILED tests/test_scripts_console_encoding.py::test_all_emoji_printing_scripts_are_hardened
+RC=1

@@ -1,0 +1,2 @@
+[2026-10-01 14:41:28] [ERROR   ] [services.queue_worker:380] 任务 img_00.jpg 最终失败：模拟的偶发失败
+[2026-10-01 14:41:29] [ERROR   ] [services.queue_worker:380] 任务 img_03.jpg 最终失败：模拟的偶发失败

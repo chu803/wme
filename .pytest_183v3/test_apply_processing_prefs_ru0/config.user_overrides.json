@@ -1,0 +1,6 @@
+{
+  "INPAINT_DUAL_RUN": true,
+  "PNG_KEEP_ALPHA": false,
+  "IMAGE_APPLY_EXIF_ORIENTATION": false,
+  "IMAGE_NORMALIZE_BIT_DEPTH": false
+}

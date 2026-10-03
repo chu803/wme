@@ -1,0 +1,3 @@
+ai_logo_02_snow_mountain: truth=[1690, 1884, 315, 118] pred_regions=7 mask_px=86026 mask_cov=0.0205
+ai_logo_test_01_orange_c: truth=[1692, 1884, 313, 118] pred_regions=3 mask_px=23232 mask_cov=0.0055
+ai_logo_04_neon_street_n: truth=[1629, 1884, 366, 118] pred_regions=17 mask_px=332008 mask_cov=0.0792

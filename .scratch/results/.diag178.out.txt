@@ -1,0 +1,12 @@
+
+### ai_logo_06_flower_field_  mask_recall=0.389  corner_logo区域数=0
+   >>> 无任何 corner_logo 区域输出！
+
+### ai_logo_07_glass_curtain  mask_recall=0.272  corner_logo区域数=0
+   >>> 无任何 corner_logo 区域输出！
+
+### ai_logo_08_abstract_flui  mask_recall=0.030  corner_logo区域数=0
+   >>> 无任何 corner_logo 区域输出！
+
+### ai_logo_09_vintage_typew  mask_recall=0.226  corner_logo区域数=0
+   >>> 无任何 corner_logo 区域输出！

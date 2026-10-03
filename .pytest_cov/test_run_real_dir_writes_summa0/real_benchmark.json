@@ -1,0 +1,38 @@
+[
+  {
+    "file": "r0.png",
+    "coverage_pct": 0.78,
+    "engines": {
+      "opencv": {
+        "mae_masked": 87.924,
+        "mae_full": 0.685,
+        "quality_score": -0.6051
+      },
+      "lama": {
+        "mae_masked": 87.945,
+        "mae_full": 0.685,
+        "quality_score": -0.6122
+      }
+    },
+    "recommended": "opencv",
+    "lama_vs_opencv_mae": 0.004
+  },
+  {
+    "file": "r1.png",
+    "coverage_pct": 0.76,
+    "engines": {
+      "opencv": {
+        "mae_masked": 86.106,
+        "mae_full": 0.653,
+        "quality_score": -0.4247
+      },
+      "lama": {
+        "mae_masked": 86.134,
+        "mae_full": 0.654,
+        "quality_score": -0.4184
+      }
+    },
+    "recommended": "lama",
+    "lama_vs_opencv_mae": 0.004
+  }
+]

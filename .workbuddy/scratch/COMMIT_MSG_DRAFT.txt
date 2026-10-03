@@ -1,0 +1,49 @@
+feat(gate): 性能探针与时间预算门禁（阶段 186 · 优化清单 A5）+ 分位数抽为共用件
+
+背景
+----
+docs/185 侦察发现全仓 `p95` / `latency` / `time_budget` 命中 0 处——四个门禁都只
+`time.time()` 打印耗时，**没有任何时间红线** ⇒ 路线图目标「P95 < 1.5s」无法判定是否达标。
+（同文档 A2 的表述也在本轮核实后修正：precision **已**同时被红线 0.050 与漂移层 0.25 守住。）
+
+新增
+----
+- scripts/perf_probe.py：检测阶段延迟门禁（退出码 0/1/2）
+  · 工作量默认 = 真实基准图（benchmark_real/images，优先 ai_logo_*）
+  · 逐图 min-of-k（--repeat，默认 3）取样 → min/P50/P95/max/均值
+  · 回归护栏 P95 ≤ 基线×(1+tol=30%)；绝对目标 --target 1.5s 默认**只报告差距**
+    （--enforce-target 才升级为红线，供 GPU/CI 环境）
+  · 可比性裁决：source / stage / repeat / 结构版本不一致 ⇒ 判跳过(2)
+  · 无基线 ⇒ 2（跳过，绝不假装通过）；--update 写基线
+- utils/stats.py：nearest_rank_percentile —— **分位数的唯一实现**（最近秩、无插值）
+- tests/test_perf_probe.py（15 例）：工作量确定性 / 真实图优先 / 分位口径 / 可比性 / 退出码
+- benchmark_real/perf_baseline.json：首次标定（min-of-3）
+- docs/186-性能探针与时间预算门禁.md
+
+修改
+----
+- scripts/real_gate.py：面积画像 P90 由本地嵌套 `_pct` 改为调用共用件（取值逐位不变，
+  有回归测试钉住）——避免「同一判据两处实现慢慢漂移」
+- scripts/run_all_checks.py：--gates 追加 perf_probe 步骤（第 6 步）
+- tests/test_legacy_selfcheck.py：perf_probe 按 S 登记
+- tests/test_run_all_checks.py：门禁步骤清单同步
+- docs/185：A2 修正（precision 门禁现状）+ A5 标记已交付并回填实测
+- .workbuddy/memory/LESSONS.md：新增 198（陈述缺口前必须读当前实现）、
+  199（性能门禁工作量必须来自真实素材）、200（统计量须高于噪声地板）
+
+两个测量教训（本阶段核心）
+------------------------
+① 合成工作量会**系统性低估**真实成本：合成图 P95 0.113s vs 真实图 P50 1.427s / P95 3.209s
+   （差约 9~28 倍）⇒ 默认改用真实基准图，且跨 source 拒绝对比。
+② 单次采样噪声达 150%（同批两次 P95 1.558s → 4.037s），远超 30% 护栏 ⇒ 门禁会常红失效；
+   改为逐图 min-of-3 后噪声降到 ~3%（P95 3.209s → 3.302s）。
+
+首批真实数据（CPU · 检测阶段）
+----------------------------
+min 0.810s · P50 1.427s · **P95 3.209s** · 均值 1.677s · 逐图极差均值 0.113s
+⇒ 对照路线图 1.5s 为 **2.1 倍**，该目标隐含 GPU / 进一步优化（故默认不判红）。
+
+验证
+----
+- 新测试 15 例 + real_gate 相关回归面共 181 例全绿
+- perf_probe --update → 基线写入；立即复跑 → 退出码 0（护栏内）

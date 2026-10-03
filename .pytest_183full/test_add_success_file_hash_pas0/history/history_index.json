@@ -1,0 +1,25 @@
+[
+  {
+    "id": "h_837129",
+    "ts": 1790837129.578511,
+    "original_name": "h",
+    "original_path": "D:\\work 111\\2026-08-03-17-38-51\\.pytest_183full\\test_add_success_file_hash_pas0\\uploads\\h.png",
+    "result_path": null,
+    "thumb_path": "D:\\work 111\\2026-08-03-17-38-51\\.pytest_183full\\test_add_success_file_hash_pas0\\thumbs\\h.png",
+    "mode": "auto",
+    "engine": "auto",
+    "status": "success",
+    "file_hash": "deadbeef",
+    "params": "",
+    "kind": "image",
+    "video_path": null,
+    "duration": 0.0,
+    "fps": 0.0,
+    "frames": 0,
+    "width": 0,
+    "height": 0,
+    "upscaled": false,
+    "page_count": 0,
+    "file_size": 0
+  }
+]

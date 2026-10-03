@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "c",
+      "filename": "c.png",
+      "path": "images/c.png",
+      "ai_source": "synthetic",
+      "watermark_style_hint": "none",
+      "clean": true,
+      "original_size": [
+        1024,
+        1024
+      ],
+      "sha256": "",
+      "source": "synthetic"
+    }
+  ]
+}

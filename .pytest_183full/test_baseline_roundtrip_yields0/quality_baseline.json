@@ -1,0 +1,97 @@
+{
+  "config": {
+    "presets": [
+      "general"
+    ],
+    "area_presets": [
+      "ai_faint_tiled",
+      "ai_text_heavy",
+      "ai_grid",
+      "ai_gradient"
+    ],
+    "n_images": 1,
+    "n_expected": 1,
+    "dataset_dir": "benchmark_real",
+    "generated_at": "2026-10-01T14:52:34"
+  },
+  "aggregate": {
+    "per_preset": {
+      "general": {
+        "n": 1,
+        "mask_recall": 0.0,
+        "precision": 0.0,
+        "recall": 0.0,
+        "mean_iou": 0.0,
+        "mask_iou": 0.0,
+        "mask_coverage": 0.0,
+        "coverage_ratio": 0.0
+      }
+    },
+    "area_only": {
+      "ai_faint_tiled": {
+        "n": 1,
+        "mask_coverage_mean": 0.0,
+        "mask_coverage_p90": 0.0,
+        "mask_coverage_max": 0.0,
+        "n_with_mask": 0,
+        "pred_count_mean": 0.0
+      },
+      "ai_text_heavy": {
+        "n": 1,
+        "mask_coverage_mean": 0.0,
+        "mask_coverage_p90": 0.0,
+        "mask_coverage_max": 0.0,
+        "n_with_mask": 0,
+        "pred_count_mean": 0.0
+      },
+      "ai_grid": {
+        "n": 1,
+        "mask_coverage_mean": 0.0,
+        "mask_coverage_p90": 0.0,
+        "mask_coverage_max": 0.0,
+        "n_with_mask": 0,
+        "pred_count_mean": 0.0
+      },
+      "ai_gradient": {
+        "n": 1,
+        "mask_coverage_mean": 0.0,
+        "mask_coverage_p90": 0.0,
+        "mask_coverage_max": 0.0,
+        "n_with_mask": 0,
+        "pred_count_mean": 0.0
+      }
+    },
+    "n_images": 1
+  },
+  "scope": {
+    "labeled": [
+      "logo_watermark"
+    ],
+    "n_labeled_styles": 1,
+    "committed": [
+      "ai_logo"
+    ],
+    "uncommitted": [
+      "ai_faint_tiled",
+      "ai_gradient",
+      "ai_grid",
+      "ai_text_heavy"
+    ],
+    "committed_labeled": [
+      "ai_logo"
+    ],
+    "committed_missing": [],
+    "uncommitted_labeled": [],
+    "uncommitted_missing": [
+      "ai_faint_tiled",
+      "ai_gradient",
+      "ai_grid",
+      "ai_text_heavy"
+    ],
+    "declared_images": 1,
+    "unspecified_images": 0,
+    "contradictory": [],
+    "unknown_styles": [],
+    "complete": true
+  }
+}

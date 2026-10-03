@@ -1,0 +1,276 @@
+{
+  "seeds": [
+    1,
+    2,
+    3,
+    4
+  ],
+  "per_case_engine": [
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "faint_tiled",
+      "case_cn": "极淡平铺文字",
+      "engine": "opencv",
+      "n": 4,
+      "delta_psnr_mean": 15.27,
+      "delta_psnr_std": 1.9153589741873456,
+      "coverage_mean": 8.605,
+      "mae_mean": 0.08249999999999999
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "faint_tiled",
+      "case_cn": "极淡平铺文字",
+      "engine": "lama",
+      "n": 4,
+      "delta_psnr_mean": 12.37,
+      "delta_psnr_std": 1.9457260855526406,
+      "coverage_mean": 8.605,
+      "mae_mean": 0.1275
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "corner_logo",
+      "case_cn": "角落 LOGO",
+      "engine": "opencv",
+      "n": 4,
+      "delta_psnr_mean": 28.4,
+      "delta_psnr_std": 0.7834858007647624,
+      "coverage_mean": 3.15,
+      "mae_mean": 0.0635
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "corner_logo",
+      "case_cn": "角落 LOGO",
+      "engine": "lama",
+      "n": 4,
+      "delta_psnr_mean": 30.689999999999998,
+      "delta_psnr_std": 2.419225082541928,
+      "coverage_mean": 3.15,
+      "mae_mean": 0.052500000000000005
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "edge_text",
+      "case_cn": "底部边缘小字",
+      "engine": "opencv",
+      "n": 4,
+      "delta_psnr_mean": 23.9775,
+      "delta_psnr_std": 0.6911358404828962,
+      "coverage_mean": 1.8475,
+      "mae_mean": 0.021750000000000002
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "edge_text",
+      "case_cn": "底部边缘小字",
+      "engine": "lama",
+      "n": 4,
+      "delta_psnr_mean": 21.1525,
+      "delta_psnr_std": 1.6649680927873665,
+      "coverage_mean": 1.8475,
+      "mae_mean": 0.035250000000000004
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "grid",
+      "case_cn": "网格点阵",
+      "engine": "opencv",
+      "n": 4,
+      "delta_psnr_mean": 22.055,
+      "delta_psnr_std": 0.5913332393836829,
+      "coverage_mean": 2.125,
+      "mae_mean": 0.02425
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "grid",
+      "case_cn": "网格点阵",
+      "engine": "lama",
+      "n": 4,
+      "delta_psnr_mean": 21.299999999999997,
+      "delta_psnr_std": 0.6912669527758436,
+      "coverage_mean": 2.125,
+      "mae_mean": 0.028499999999999998
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "faint_tiled",
+      "case_cn": "极淡平铺文字",
+      "engine": "opencv",
+      "n": 4,
+      "delta_psnr_mean": -3.41,
+      "delta_psnr_std": 0.2073644135332772,
+      "coverage_mean": 2.19,
+      "mae_mean": 0.85675
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "faint_tiled",
+      "case_cn": "极淡平铺文字",
+      "engine": "lama",
+      "n": 4,
+      "delta_psnr_mean": -0.525,
+      "delta_psnr_std": 0.0687386354243376,
+      "coverage_mean": 2.19,
+      "mae_mean": 0.56675
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "corner_logo",
+      "case_cn": "角落 LOGO",
+      "engine": "opencv",
+      "n": 4,
+      "delta_psnr_mean": 13.297500000000001,
+      "delta_psnr_std": 2.6446301726328394,
+      "coverage_mean": 4.0249999999999995,
+      "mae_mean": 0.4685
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "corner_logo",
+      "case_cn": "角落 LOGO",
+      "engine": "lama",
+      "n": 4,
+      "delta_psnr_mean": 13.552499999999998,
+      "delta_psnr_std": 1.8334990455410658,
+      "coverage_mean": 4.0249999999999995,
+      "mae_mean": 0.4275
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "edge_text",
+      "case_cn": "底部边缘小字",
+      "engine": "opencv",
+      "n": 4,
+      "delta_psnr_mean": 14.982500000000002,
+      "delta_psnr_std": 0.4921064417379636,
+      "coverage_mean": 1.4275,
+      "mae_mean": 0.12475
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "edge_text",
+      "case_cn": "底部边缘小字",
+      "engine": "lama",
+      "n": 4,
+      "delta_psnr_mean": 13.545,
+      "delta_psnr_std": 0.5587709727607547,
+      "coverage_mean": 1.4275,
+      "mae_mean": 0.1185
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "grid",
+      "case_cn": "网格点阵",
+      "engine": "opencv",
+      "n": 4,
+      "delta_psnr_mean": 0.7775000000000001,
+      "delta_psnr_std": 0.65648210181238,
+      "coverage_mean": 3.2299999999999995,
+      "mae_mean": 0.48675
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "grid",
+      "case_cn": "网格点阵",
+      "engine": "lama",
+      "n": 4,
+      "delta_psnr_mean": 5.0925,
+      "delta_psnr_std": 1.52635800191174,
+      "coverage_mean": 3.2299999999999995,
+      "mae_mean": 0.22325
+    }
+  ],
+  "lama_minus_opencv": [
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "faint_tiled",
+      "case_cn": "极淡平铺文字",
+      "opencv_dpsnr": 15.27,
+      "lama_dpsnr": 12.37,
+      "diff": -2.9000000000000004
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "corner_logo",
+      "case_cn": "角落 LOGO",
+      "opencv_dpsnr": 28.4,
+      "lama_dpsnr": 30.689999999999998,
+      "diff": 2.289999999999999
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "edge_text",
+      "case_cn": "底部边缘小字",
+      "opencv_dpsnr": 23.9775,
+      "lama_dpsnr": 21.1525,
+      "diff": -2.8249999999999993
+    },
+    {
+      "data": "gradient",
+      "data_cn": "纯渐变",
+      "case": "grid",
+      "case_cn": "网格点阵",
+      "opencv_dpsnr": 22.055,
+      "lama_dpsnr": 21.299999999999997,
+      "diff": -0.7550000000000026
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "faint_tiled",
+      "case_cn": "极淡平铺文字",
+      "opencv_dpsnr": -3.41,
+      "lama_dpsnr": -0.525,
+      "diff": 2.8850000000000002
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "corner_logo",
+      "case_cn": "角落 LOGO",
+      "opencv_dpsnr": 13.297500000000001,
+      "lama_dpsnr": 13.552499999999998,
+      "diff": 0.25499999999999723
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "edge_text",
+      "case_cn": "底部边缘小字",
+      "opencv_dpsnr": 14.982500000000002,
+      "lama_dpsnr": 13.545,
+      "diff": -1.4375000000000018
+    },
+    {
+      "data": "textured",
+      "data_cn": "类自然纹理",
+      "case": "grid",
+      "case_cn": "网格点阵",
+      "opencv_dpsnr": 0.7775000000000001,
+      "lama_dpsnr": 5.0925,
+      "diff": 4.315
+    }
+  ]
+}

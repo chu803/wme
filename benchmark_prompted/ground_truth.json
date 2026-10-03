@@ -1,0 +1,345 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "image_id": "p01",
+      "watermarks": [
+        {
+          "bbox": [
+            160,
+            1330,
+            2420,
+            190
+          ],
+          "style": "edge_text",
+          "note": "底部小字带（近似；精确框待人工确认）｜豆包提示词渲染"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant(approximate)"
+    },
+    {
+      "image_id": "p02",
+      "watermarks": [
+        {
+          "bbox": [
+            160,
+            1330,
+            2420,
+            190
+          ],
+          "style": "edge_text",
+          "note": "底部小字带（近似；精确框待人工确认）｜豆包提示词渲染"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant(approximate)"
+    },
+    {
+      "image_id": "p03",
+      "watermarks": [
+        {
+          "bbox": [
+            160,
+            1330,
+            2420,
+            190
+          ],
+          "style": "edge_text",
+          "note": "底部小字带（近似；精确框待人工确认）｜豆包提示词渲染"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant(approximate)"
+    },
+    {
+      "image_id": "p04",
+      "watermarks": [
+        {
+          "bbox": [
+            160,
+            1330,
+            2420,
+            190
+          ],
+          "style": "edge_text",
+          "note": "底部小字带（近似；精确框待人工确认）｜豆包提示词渲染"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant(approximate)"
+    },
+    {
+      "image_id": "p05",
+      "watermarks": [
+        {
+          "bbox": [
+            160,
+            1330,
+            2420,
+            190
+          ],
+          "style": "edge_text",
+          "note": "底部小字带（近似；精确框待人工确认）｜豆包提示词渲染"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant(approximate)"
+    },
+    {
+      "image_id": "p06",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2720,
+            1520
+          ],
+          "style": "grid_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p07",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2720,
+            1520
+          ],
+          "style": "grid_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p08",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2720,
+            1520
+          ],
+          "style": "grid_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p09",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2739,
+            1531
+          ],
+          "style": "grid_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p10",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2739,
+            1531
+          ],
+          "style": "grid_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p11",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2720,
+            1520
+          ],
+          "style": "translucent",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p12",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2720,
+            1520
+          ],
+          "style": "translucent",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p13",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2720,
+            1520
+          ],
+          "style": "translucent",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p14",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2739,
+            1531
+          ],
+          "style": "translucent",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p15",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2739,
+            1531
+          ],
+          "style": "translucent",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p16",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2739,
+            1531
+          ],
+          "style": "gradient_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p17",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2739,
+            1531
+          ],
+          "style": "gradient_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p18",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2739,
+            1531
+          ],
+          "style": "gradient_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p19",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2739,
+            1531
+          ],
+          "style": "gradient_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    },
+    {
+      "image_id": "p20",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            0,
+            2739,
+            1531
+          ],
+          "style": "gradient_watermark",
+          "note": "豆包提示词渲染水印（prompt-rendered）"
+        }
+      ],
+      "labeled_at": "2026-09-25T06:35:54Z",
+      "labeled_by": "manual:assistant"
+    }
+  ]
+}

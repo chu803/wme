@@ -1,0 +1,11 @@
+{
+  "version": 1,
+  "_note": "干净图真值：全部 watermarks:[]（无 AI 水印）。与 manifest 的 clean:true 配对，供 clean_bench_probe.py 测量补全先验误报率。合成样本仅作管线验证。",
+  "entries": [
+    {"image_id": "syn_01_plain", "watermarks": [], "labeled_at": "2026-10-01T00:00:00Z", "labeled_by": "synthetic:clean"},
+    {"image_id": "syn_02_corner_text", "watermarks": [], "labeled_at": "2026-10-01T00:00:00Z", "labeled_by": "synthetic:clean"},
+    {"image_id": "syn_03_corner_logo", "watermarks": [], "labeled_at": "2026-10-01T00:00:00Z", "labeled_by": "synthetic:clean"},
+    {"image_id": "syn_04_corner_translucent", "watermarks": [], "labeled_at": "2026-10-01T00:00:00Z", "labeled_by": "synthetic:clean"},
+    {"image_id": "syn_05_natural", "watermarks": [], "labeled_at": "2026-10-01T00:00:00Z", "labeled_by": "synthetic:clean"}
+  ]
+}

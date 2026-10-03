@@ -1,0 +1,176 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "image_id": "ai_logo_02_snow_mountain",
+      "watermarks": [
+        {
+          "bbox": [
+            1702,
+            1893,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "ai_logo_03_white_coffee_",
+      "watermarks": [
+        {
+          "bbox": [
+            1670,
+            1880,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "ai_logo_04_neon_street_n",
+      "watermarks": [
+        {
+          "bbox": [
+            1640,
+            1879,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "ai_logo_05_fruit_platter",
+      "watermarks": [
+        {
+          "bbox": [
+            1708,
+            1888,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "ai_logo_06_flower_field_",
+      "watermarks": [
+        {
+          "bbox": [
+            1692,
+            1885,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "ai_logo_07_glass_curtain",
+      "watermarks": [
+        {
+          "bbox": [
+            1692,
+            1885,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "ai_logo_08_abstract_flui",
+      "watermarks": [
+        {
+          "bbox": [
+            1690,
+            1884,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "ai_logo_09_vintage_typew",
+      "watermarks": [
+        {
+          "bbox": [
+            1621,
+            1884,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "ai_logo_10_lavender_hot_",
+      "watermarks": [
+        {
+          "bbox": [
+            1673,
+            1884,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "ai_logo_test_01_orange_c",
+      "watermarks": [
+        {
+          "bbox": [
+            1704,
+            1884,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包AI」平台角标板（足迹 340x128，白底图亮度剖面实测）"
+        }
+      ],
+      "labeled_at": "2026-09-30T08:07:46Z",
+      "labeled_by": "manual:measured"
+    }
+  ],
+  "_note": "阶段 172-A：真值精修。角标板为固定尺寸平台叠加层，足迹经白底图亮度剖面客观实测为 340x128；逐图左上角为本人剖面/目视量取（非检测器输出），故 10 条 bbox 互不相同（通过反伪造守卫）。labeled_by=manual:measured。"
+}

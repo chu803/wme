@@ -1,0 +1,13 @@
+image                        mask_rec    corner#
+ai_logo_02_snow_mountain      0.718          1 
+ai_logo_03_white_coffee_      0.978          1 
+ai_logo_04_neon_street_n      0.845          1 
+ai_logo_05_fruit_platter      0.655          1 
+ai_logo_06_flower_field_      0.804          1 <<目标>>
+ai_logo_07_glass_curtain      0.799          1 <<目标>>
+ai_logo_08_abstract_flui      0.712          1 <<目标>>
+ai_logo_09_vintage_typew      0.618          1 <<目标>>
+ai_logo_10_lavender_hot_      0.850          1 
+ai_logo_test_01_orange_c      0.684          1 
+
+MICRO mask_recall (10 图) = 0.7665

@@ -1,0 +1,25 @@
+# ==============================================================================
+#  项目名称 : AI 智能水印擦除工作台 (AI Watermark Eraser Workbench)
+#  文件名称 : requirements-gpu.txt
+#  文件说明 : NVIDIA 显卡加速版 PyTorch 补充清单（在 requirements.txt 之后安装）
+#  版权声明 : Copyright (c) 2026 AI 智能水印擦除工作台. All Rights Reserved.
+# ------------------------------------------------------------------------------
+#  适用场景：
+#    机器有 NVIDIA 显卡，且已安装好显卡驱动（CUDA 驱动），希望启用 LaMa 引擎
+#    走 GPU 推理，大幅提升大图 / 批量处理的吞吐。
+#
+#  安装顺序（重要）：
+#    1) 先装完整依赖（CPU 版 torch 也一并装上无妨，下一步会覆盖）：
+#         pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
+#    2) 再装本文件，把 torch / torchvision 替换为 CUDA 12.1 版：
+#         pip install -r requirements-gpu.txt
+#
+#  说明：
+#    - 下面两行会覆盖 requirements.txt 里的 CPU 版 torch/torchvision。
+#    - cu121 对应 CUDA 12.1 驱动；若你的驱动是 CUDA 11.8，请把末尾改为 cu118。
+#    - 安装后无需改代码，程序启动时 DEVICE_MODE=auto 会自动探测并启用显卡。
+# ==============================================================================
+
+torch==2.3.1
+torchvision==0.18.1
+--index-url https://download.pytorch.org/whl/cu121

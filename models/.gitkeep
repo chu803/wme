@@ -1,0 +1,4 @@
+# 本文件用于让 Git 追踪空目录，请勿删除。
+# 目录用途：存放 LaMa 模型权重文件（big-lama.pt，约 200MB）。
+# 获取方式：在项目根目录执行 python download_model.py 自动下载。
+# 注意：权重文件体积大，已被 .gitignore 忽略，不会上传到代码仓库。

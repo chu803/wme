@@ -1,0 +1,16 @@
+scripts PRINTING non-GBK chars: 13
+  missing hardening: 0
+
+OK  audit_selector.py                  U+26A0 U+2713 U+2717
+OK  cascade_robustness.py              U+2705 U+274C
+OK  e2e_real_probe.py                  U+21D2 U+26A0 U+2705 U+2717
+OK  jpeg_robustness.py                 U+2705 U+274C
+OK  mask_param_audit.py                U+2705 U+274C
+OK  prompted_area_gate.py              U+23ED U+2705 U+274C
+OK  quality_gate.py                    U+2705 U+274C
+OK  real_asset_preflight.py            U+2705 U+274C
+OK  real_gate.py                       U+2705 U+274C
+OK  run_benchmark.py                   U+2212
+OK  scale_robustness.py                U+2705 U+274C
+OK  undef_scan.py                      U+26A0 U+2705
+OK  validate_selector.py               U+26A0 U+2717

@@ -1,0 +1,761 @@
+{
+  "timestamp": "2026-09-13T07:04:34Z",
+  "n_images": 30,
+  "presets": [
+    "truth"
+  ],
+  "mask_source": "truth",
+  "note": "质量以 seam_delta（掩码区 vs 邻域环带色差，越低越好）为准；white_frac 为白板指纹（越低越好）；masked_psnr 仅为改写量对照，高 ≠ 好",
+  "results": [
+    {
+      "image_id": "01",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 13.743064880371094,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.640388884130365,
+            "seam_delta": 27.293540954589844,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.016822820291674,
+            "seam_delta": 42.686767578125,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "02",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 25.992477416992188,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.208150180296434,
+            "seam_delta": 14.6668119430542,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.979969416922954,
+            "seam_delta": 23.14803123474121,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "03",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 32.8529167175293,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.596841265236442,
+            "seam_delta": 9.0800199508667,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.407006326377886,
+            "seam_delta": 12.408097267150879,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "04",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 45.52791213989258,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 7.877042021135377,
+            "seam_delta": 4.221916675567627,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.797897902781203,
+            "seam_delta": 6.429657459259033,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "05",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 14.06755542755127,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.293089825880605,
+            "seam_delta": 12.850455284118652,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.07759489382055,
+            "seam_delta": 41.97603988647461,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "06",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 43.849761962890625,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.045538750654691,
+            "seam_delta": 4.0829758644104,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.870462676554113,
+            "seam_delta": 6.513893127441406,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "07",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 17.32923698425293,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.227182419226061,
+            "seam_delta": 32.933040618896484,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 9.154006341028488,
+            "seam_delta": 31.156679153442383,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "08",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 39.57741928100586,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.959777172568458,
+            "seam_delta": 11.489689826965332,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.832976616841369,
+            "seam_delta": 16.63330078125,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "09",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 31.94599151611328,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.319821184201393,
+            "seam_delta": 5.69314432144165,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.98786333693613,
+            "seam_delta": 8.490265846252441,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "10",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 44.73092269897461,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 7.876435196176558,
+            "seam_delta": 2.9850995540618896,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.461143289281738,
+            "seam_delta": 13.706787109375,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "11",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 14.869786262512207,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.288826258758228,
+            "seam_delta": 14.035204887390137,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 9.185622951493412,
+            "seam_delta": 13.559109687805176,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "12",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 3.686823606491089,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.841372042099152,
+            "seam_delta": 28.09456443786621,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 9.104323417020444,
+            "seam_delta": 19.99022102355957,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "13",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 20.311878204345703,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.903488096359444,
+            "seam_delta": 10.861405372619629,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 9.174112124700887,
+            "seam_delta": 10.145325660705566,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "14",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 35.28834533691406,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.75884151896716,
+            "seam_delta": 11.163823127746582,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.4750938131905,
+            "seam_delta": 12.355687141418457,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "15",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 14.788025856018066,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.737980439280747,
+            "seam_delta": 14.361456871032715,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.634377214712051,
+            "seam_delta": 31.23288917541504,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "16",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 44.224395751953125,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.069408223823768,
+            "seam_delta": 4.814022541046143,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.5613142605744175,
+            "seam_delta": 10.343642234802246,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "17",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 12.329623222351074,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.996548766541531,
+            "seam_delta": 5.3218841552734375,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.79077766859697,
+            "seam_delta": 3.5551860332489014,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "18",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 39.329925537109375,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.323487534264585,
+            "seam_delta": 1.3476461172103882,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 9.514373386334201,
+            "seam_delta": 0.2657267153263092,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "19",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 12.555461883544922,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.322747974227774,
+            "seam_delta": 33.10879135131836,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.890221459150696,
+            "seam_delta": 38.15007400512695,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "20",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 15.47514820098877,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.268190458020936,
+            "seam_delta": 22.97431182861328,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.8670077071543,
+            "seam_delta": 32.92258071899414,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "21",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 19.600662231445312,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.680861810313463,
+            "seam_delta": 8.659451484680176,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 9.521926681170834,
+            "seam_delta": 8.923296928405762,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "22",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 60.173519134521484,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.908530303485739,
+            "seam_delta": 13.11382007598877,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.53300237680051,
+            "seam_delta": 19.58642578125,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "23",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 67.63680267333984,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.305110238074601,
+            "seam_delta": 3.881159543991089,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.000268086872804,
+            "seam_delta": 9.93785572052002,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "24",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 35.77212905883789,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 7.950776947651872,
+            "seam_delta": 4.992762088775635,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.116456173365481,
+            "seam_delta": 26.74546241760254,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "25",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 10.3967924118042,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.046305293102167,
+            "seam_delta": 31.000595092773438,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.413959945327699,
+            "seam_delta": 44.7394905090332,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "26",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 2.6746928691864014,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.537934702937974,
+            "seam_delta": 30.612838745117188,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.118697688420883,
+            "seam_delta": 53.57540512084961,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "27",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 11.033676147460938,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.170667484854512,
+            "seam_delta": 11.29847240447998,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 8.915404458967663,
+            "seam_delta": 5.959587097167969,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "28",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 28.15036964416504,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.486248343242798,
+            "seam_delta": 24.89360237121582,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.965531150944843,
+            "seam_delta": 65.70012664794922,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "29",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 34.02064514160156,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 8.401513908760103,
+            "seam_delta": 9.421698570251465,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 7.904760153078804,
+            "seam_delta": 15.957355499267578,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    },
+    {
+      "image_id": "30",
+      "ai_source": "other",
+      "truth": {
+        "mask_source": "truth",
+        "mask_pixels": 10213,
+        "baseline_seam_delta": 38.27968978881836,
+        "engines": {
+          "opencv": {
+            "available": true,
+            "masked_psnr": 9.257293406776224,
+            "seam_delta": 7.028961181640625,
+            "white_frac": 0.0,
+            "niqe": null
+          },
+          "lama": {
+            "available": true,
+            "masked_psnr": 9.767109920238601,
+            "seam_delta": 26.346406936645508,
+            "white_frac": 0.0,
+            "niqe": null
+          }
+        }
+      }
+    }
+  ]
+}

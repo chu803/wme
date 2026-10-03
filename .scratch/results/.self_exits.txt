@@ -1,0 +1,2 @@
+i18n EXIT=0
+report EXIT=0

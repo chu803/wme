@@ -1,0 +1,2 @@
+stdout: encoding=gbk print_emoji=FAIL:UnicodeEncodeError
+stderr: encoding=gbk print_emoji=FAIL:UnicodeEncodeError

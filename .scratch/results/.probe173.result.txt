@@ -1,0 +1,5 @@
+close_k= 0 max_aspect=2.5: MICRO_mask_recall=0.361 | 05_fruit_p=0.15 08_abstrac=0.03 09_vintage=0.23 02_snow_mo=0.37 04_neon_st=0.44 03_white_c=0.95
+close_k= 0 max_aspect=3.2: MICRO_mask_recall=0.419 | 05_fruit_p=0.15 08_abstrac=0.03 09_vintage=0.23 02_snow_mo=0.72 04_neon_st=0.44 03_white_c=0.95
+close_k=21 max_aspect=3.2: MICRO_mask_recall=0.513 | 05_fruit_p=0.66 08_abstrac=0.03 09_vintage=0.23 02_snow_mo=0.37 04_neon_st=0.85 03_white_c=0.95
+close_k=35 max_aspect=3.2: MICRO_mask_recall=0.428 | 05_fruit_p=0.15 08_abstrac=0.03 09_vintage=0.23 02_snow_mo=0.37 04_neon_st=0.85 03_white_c=0.95
+close_k=21 max_aspect=2.5: MICRO_mask_recall=0.361 | 05_fruit_p=0.15 08_abstrac=0.03 09_vintage=0.23 02_snow_mo=0.37 04_neon_st=0.44 03_white_c=0.95

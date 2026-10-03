@@ -1,0 +1,18 @@
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:196] 任务入队：img_00.jpg (ab50720d)，队列长度=1
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:196] 任务入队：img_01.jpg (bd7ff1cf)，队列长度=2
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:196] 任务入队：img_02.jpg (d7025e72)，队列长度=3
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:196] 任务入队：img_03.jpg (b27091b0)，队列长度=4
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:196] 任务入队：img_04.jpg (e9dd1d58)，队列长度=5
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:196] 任务入队：img_05.jpg (5f71483e)，队列长度=6
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:196] 任务入队：img_06.jpg (d11f7b0f)，队列长度=7
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:251] 开始批量执行：共 7 个任务，并发数 3。
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:306] 任务进度 1/7：img_00.jpg -> done
+[2026-10-01 14:47:00] [WARNING ] [services.queue_worker:370] 任务 img_01.jpg 第 1 次失败，准备重试：模拟的偶发失败
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:306] 任务进度 2/7：img_02.jpg -> done
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:306] 任务进度 3/7：img_03.jpg -> done
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:306] 任务进度 4/7：img_04.jpg -> done
+[2026-10-01 14:47:00] [INFO    ] [services.queue_worker:306] 任务进度 5/7：img_05.jpg -> done
+[2026-10-01 14:47:00] [WARNING ] [services.queue_worker:370] 任务 img_06.jpg 第 1 次失败，准备重试：模拟的偶发失败
+[2026-10-01 14:47:01] [INFO    ] [services.queue_worker:306] 任务进度 6/7：img_01.jpg -> done
+[2026-10-01 14:47:01] [INFO    ] [services.queue_worker:306] 任务进度 7/7：img_06.jpg -> done
+[2026-10-01 14:47:01] [INFO    ] [services.queue_worker:311] 批量执行结束：成功 7 / 失败 0 / 取消 0。

@@ -1,0 +1,105 @@
+# syntax=docker/dockerfile:1
+# ==============================================================================
+#  AI 智能水印擦除工作台 —— GPU 版 Docker 构建文件（可选）
+#  阶段 198 · D1 产品化（GPU/API）· D1-Stage 3：把 Docker GPU 配方从注释落地为
+#  可选构建文件，使「带显卡的机器」能直接 `docker build -f Dockerfile.gpu` 得到
+#  启用 CUDA 推理的镜像，配合 `python main.py --api` 或网页界面服务。
+#
+#  与默认 Dockerfile 的区别：
+#    1. 基础镜像换成 `nvidia/cuda:12.1.1-runtime-ubuntu22.04`（自带 CUDA 运行库，
+#       推理只需运行时库，不需要 nvcc 等开发库）。
+#    2. torch / torchvision 替换为 **CUDA 12.1 版**（从 PyTorch 官方 cu121 源安装），
+#       这是启用显卡加速的关键——默认 Dockerfile 装的是 CPU 版 torch。
+#    3. 仍保持多阶段 + HEALTHCHECK + 非 root + `WME_` 前缀环境变量等全部契约。
+#
+#  用法：
+#    build ：docker build -f Dockerfile.gpu -t watermark-eraser-gpu .
+#    运行（网页）：docker run --gpus all -p 7860:7860 -p 7861:7861 \
+#                   -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu
+#    运行（仅REST）：docker run --gpus all -p 7861:7861 \
+#                   -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu python main.py --api
+#
+#  前置：宿主机需装好 NVIDIA 驱动 + 安装 nvidia-container-toolkit，否则 --gpus 无效。
+#  说明：本文件只保证「镜像内 torch 为 CUDA 版 + 设备自动选择逻辑（config.DEVICE_MODE
+#        默认 auto）会在检测到 CUDA 时启用显卡」；具体加速倍数取决于机型与图尺寸。
+# ==============================================================================
+
+ARG PYTHON_VERSION=3.11
+
+# ------------------------------ Stage 1 · builder -----------------------------
+# 用 nvidia/cuda runtime 基础镜像，既带 CUDA 运行库，又是 ubuntu，可装 python。
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04 AS builder
+
+# 构建期：装 python + 编译工具链（部分依赖可能需就地编译）。
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3.11 python3-pip python3.11-venv build-essential \
+    && rm -rf /var/lib/apt/lists/* \
+    && python3.11 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+
+# 先复制依赖清单。
+COPY requirements.txt /tmp/requirements.txt
+
+# 安装全部依赖到独立前缀 /install（runtime 阶段整体拷贝）。
+# 第 1 步：按默认清单装（其中 torch 是 CPU 版，下一步会被 CUDA 版覆盖）。
+RUN python3.11 -m pip install --no-cache-dir --prefix=/install \
+         -r /tmp/requirements.txt
+
+# 第 2 步：用 CUDA 12.1 版 torch 覆盖（cu121 源）。--no-deps 避免拉回 CPU 版依赖。
+#   ⚠️ 这步是 GPU 镜像的「灵魂」：torch 必须是 CUDA 版，否则 DEVICE_MODE=auto
+#      检测到 CUDA 也加载不了 GPU 权重（torch.cuda.is_available() 直接 False）。
+RUN python3.11 -m pip install --no-cache-dir --prefix=/install \
+        --no-deps --index-url https://download.pytorch.org/whl/cu121 \
+        torch==2.3.1 torchvision==0.18.1
+
+# ------------------------------ Stage 2 · runtime -----------------------------
+FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04 AS runtime
+
+# 运行期系统库（OpenCV / Gradio 所需）+ python3.11 + ffmpeg（视频处理）。
+RUN apt-get update && apt-get install -y --no-install-recommends \
+        python3.11 \
+        libgl1 \
+        libglib2.0-0 \
+        libsm6 \
+        libxext6 \
+        libxrender1 \
+        ffmpeg \
+    && rm -rf /var/lib/apt/lists/*
+
+# 非 root 用户（最小权限原则）。
+RUN useradd --create-home --uid 10001 appuser
+
+WORKDIR /app
+
+# 只拷「已安装的包」（builder 的 /install → 系统 site-packages），不带编译工具链。
+COPY --from=builder /install /usr/local
+
+# 拷源码并按 appuser 授权（运行期需写 outputs / cache / temp / logs / exports / models）。
+COPY --chown=appuser:appuser . .
+RUN mkdir -p outputs cache temp logs exports models \
+    && chown -R appuser:appuser /app
+
+# 容器内默认允许外网访问（WME_ 前缀！）；关掉 Gradio 遥测以保持离线。
+# DEVICE_MODE 默认 auto：检测到 CUDA 即自动启用显卡，无需额外设置。
+ENV PYTHONUNBUFFERED=1 \
+    PYTHONDONTWRITEBYTECODE=1 \
+    GRADIO_ANALYTICS_ENABLED=False \
+    WME_SERVER_HOST=0.0.0.0 \
+    WME_SERVER_PORT=7860 \
+    WME_SERVER_OPEN_BROWSER=False \
+    WME_DEVICE_MODE=auto
+
+# 暴露端口：
+#   · 7860 —— Gradio 网页界面（config.SERVER_PORT 默认）
+#   · 7861 —— 零依赖 REST 服务（server.py，需 `python main.py --api` 启动）
+EXPOSE 7860
+EXPOSE 7861
+
+# HEALTHCHECK：轮询 Gradio 首页是否就绪（用容器自带 python，免装 curl）。
+HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
+    CMD python3 -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('WME_SERVER_PORT','7860')+'/', timeout=4)"
+
+USER appuser
+
+# 入口：运行主程序（main.py 内部会做目录自检、模型就绪、启动 Gradio）。
+#   仅跑 REST 时覆盖命令为 `python main.py --api`（见上方用法示例）。
+ENTRYPOINT ["python3", "main.py"]

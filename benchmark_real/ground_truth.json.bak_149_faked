@@ -1,0 +1,815 @@
+{
+  "version": 1,
+  "entries": [
+    {
+      "image_id": "01",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "02",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "03",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "04",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "05",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "06",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "07",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "08",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "09",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "10",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "11",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "12",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "13",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "14",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "15",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "16",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "17",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "18",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "19",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "20",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "21",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "22",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "23",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "24",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "25",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "26",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "27",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "28",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "29",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "30",
+      "watermarks": [
+        {
+          "bbox": [
+            25,
+            28,
+            49,
+            37
+          ],
+          "style": "corner_logo",
+          "note": "左上 AI 白色圆角标"
+        },
+        {
+          "bbox": [
+            875,
+            952,
+            140,
+            60
+          ],
+          "style": "corner_logo",
+          "note": "右下 AI生成 深色半透明框"
+        }
+      ],
+      "labeled_at": "2026-09-13T06:29:36Z",
+      "labeled_by": "manual:measured"
+    }
+  ]
+}

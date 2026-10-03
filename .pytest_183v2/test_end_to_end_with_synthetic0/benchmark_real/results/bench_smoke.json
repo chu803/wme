@@ -1,0 +1,99 @@
+{
+  "timestamp": "2026-10-01T07:02:26Z",
+  "n_images": 1,
+  "presets": [
+    "general",
+    "ai_logo"
+  ],
+  "per_image": [
+    {
+      "image_id": "synth_001",
+      "ai_source": "other",
+      "original_size": [
+        256,
+        256
+      ],
+      "watermark_count": 1,
+      "results": {
+        "general": {
+          "preset": "general",
+          "tp": 0,
+          "fp": 0,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "mean_iou": 0.0,
+          "mask_iou": 0.0,
+          "mask_recall": 0.0,
+          "mask_inter_px": 0,
+          "truth_px": 6400,
+          "mask_coverage": 0.0,
+          "truth_coverage": 0.0977,
+          "coverage_ratio": 0.0,
+          "pred_count": 0,
+          "truth_count": 1
+        },
+        "ai_logo": {
+          "preset": "ai_logo",
+          "tp": 0,
+          "fp": 1,
+          "fn": 1,
+          "precision": 0.0,
+          "recall": 0.0,
+          "mean_iou": 0.0,
+          "mask_iou": 0.1568,
+          "mask_recall": 0.16,
+          "mask_inter_px": 1024,
+          "truth_px": 6400,
+          "mask_coverage": 0.0176,
+          "truth_coverage": 0.0977,
+          "coverage_ratio": 0.18,
+          "pred_count": 1,
+          "truth_count": 1
+        }
+      }
+    }
+  ],
+  "per_preset_aggregate": {
+    "general": {
+      "n": 1,
+      "precision_micro": 0.0,
+      "recall_micro": 0.0,
+      "tp_total": 0,
+      "fp_total": 0,
+      "fn_total": 1,
+      "precision_mean": 0.0,
+      "recall_mean": 0.0,
+      "mean_iou_mean": 0.0,
+      "mask_iou_mean": 0.0,
+      "mask_recall_micro": 0.0,
+      "mask_recall_mean": 0.0,
+      "mask_inter_px_total": 0,
+      "truth_px_total": 6400,
+      "mask_coverage_mean": 0.0,
+      "truth_coverage_mean": 0.0977,
+      "coverage_ratio_mean": 0.0,
+      "coverage_ratio_n": 1
+    },
+    "ai_logo": {
+      "n": 1,
+      "precision_micro": 0.0,
+      "recall_micro": 0.0,
+      "tp_total": 0,
+      "fp_total": 1,
+      "fn_total": 1,
+      "precision_mean": 0.0,
+      "recall_mean": 0.0,
+      "mean_iou_mean": 0.0,
+      "mask_iou_mean": 0.1568,
+      "mask_recall_micro": 0.16,
+      "mask_recall_mean": 0.16,
+      "mask_inter_px_total": 1024,
+      "truth_px_total": 6400,
+      "mask_coverage_mean": 0.0176,
+      "truth_coverage_mean": 0.0977,
+      "coverage_ratio_mean": 0.18,
+      "coverage_ratio_n": 1
+    }
+  }
+}

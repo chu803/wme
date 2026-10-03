@@ -1,0 +1,5 @@
+[2026-10-01 14:41:10] [INFO    ] [services.export_service:112] 已重新编码：C:\Users\HP\AppData\Local\Temp\tmpbouqba_o.png -> C:\Users\HP\AppData\Local\Temp\export_selfcheck_tc9z96vf\recoded.jpg (JPG)
+[2026-10-01 14:41:10] [INFO    ] [services.export_service:383] 对比图已生成：C:\Users\HP\AppData\Local\Temp\export_selfcheck_tc9z96vf\compare.png
+[2026-10-01 14:41:10] [INFO    ] [services.export_service:440] 已打包 2 个文件到 C:\Users\HP\AppData\Local\Temp\export_selfcheck_tc9z96vf\results.zip
+[2026-10-01 14:41:10] [INFO    ] [services.export_service:112] 已重新编码：C:\Users\HP\AppData\Local\Temp\tmpq3ulb6yv.png -> C:\Users\HP\AppData\Local\Temp\export_selfcheck_tc9z96vf\tmpq3ulb6yv_cleaned_144110.webp (WEBP)
+[2026-10-01 14:41:10] [INFO    ] [services.export_service:440] 已打包 1 个文件到 C:\Users\HP\AppData\Local\Temp\export_selfcheck_tc9z96vf\history.zip

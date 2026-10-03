@@ -1,0 +1,52 @@
+# ==============================================================================
+#  项目名称 : AI 智能水印擦除工作台 (AI Watermark Eraser Workbench)
+#  文件名称 : .coveragerc
+#  文件说明 : 覆盖率统计口径（阶段 187 · 优化清单 B2）
+#  版权声明 : Copyright (c) 2026 AI 智能水印擦除工作台. All Rights Reserved.
+#
+#  为什么此前没有覆盖率
+#  --------------------
+#  `pytest-cov` 早在 `requirements-dev.txt` 里，但全仓 `--cov` 调用 **0 处**
+#  ⇒ 「1546 个用例」从未换算成「代码被覆盖多少」（docs/185 B2）。
+#  阶段 183 暴露的守卫腐烂也说明：**测试数量 ≠ 覆盖**。
+#
+#  口径说明（如实登记，勿凭直觉改）
+#  --------------------------------
+#  · 只统计**产品代码**：排除 `tests/` 自身、一次性探针与本地验证器；
+#  · 暂用**语句（行）覆盖**，不开分支覆盖（branch）：先拿到基线数字，
+#    分支覆盖待基线稳定后再评估（先测量、后收紧）；
+#  · `omit` 里的路径用相对路径匹配（coverage 会相对 `source` 解析）。
+# ==============================================================================
+
+[run]
+source = .
+# ⚠ **必须显式关闭并行数据（阶段 187 实测教训）**：pytest-cov 默认会写
+#   `.coverage.<host>.<pid>...` 并行文件，并在收尾 `combine()` 时**删除**它们。
+#   在受限沙箱里，删除会撞「单轮批量删除」护栏（>50 即拒）⇒ coverage 收尾抛
+#   SystemExit ⇒ pytest INTERNALERROR，**报告整体丢失**（实测：97% 用例跑完才崩）。
+#   关闭后直接写单个 `.coverage`，无删除动作。
+parallel = False
+omit =
+    tests/*
+    conftest.py
+    scripts/_verify_clean_probe.py
+    */__pycache__/*
+    .workbuddy/*
+    .pytest_*/*
+    .verify_tmp/*
+    cache/*
+    exports/*
+    outputs/*
+    temp/*
+    build/*
+    dist/*
+
+[report]
+# 纯声明行/防御分支不计入（与项目「守卫可读性」取舍一致，数量少、逐条登记）
+exclude_lines =
+    pragma: no cover
+    if __name__ == .__main__.:
+    raise NotImplementedError
+show_missing = True
+skip_covered = False
+precision = 2

@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "cross",
+      "filename": "cross.png",
+      "path": "D:\\work 111\\2026-08-03-17-38-51\\.pytest_158_b99eef38\\test_add_cross_drive_falls_bac0\\benchmark_real\\cross.png",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        64,
+        64
+      ],
+      "sha256": "268b0e4f614e3904d6906d3941fcf6ee32489b37ca13c86c79696d7d289164e6",
+      "added_at": "2026-09-29T04:50:02Z",
+      "source": "local"
+    }
+  ]
+}

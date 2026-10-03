@@ -1,0 +1,305 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "p01",
+      "filename": "txt_01_城市夜景.png",
+      "path": "images/txt_01_城市夜景.png",
+      "ai_source": "other",
+      "watermark_style_hint": "edge_text",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "4b7bde3abd5326b5fe7a21d0ab3670ab7d9627192b7423b7a953667b46750552",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p02",
+      "filename": "txt_02_森林溪流.png",
+      "path": "images/txt_02_森林溪流.png",
+      "ai_source": "other",
+      "watermark_style_hint": "edge_text",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "1df0cf4addd6039cc7266277877956ec3c4e2a8ee80ec2537e4d42b11c4b9a4b",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p03",
+      "filename": "txt_03_咖啡馆静物.png",
+      "path": "images/txt_03_咖啡馆静物.png",
+      "ai_source": "other",
+      "watermark_style_hint": "edge_text",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "9da51ad31913818b2b8c599705b5567405c6e0f3fd636922b03ba39dff156f71",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p04",
+      "filename": "txt_04_海边灯塔.jpg",
+      "path": "images/txt_04_海边灯塔.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "edge_text",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "5341dc0ac4edfd27560310a39b898e136d443ec380193e9d3aeb8fa22c05e0fc",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p05",
+      "filename": "txt_05_秋日枫林.jpg",
+      "path": "images/txt_05_秋日枫林.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "edge_text",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "51c328aa59199766d90d02323195d33aa7502f15c55a6db333dfe957a7c8b105",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p06",
+      "filename": "grid_01_雪山湖泊.png",
+      "path": "images/grid_01_雪山湖泊.png",
+      "ai_source": "other",
+      "watermark_style_hint": "grid_watermark",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "33e1ba97ab5738b5ae6fa2e9ed66384bbc5052210e1400816af264aaaccc0963",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p07",
+      "filename": "grid_02_海边日落.png",
+      "path": "images/grid_02_海边日落.png",
+      "ai_source": "other",
+      "watermark_style_hint": "grid_watermark",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "b59f826209cf2ae4a0d83e8c6576c0a07d9ee811c0ba312ee2140fc2bb8b97a5",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p08",
+      "filename": "grid_03_古建筑街巷.png",
+      "path": "images/grid_03_古建筑街巷.png",
+      "ai_source": "other",
+      "watermark_style_hint": "grid_watermark",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "1c3e5fcc4738f0ea52e1380ae6de96b1fdceaec3a5a36cd9faf7b3c55f5d3fae",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p09",
+      "filename": "grid_04_城市天际线.jpg",
+      "path": "images/grid_04_城市天际线.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "grid_watermark",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "813a8cc1752a557668b8260b39750ef9cdb3541bcd16f095d67fa353034b8e89",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p10",
+      "filename": "grid_05_草原牧马.jpg",
+      "path": "images/grid_05_草原牧马.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "grid_watermark",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "0c308a3a722c055b40cd880c98e3cc84302e6f506817d32b6112de5348375ca4",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p11",
+      "filename": "tile_01_花海.png",
+      "path": "images/tile_01_花海.png",
+      "ai_source": "other",
+      "watermark_style_hint": "translucent",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "1d9cdb36755f5e2a84d4a0d93eab32680344e7a7f71dc42a282994a4ea0db9b6",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p12",
+      "filename": "tile_02_山间公路.png",
+      "path": "images/tile_02_山间公路.png",
+      "ai_source": "other",
+      "watermark_style_hint": "translucent",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "ca7c9ccc508c3512a40497d1c2c748c782def6d724f063839253240623c7619d",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p13",
+      "filename": "tile_03_室内书房.png",
+      "path": "images/tile_03_室内书房.png",
+      "ai_source": "other",
+      "watermark_style_hint": "translucent",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "67b0e3a153d8e07c34d493647968255990e6e1a949347fb4c5ac50beedf3f65a",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p14",
+      "filename": "tile_04_湖上日出.jpg",
+      "path": "images/tile_04_湖上日出.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "translucent",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "2888f8779991cab7595e64a92c1335724ec40a8f73dc1445e5a0fe7da814c34b",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p15",
+      "filename": "tile_05_雪山森林.jpg",
+      "path": "images/tile_05_雪山森林.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "translucent",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "71b4b4d0c6f9331c9761332d8db0ab00f5dde00e8d4601d9b1a9b79861c7ffd3",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p16",
+      "filename": "grad_04_海面波光.jpg",
+      "path": "images/grad_04_海面波光.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "gradient_watermark",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "47354915731216f438ecf659d672dab0eda5de05506c39b887f4778079b8739e",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p17",
+      "filename": "grad_05_都市霓虹夜.jpg",
+      "path": "images/grad_05_都市霓虹夜.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "gradient_watermark",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "b11db3524c46330cf6f31dfe45dbc0960f8afb194f7ed5aa01c23786fca1ac48",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p18",
+      "filename": "grad_06_沙漠暮色.png",
+      "path": "images/grad_06_沙漠暮色.png",
+      "ai_source": "other",
+      "watermark_style_hint": "gradient_watermark",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "00d49ce0f367aa6d2c987238bc68e17a9087ce58fb64031a79ccd2e7d770a983",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p19",
+      "filename": "grad_07_深海潜水.png",
+      "path": "images/grad_07_深海潜水.png",
+      "ai_source": "other",
+      "watermark_style_hint": "gradient_watermark",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "076f158e3c077549f0c188b4a63813daf66d1e01c3c9a4a720d95c8e4dd4ac76",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    },
+    {
+      "id": "p20",
+      "filename": "grad_08_极地冰川.png",
+      "path": "images/grad_08_极地冰川.png",
+      "ai_source": "other",
+      "watermark_style_hint": "gradient_watermark",
+      "original_size": [
+        2739,
+        1531
+      ],
+      "sha256": "276a2772bec5a4605ea5dff55847dfafc484f0b8920f8462c835b648604d3ada",
+      "added_at": "2026-09-25T06:35:54Z",
+      "source": "local",
+      "provenance": "doubao-prompt-rendered"
+    }
+  ]
+}

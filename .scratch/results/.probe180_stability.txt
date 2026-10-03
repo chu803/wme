@@ -1,0 +1,42 @@
+--- RUN 1 (exit=1) ---
+干净图误报探针 · root=clean · n=5 · gate_on=prior
+
+image_id                         ON误发    OFF误发   掩码覆盖率      牌足迹覆盖率      
+syn_01_plain                     0       0       0.0000     0.0000      
+syn_02_corner_text               1       0       0.0104     1.0000      
+syn_03_corner_logo               0       0       0.0000     0.0000      
+syn_04_corner_translucent        0       0       0.0000     0.0000      
+syn_05_natural                   1       0       0.0104     1.0000      
+
+基线误报率(baseline, OFF)      = 0/5 = 0.0000
+179 归因误报率(prior, ON−OFF)  = 2/5 = 0.4000  ← 179 专属风险
+总误报率(total, ON)           = 2/5 = 0.4000
+门禁口径 = prior → 0.4000  阈值 = 0.0000  → ❌ 未通过
+--- RUN 2 (exit=1) ---
+干净图误报探针 · root=clean · n=5 · gate_on=prior
+
+image_id                         ON误发    OFF误发   掩码覆盖率      牌足迹覆盖率      
+syn_01_plain                     0       0       0.0000     0.0000      
+syn_02_corner_text               1       0       0.0104     1.0000      
+syn_03_corner_logo               0       0       0.0000     0.0000      
+syn_04_corner_translucent        0       0       0.0000     0.0000      
+syn_05_natural                   1       0       0.0104     1.0000      
+
+基线误报率(baseline, OFF)      = 0/5 = 0.0000
+179 归因误报率(prior, ON−OFF)  = 2/5 = 0.4000  ← 179 专属风险
+总误报率(total, ON)           = 2/5 = 0.4000
+门禁口径 = prior → 0.4000  阈值 = 0.0000  → ❌ 未通过
+--- RUN 3 (exit=1) ---
+干净图误报探针 · root=clean · n=5 · gate_on=prior
+
+image_id                         ON误发    OFF误发   掩码覆盖率      牌足迹覆盖率      
+syn_01_plain                     0       0       0.0000     0.0000      
+syn_02_corner_text               1       0       0.0104     1.0000      
+syn_03_corner_logo               0       0       0.0000     0.0000      
+syn_04_corner_translucent        0       0       0.0000     0.0000      
+syn_05_natural                   1       0       0.0104     1.0000      
+
+基线误报率(baseline, OFF)      = 0/5 = 0.0000
+179 归因误报率(prior, ON−OFF)  = 2/5 = 0.4000  ← 179 专属风险
+总误报率(total, ON)           = 2/5 = 0.4000
+门禁口径 = prior → 0.4000  阈值 = 0.0000  → ❌ 未通过

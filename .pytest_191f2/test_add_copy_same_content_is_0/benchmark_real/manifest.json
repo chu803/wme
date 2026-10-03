@@ -1,0 +1,19 @@
+{
+  "version": 1,
+  "images": [
+    {
+      "id": "same",
+      "filename": "same.png",
+      "path": "images/same.png",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        64,
+        64
+      ],
+      "sha256": "8fae148542b1e2ff382c052677cc3bbdf20d14cb8110008061b0daad33933423",
+      "added_at": "2026-10-01T11:24:44Z",
+      "source": "local"
+    }
+  ]
+}

@@ -1,0 +1,97 @@
+{
+  "config": {
+    "presets": [
+      "general"
+    ],
+    "area_presets": [
+      "ai_faint_tiled",
+      "ai_text_heavy",
+      "ai_grid",
+      "ai_gradient"
+    ],
+    "n_images": 10,
+    "n_expected": 10,
+    "dataset_dir": "benchmark_real",
+    "generated_at": "2026-09-30T19:20:48"
+  },
+  "aggregate": {
+    "per_preset": {
+      "general": {
+        "n": 10,
+        "mask_recall": 0.5619,
+        "precision": 0.069,
+        "recall": 0.8,
+        "mean_iou": 0.5347,
+        "mask_iou": 0.2975,
+        "mask_coverage": 0.0291,
+        "coverage_ratio": 2.8
+      }
+    },
+    "area_only": {
+      "ai_faint_tiled": {
+        "n": 10,
+        "mask_coverage_mean": 0.0482,
+        "mask_coverage_p90": 0.1117,
+        "mask_coverage_max": 0.1158,
+        "n_with_mask": 10,
+        "pred_count_mean": 31.2
+      },
+      "ai_text_heavy": {
+        "n": 10,
+        "mask_coverage_mean": 0.0298,
+        "mask_coverage_p90": 0.0557,
+        "mask_coverage_max": 0.0884,
+        "n_with_mask": 10,
+        "pred_count_mean": 11.4
+      },
+      "ai_grid": {
+        "n": 10,
+        "mask_coverage_mean": 0.1058,
+        "mask_coverage_p90": 0.1488,
+        "mask_coverage_max": 0.1495,
+        "n_with_mask": 10,
+        "pred_count_mean": 846.2
+      },
+      "ai_gradient": {
+        "n": 10,
+        "mask_coverage_mean": 0.0,
+        "mask_coverage_p90": 0.0,
+        "mask_coverage_max": 0.0,
+        "n_with_mask": 0,
+        "pred_count_mean": 0.0
+      }
+    },
+    "n_images": 10
+  },
+  "scope": {
+    "labeled": [
+      "corner_logo"
+    ],
+    "n_labeled_styles": 1,
+    "committed": [
+      "ai_logo"
+    ],
+    "uncommitted": [
+      "ai_faint_tiled",
+      "ai_gradient",
+      "ai_grid",
+      "ai_text_heavy"
+    ],
+    "committed_labeled": [
+      "ai_logo"
+    ],
+    "committed_missing": [],
+    "uncommitted_labeled": [],
+    "uncommitted_missing": [
+      "ai_faint_tiled",
+      "ai_gradient",
+      "ai_grid",
+      "ai_text_heavy"
+    ],
+    "declared_images": 10,
+    "unspecified_images": 30,
+    "contradictory": [],
+    "unknown_styles": [],
+    "complete": true
+  }
+}

@@ -1,0 +1,2 @@
+[2026-10-01 15:20:43] [WARNING ] [ui.theme:248] 未识别的界面主题 'banana'，回退为品牌主题 'brand'。可选内置主题：base, citrus, default, glass, mario, monochrome, ocean, origin, soft
+[2026-10-01 15:20:43] [WARNING ] [ui.theme:248] 未识别的界面主题 None，回退为品牌主题 'brand'。可选内置主题：base, citrus, default, glass, mario, monochrome, ocean, origin, soft

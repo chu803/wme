@@ -1,0 +1,6 @@
+image=ai_logo_02_snow_mountain_lake.jpg  shape=(2048, 2048)
+row y=1900: bg=194 plate_p90=240 thr=217 x_left=1711 x_right=1988
+row y=1925: bg=192 plate_p90=233 thr=213 x_left=1703 x_right=1995
+row y=1950: bg=170 plate_p90=228 thr=199 x_left=1702 x_right=1996
+col x=1690: bg=173 plate_p90=191 thr=182 y_top=1843 y_bottom=1906
+col x=1720: bg=167 plate_p90=235 thr=201 y_top=1893 y_bottom=1992

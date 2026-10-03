@@ -1,0 +1,851 @@
+{
+  "timestamp": "2026-09-13T06:33:56Z",
+  "n_images": 30,
+  "presets": [
+    "general",
+    "ai_signature"
+  ],
+  "note": "无 GT；以「掩码区修复前后 PSNR」（越高越没改坏）+「NIQE」（越低越好）衡量",
+  "results": [
+    {
+      "image_id": "01",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 156071,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 152120,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "02",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 205074,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 203614,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "03",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 74895,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 64442,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "04",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 59440,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 52600,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "05",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 275362,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 272333,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "06",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 271041,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 264265,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "07",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 148740,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 143872,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "08",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 154263,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 148528,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "09",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 313755,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 308785,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "10",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 202617,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 199542,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "11",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 191878,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 185775,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "12",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 205593,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 198461,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "13",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 290715,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 287135,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "14",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 150069,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 144016,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "15",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 177137,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 171569,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "16",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 271631,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 262914,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "17",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 224728,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 213956,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "18",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 310789,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 308905,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "19",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 210186,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 209333,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "20",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 217728,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 209401,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "21",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 155894,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 154977,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "22",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 24097,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 24012,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "23",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 301583,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 295785,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "24",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 175993,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 168825,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "25",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 161878,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 160323,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "26",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 266631,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 259539,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "27",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 185674,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 180854,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "28",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 255729,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 252514,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "29",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 216861,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 209690,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    },
+    {
+      "image_id": "30",
+      "ai_source": "other",
+      "general": {
+        "preset": "general",
+        "mask_pixels": 206345,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      },
+      "ai_signature": {
+        "preset": "ai_signature",
+        "mask_pixels": 203239,
+        "engines": {
+          "opencv": {
+            "available": false
+          },
+          "lama": {
+            "available": false
+          }
+        }
+      }
+    }
+  ]
+}

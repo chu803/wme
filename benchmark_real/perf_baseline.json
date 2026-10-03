@@ -1,0 +1,28 @@
+{
+  "source": "benchmark",
+  "stage": "detect",
+  "runs": 10,
+  "repeat": 3,
+  "size": null,
+  "items": [
+    "ai_logo_02_snow_mountain_lake.jpg",
+    "ai_logo_03_white_coffee_cup.jpg",
+    "ai_logo_04_neon_street_night.jpg",
+    "ai_logo_05_fruit_platter.jpg",
+    "ai_logo_06_flower_field_portrait.jpg",
+    "ai_logo_07_glass_curtain_building.jpg",
+    "ai_logo_08_abstract_fluid.jpg",
+    "ai_logo_09_vintage_typewriter.jpg",
+    "ai_logo_10_lavender_hot_air_balloon.jpg",
+    "ai_logo_test_01_orange_cat.jpg"
+  ],
+  "spread_mean": 0.0235,
+  "n": 10,
+  "min": 0.3713,
+  "p50": 0.7209,
+  "p95": 1.505,
+  "max": 1.505,
+  "mean": 0.8275,
+  "version": 1,
+  "measured_at": "2026-10-01T11:40:51Z"
+}

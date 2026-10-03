@@ -1,0 +1,42 @@
+============================= test session starts =============================
+platform win32 -- Python 3.13.14, pytest-9.1.1, pluggy-1.6.0
+rootdir: D:\work 111\2026-08-03-17-38-51
+configfile: pytest.ini
+testpaths: tests
+plugins: anyio-4.14.2, cov-7.1.0, timeout-2.4.0
+timeout: 300.0s
+timeout method: thread
+timeout func_only: False
+collected 299 items
+
+tests\test_api.py ......                                                 [  2%]
+tests\test_batch_recommend.py .......                                    [  4%]
+tests\test_cli.py ......                                                 [  6%]
+tests\test_cli_real_superres.py .......                                  [  8%]
+tests\test_compare_viewer.py .................                           [ 14%]
+tests\test_compliance_statement.py ....                                  [ 15%]
+tests\test_config.py .....                                               [ 17%]
+tests\test_detection_presets.py ..........................               [ 26%]
+tests\test_detector_v2.py ...........                                    [ 29%]
+tests\test_detector_v3.py .................                              [ 35%]
+tests\test_export_compare_view.py .............                          [ 39%]
+tests\test_history_filter.py ......                                      [ 41%]
+tests\test_i18n.py ....................                                  [ 48%]
+tests\test_inpainter.py ....s                                            [ 50%]
+tests\test_legacy_selfcheck.py .........                                 [ 53%]
+tests\test_mask_editor.py .............                                  [ 57%]
+tests\test_media_recommend.py .......                                    [ 59%]
+tests\test_model_manager.py ............                                 [ 63%]
+tests\test_pdf_history.py ...........F..                                 [ 68%]
+tests\test_perf.py ......                                                [ 70%]
+tests\test_perf2.py .....                                                [ 72%]
+tests\test_plugins.py ....                                               [ 73%]
+tests\test_postprocess.py ............                                   [ 77%]
+tests\test_preset_recommender.py ...............                         [ 82%]
+tests\test_recommend_view.py ........                                    [ 85%]
+tests\test_report_service.py .......                                     [ 87%]
+tests\test_settings_superres.py ........                                 [ 90%]
+tests\test_superres.py ........                                          [ 92%]
+tests\test_ui.py ....                                                    [ 94%]
+tests\test_video_management.py .........                                 [ 97%]
+tests\test_video_superres.py ........                                    [100%][safe-delete][SAFE_DELETE_BULK_CONFIRM_REQUIRED] {"count":57,"threshold":50,"scope":"turn","targets":["\\\\?\\C:\\Users\\HP\\AppData\\Local\\Temp\\pytest-of-HP\\garbage-621af31c-8e3d-484c-a7df-073c7a2d69b7"],"targetCount":1}

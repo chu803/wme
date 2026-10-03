@@ -1,0 +1,5 @@
+ai_logo_06_flower_field_: Vmean=126 Vp90=219 Smean=38 | V>=140: fill=0.36 maxcc=0.25 | V>=120: fill=0.52 maxcc=0.48 | V>=100: fill=0.64 maxcc=0.63 | V>=80: fill=0.72 maxcc=0.67
+ai_logo_07_glass_curtain: Vmean=166 Vp90=250 Smean=109 | V>=140: fill=0.27 maxcc=0.18 | V>=120: fill=0.28 maxcc=0.19 | V>=100: fill=0.28 maxcc=0.19 | V>=80: fill=0.29 maxcc=0.19
+ai_logo_08_abstract_flui: Vmean=193 Vp90=246 Smean=110 | V>=140: fill=0.19 maxcc=0.07 | V>=120: fill=0.19 maxcc=0.07 | V>=100: fill=0.20 maxcc=0.08 | V>=80: fill=0.20 maxcc=0.08
+ai_logo_09_vintage_typew: Vmean=85 Vp90=199 Smean=56 | V>=140: fill=0.22 maxcc=0.12 | V>=120: fill=0.25 maxcc=0.14 | V>=100: fill=0.27 maxcc=0.19 | V>=80: fill=0.33 maxcc=0.27
+ai_logo_04_neon_street_n: Vmean=86 Vp90=208 Smean=47 | V>=140: fill=0.22 maxcc=0.06 | V>=120: fill=0.23 maxcc=0.07 | V>=100: fill=0.24 maxcc=0.10 | V>=80: fill=0.31 maxcc=0.15
