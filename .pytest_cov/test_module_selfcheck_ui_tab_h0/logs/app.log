@@ -1,2 +1,0 @@
-[2026-10-01 16:05:28] [INFO    ] [core.plugins:335] 已注册自定义修复引擎：lama（显示名：LaMa 深度学习）
-[2026-10-01 16:05:28] [INFO    ] [core.plugins:335] 已注册自定义修复引擎：opencv（显示名：OpenCV 传统算法）

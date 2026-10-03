@@ -1,7 +1,0 @@
-{
-  "INPAINT_DUAL_RUN": true,
-  "INPAINT_DUAL_SECONDARY": "opencv",
-  "PNG_KEEP_ALPHA": false,
-  "IMAGE_APPLY_EXIF_ORIENTATION": false,
-  "IMAGE_NORMALIZE_BIT_DEPTH": false
-}

@@ -1,5 +1,0 @@
-[2026-10-01 18:57:51] [INFO    ] [services.export_service:112] 已重新编码：C:\Users\HP\AppData\Local\Temp\tmpga7cq18l.png -> C:\Users\HP\AppData\Local\Temp\export_selfcheck_xwwijcgt\recoded.jpg (JPG)
-[2026-10-01 18:57:51] [INFO    ] [services.export_service:383] 对比图已生成：C:\Users\HP\AppData\Local\Temp\export_selfcheck_xwwijcgt\compare.png
-[2026-10-01 18:57:51] [INFO    ] [services.export_service:440] 已打包 2 个文件到 C:\Users\HP\AppData\Local\Temp\export_selfcheck_xwwijcgt\results.zip
-[2026-10-01 18:57:51] [INFO    ] [services.export_service:112] 已重新编码：C:\Users\HP\AppData\Local\Temp\tmpzg_vtdqx.png -> C:\Users\HP\AppData\Local\Temp\export_selfcheck_xwwijcgt\tmpzg_vtdqx_cleaned_185751.webp (WEBP)
-[2026-10-01 18:57:51] [INFO    ] [services.export_service:440] 已打包 1 个文件到 C:\Users\HP\AppData\Local\Temp\export_selfcheck_xwwijcgt\history.zip

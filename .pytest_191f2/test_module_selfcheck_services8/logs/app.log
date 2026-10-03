@@ -1,9 +1,0 @@
-[2026-10-01 19:29:32] [INFO    ] [services.postprocess_service:466] Poisson 融合未获部署层放行（POSTPROCESS_POISSON_ALLOW=False），已跳过
-[2026-10-01 19:29:32] [INFO    ] [services.postprocess_service:453] 纹理重建未获部署层放行（POSTPROCESS_TEXTURE_ALLOW=False），已跳过
-[2026-10-01 19:29:32] [WARNING ] [services.postprocess_service:205] 后处理步骤「伪影抑制」质量分下滑（-0.452 → -0.520），已自动回退
-[2026-10-01 19:29:32] [WARNING ] [services.postprocess_service:205] 后处理步骤「伪影抑制」质量分下滑（-0.452 → -0.520），已自动回退
-[2026-10-01 19:29:32] [INFO    ] [services.postprocess_service:453] 纹理重建未获部署层放行（POSTPROCESS_TEXTURE_ALLOW=False），已跳过
-[2026-10-01 19:29:32] [INFO    ] [services.postprocess_service:466] Poisson 融合未获部署层放行（POSTPROCESS_POISSON_ALLOW=False），已跳过
-[2026-10-01 19:29:34] [INFO    ] [services.postprocess_service:497] 真实超分已应用：ESRGAN 后端无训练权重，已退化为纯双三次放大（4×）；配置 REAL_SUPERRES_MODEL_PATH 可启用学习式增强
-[2026-10-01 19:29:34] [INFO    ] [services.postprocess_service:497] 真实超分已应用：ESRGAN 后端无训练权重，已退化为纯双三次放大（4×）；配置 REAL_SUPERRES_MODEL_PATH 可启用学习式增强
-[2026-10-01 19:29:34] [INFO    ] [services.postprocess_service:466] Poisson 融合未获部署层放行（POSTPROCESS_POISSON_ALLOW=False），已跳过

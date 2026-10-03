@@ -1,5 +1,0 @@
-{
-  "REAL_SUPERRES_ENABLED": true,
-  "REAL_SUPERRES_SCALE": 2,
-  "REAL_SUPERRES_BACKEND": "esrgan"
-}
