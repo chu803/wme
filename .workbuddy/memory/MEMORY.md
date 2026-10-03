@@ -39,9 +39,11 @@
 ## i18n 整类收口 ✅
 4 子类全收口：全角标点(162) / 任务级消息(164) / utils.exceptions(168) / 报告交付物(169)。新增文案须双语，由覆盖契约守卫兜底。
 
-## 仓库与交付
-- **git（185 C1）**：已 `init -b main`，**8+ 提交**（`402e26f` 基线重建 → … → `2743741` 阶段204 → `d16d2d5` 退管 .pytest_*）；仓库级身份占位 `WME Dev <dev@wme.local>`。CI `ci.yml` → `run_all_checks.py`（184 固化同源；**待推远端即生效**，需用户决策）。**⚠ 推远端前必读（205）**：历史里含 **196MB `models/big-lama.pt` blob**（已 `git rm --cached` 停止追踪 + 补 `models/*.pt` 忽略规则，`tests/test_repo_hygiene.py` 守卫 ≤50MB），但**历史未清** ⇒ 未推送过应重建首个提交（或 `git filter-repo`），已推送过需 `filter-repo` + 强推。追踪文件 741。
-- **仓库卫生（205）**：追踪文件从 5172 → 741（退管 `.pytest_*` 4431 条 + `build/` + `egg-info` + 4 项产物/权重）；`tests/test_repo_hygiene.py` 两条守卫（追踪文件体积上限 / 文档承诺的忽略规则必须生效）。`.workbuddy/scratch/`（阶段 158-167 探针证据）**有意保留追踪**，勿清除。
+- **仓库与交付**
+  - **git（185 C1）**：已 `init -b main`，**9 提交**；仓库级身份占位 `WME Dev <dev@wme.local>`。CI `ci.yml` → `run_all_checks.py`（184 固化同源；**待推远端即生效**，需用户决策）。
+  - **历史已重写（205，用户授权）**：196MB `models/big-lama.pt` 已从**全部历史**移除（内置 `filter-branch`，`git-filter-repo` 不可用）⇒ `.git` **326.6→143.8 MB**，blob 物理回收，9 提交全保留（SHA 全变，对照见 `docs/205 §六`），追踪内容零变化。「推远端」的体积阻塞**已解除**。bundle 备份 `.scratch/backup_pre205.bundle`（143.6MB，gitignored，**仅含重写后历史**）。
+  - **⚠ 重写前历史不可恢复**（`--all` 把备份分支一并重写了；教训见 LESSONS 219⑦：备份须 `git bundle` 且**先备份后重写**）。
+- **仓库卫生（205）**：追踪文件 5172 → **741**（退管 `.pytest_*` 4431 条 + `build/` + `egg-info` + 4 项产物/权重）；`tests/test_repo_hygiene.py` 两条守卫（追踪文件 ≤50MB / 文档承诺的忽略规则必须生效）。`.workbuddy/scratch/`（阶段 158-167 探针证据）**有意保留追踪**，勿清除。
 - **验证入口（184）**：`scripts/run_all_checks.py`（pytest CI 子集 / `--full`+`undef_scan` / `--gates` 追加门禁；退出码 0/1/2；强制项目内 basetemp）。
 - **性能门禁（186 A5）**：`scripts/perf_probe.py` 真实基准（CPU·检测 P50 1.427s / P95 3.209s，对照路线图 1.5s 为 2.1×，默认只守回归、目标仅报告）。
 - **覆盖率（187/192）**：TOTAL **75.23%**（187:75.29%）；地板 `COVERAGE_FLOOR=67`；`.coveragerc` 必须 `parallel=False`（否则收尾删并行数据撞删除护栏⇒报告丢失）。分层：`core/detector` 87.3% / `inpainter` 93.1% / `config` 91.8% / `ui/components` 98.01% / `tab_single` 81.25% / `tab_media` 63.17% / `tab_batch` 53.87%（搬家效应）/ **`main.py` 32.28%**（187:0.00%，189 成果）。
