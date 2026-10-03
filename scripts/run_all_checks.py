@@ -55,6 +55,13 @@ if _ROOT not in sys.path:
 FAST_MARKER_EXPR = "not torch_required and not network"
 
 #: pytest 的临时根目录名（项目内，规避 %TEMP% 清理护栏）。
+#:
+#: ⚠ **选位禁忌**（阶段 201 实测踩坑，LESSONS 207 的补充）：basetemp **不能放在
+#:   `.scratch/` 下**。`tests/test_clean_artifacts.py::test_scan_finds_expected_and_skips_git_scratch`
+#:   断言「所有命中路径都不含 `.scratch`」；若 basetemp 落在 `.scratch/bt*/` 下，
+#:   `tmp_path` 就在 `.scratch` 里 ⇒ 每个命中路径都含该子串 ⇒ 用例**假红**。
+#:   正确姿势：放在**项目根下的独立目录**（如 `.pytest_runall`），既避开 %TEMP% 护栏，
+#:   又不撞任何「路径不含某目录」的断言。
 _BASETEMP_NAME = ".pytest_runall"
 
 #: 覆盖率地板（百分比，阶段 187 标定）。
@@ -92,8 +99,15 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
     返回值：
         Step 列表。
     """
+    # 阶段 201 修：**每次运行用唯一 basetemp**，不再复用固定名。
+    # 原因：pytest 启动时会**先清空** basetemp。复用固定名 ⇒ 第二次运行必然要删上一轮
+    # 留下的成堆文件 ⇒ 在受限沙箱里撞「单轮批量删除」护栏（LESSONS 202/207），
+    # 表现为**整片 fixture 级 ERROR**（实测 2500 个用例里 2400+ 报 E，而非真实失败）。
+    # 该缺陷在 CI 里不可见（每次全新 checkout ⇒ 目录恒不存在），但**本地第二次跑必中**。
+    _stamp = time.strftime("%Y%m%d_%H%M%S")
+    _pid = os.getpid()
     pytest_argv = [sys.executable, "-m", "pytest",
-                   "--basetemp", os.path.join(root, _BASETEMP_NAME)]
+                   "--basetemp", os.path.join(root, f"{_BASETEMP_NAME}_{_stamp}_{_pid}")]
     if not full:
         pytest_argv += ["-m", FAST_MARKER_EXPR]
     if cov:

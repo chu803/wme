@@ -259,3 +259,46 @@ def test_entry_surfaces_do_not_duplicate_marker_selection(rel):
 
 def test_list_mode_returns_skip_code():
     assert rac.main(["--list"]) == 2
+
+
+# ---------------------------------------------------------------------------
+# 阶段 201：basetemp 必须「每次唯一」（LESSONS 202/207 的延伸）
+# ---------------------------------------------------------------------------
+
+def test_basetemp_is_not_a_fixed_reusable_name():
+    """统一入口的 `--basetemp` **不得**是固定名。
+
+    为什么这是硬要求：pytest 启动时会**先清空** basetemp。固定名 ⇒ 第二次运行必然
+    要删上一轮留下的成堆文件 ⇒ 在受限沙箱里撞「单轮批量删除」护栏，表现为
+    **整片 fixture 级 ERROR**（实测 2500 个用例里 2400+ 报 E，而非真实失败），
+    且极具误导性——看起来像「代码大面积崩坏」，实则是环境操作被拒。
+
+    该缺陷在 CI 里**不可见**（每次全新 checkout ⇒ 目录恒不存在），
+    但**本地第二次跑必中** ⇒ 必须在入口处根治，不能靠调用方自觉。
+    """
+    argv = rac.build_steps()[0].argv
+    bt = argv[argv.index("--basetemp") + 1]
+    base = os.path.basename(bt)
+    assert base != rac._BASETEMP_NAME, (
+        f"basetemp 仍是固定名 {base!r} ⇒ 第二次运行会清空旧目录并撞删除护栏"
+    )
+    # 必须带唯一成分（时间戳 + pid 任一即可）
+    assert str(os.getpid()) in base or any(ch.isdigit() for ch in base), (
+        f"basetemp 缺少唯一成分（时间戳/pid）：{base!r}"
+    )
+
+
+def test_basetemp_is_never_under_scratch():
+    """basetemp **不得**放在 `.scratch/` 下。
+
+    实测踩坑：`tests/test_clean_artifacts.py::test_scan_finds_expected_and_skips_git_scratch`
+    断言「所有命中路径都不含 `.scratch`」；若 basetemp 落在 `.scratch/bt*/` 下，
+    `tmp_path` 就在 `.scratch` 里 ⇒ 每个命中路径都含该子串 ⇒ 用例**假红**。
+    正确姿势：项目根下的独立目录（既避开 %TEMP% 护栏，又不撞路径断言）。
+    """
+    argv = rac.build_steps()[0].argv
+    bt = argv[argv.index("--basetemp") + 1]
+    parts = {p.lower() for p in os.path.normpath(bt).split(os.sep)}
+    assert ".scratch" not in parts, (
+        f"basetemp 落在 .scratch/ 下 ⇒ 会撞 clean_artifacts 的路径断言：{bt}"
+    )
