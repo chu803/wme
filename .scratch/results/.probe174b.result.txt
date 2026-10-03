@@ -1,9 +1,0 @@
-k=151 delta=10: 02_snow_moun=0.56 03_white_cof=0.44 04_neon_stre=0.36 05_fruit_pla=0.37 06_flower_fi=0.44 07_glass_cur=0.38 08_abstract_=0.42 09_vintage_t=0.36 10_lavender_=0.41 test_01_oran=0.45
-k=151 delta=18: 02_snow_moun=0.51 03_white_cof=0.23 04_neon_stre=0.32 05_fruit_pla=0.3 06_flower_fi=0.36 07_glass_cur=0.3 08_abstract_=0.32 09_vintage_t=0.33 10_lavender_=0.34 test_01_oran=0.39
-k=151 delta=28: 02_snow_moun=0.29 03_white_cof=0.07 04_neon_stre=0.27 05_fruit_pla=0.23 06_flower_fi=0.27 07_glass_cur=0.26 08_abstract_=0.23 09_vintage_t=0.29 10_lavender_=0.29 test_01_oran=0.32
-k=301 delta=10: 02_snow_moun=0.54 03_white_cof=0.13 04_neon_stre=0.59 05_fruit_pla=0.43 06_flower_fi=0.52 07_glass_cur=0.51 08_abstract_=0.39 09_vintage_t=0.42 10_lavender_=0.54 test_01_oran=0.56
-k=301 delta=18: 02_snow_moun=0.47 03_white_cof=0.01 04_neon_stre=0.46 05_fruit_pla=0.35 06_flower_fi=0.46 07_glass_cur=0.39 08_abstract_=0.25 09_vintage_t=0.37 10_lavender_=0.46 test_01_oran=0.52
-k=301 delta=28: 02_snow_moun=0.21 03_white_cof=0.0 04_neon_stre=0.36 05_fruit_pla=0.28 06_flower_fi=0.38 07_glass_cur=0.28 08_abstract_=0.14 09_vintage_t=0.33 10_lavender_=0.38 test_01_oran=0.46
-k=501 delta=10: 02_snow_moun=0.52 03_white_cof=0.07 04_neon_stre=0.58 05_fruit_pla=0.54 06_flower_fi=0.52 07_glass_cur=0.56 08_abstract_=0.33 09_vintage_t=0.47 10_lavender_=0.52 test_01_oran=0.6
-k=501 delta=18: 02_snow_moun=0.41 03_white_cof=0.0 04_neon_stre=0.47 05_fruit_pla=0.46 06_flower_fi=0.45 07_glass_cur=0.49 08_abstract_=0.22 09_vintage_t=0.4 10_lavender_=0.43 test_01_oran=0.55
-k=501 delta=28: 02_snow_moun=0.09 03_white_cof=0.0 04_neon_stre=0.37 05_fruit_pla=0.37 06_flower_fi=0.39 07_glass_cur=0.39 08_abstract_=0.14 09_vintage_t=0.35 10_lavender_=0.37 test_01_oran=0.49

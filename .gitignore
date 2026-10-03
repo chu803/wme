@@ -1,0 +1,54 @@
+# ---------------------------------------------------------------------------
+# 阶段 200 重建说明（重要）
+# ---------------------------------------------------------------------------
+# ⚠ 本文件此前已被清空（git 历史里是空 blob e69de29，早于阶段 199 的仓库重建），
+#   原始内容随阶段 199 的 .git 损坏一并不可恢复（见 docs/200）。
+#   下方规则是**按本项目实际存在的产物目录重建**的，不是找回原件。
+#   若发现某目录不该被忽略，直接删除对应行即可（规则是显式列举，不是通配）。
+# ---------------------------------------------------------------------------
+
+# Python 缓存与构建产物
+__pycache__/
+*.py[cod]
+*.egg-info/
+build/
+dist/
+.eggs/
+
+# 测试与覆盖率产物
+.pytest_cache/
+.pytest_*/
+.coverage
+.coverage.*
+coverage.xml
+htmlcov/
+covdata_parallel_quarantine.bin
+.verify_tmp/
+
+# 项目运行产物目录（E2 已约定「产物目录」边界）
+cache/
+exports/
+logs/
+outputs/
+temp/
+
+# 阶段探针与临时脚本（E1 已归档根目录点文件；新探针一律放这里）
+.scratch/
+
+# 编辑器 / IDE
+.vscode/
+.idea/
+*.swp
+
+# 系统文件
+Thumbs.db
+.DS_Store
+desktop.ini
+
+# 阶段 199 事故留档：git stash 在受限沙箱中被 SIGTERM 中断，导致 .git/refs 与
+# .git/objects 受损。已 rename 归档而非删除，供事后复核。
+/.git_broken_*/
+
+# Windows 保留设备名：某次命令误把输出重定向到字面量 NUL 产生的 0 字节文件。
+# git 无法索引它（short read while indexing NUL），故只忽略、不删除。
+/NUL

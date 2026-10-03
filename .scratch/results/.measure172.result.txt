@@ -1,5 +1,0 @@
-n_images=10 region=(1500,1700)-2048
-std_min=13.47 std_max=104.72
-thr=2.0: (none)
-thr=3.0: (none)
-thr=5.0: (none)

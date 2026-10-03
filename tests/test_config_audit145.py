@@ -37,12 +37,26 @@ N4 F2：元检查必须**从命名空间派生**（源码断言），且不得�
 N5 回归：原有 17 项检查逐条仍有效
 N6 无误报：正常配置 ``problems == 0``；检查项数下界
 N7 消息质量：捕获信息含变量名与数值（便于用户定位）
+
+阶段 200 追加：N8「测试自身不得污染全局单例」
+----------------------------------------------------
+本文件每个用例都要**临时改写 `config` 模块属性**来驱动 `validate_config`。
+原实现把还原完全交给模块级 autouse fixture，但**fixture 只在测试结束时兜底**——
+同一个测试**内部**的循环会互相污染：`test_N3_default_out_of_range_is_caught`
+遍历 5 组三元组，每组末尾都把 ``DEFAULT`` 留在 ``MIN - 10`` 的脏值上。
+后果是 **假红**：后续 ``N3_defaults_are_currently_in_range`` / ``N6_baseline_is_clean``
+读到脏值，报出「``DENOISE_STRENGTH_DEFAULT(-10) 不在 [0, 30] 内``」这类
+**根本不存在的配置缺陷**（干净值是 3）——而 N6 恰恰是「元检查不得误报」的那道闸门，
+它一假红，整套 config 审计的可信度归零。
+⇒ 修法：``_set()`` 返回还原函数，所有改动**自包含**（``try/finally``），
+不依赖 fixture 兜底；N8 机械地钉死「跑完全部用例后 config 必须零残留」。
 """
 from __future__ import annotations
 
 import os
 import re
 import sys
+import inspect
 
 import pytest
 
@@ -58,6 +72,9 @@ from config import (                                                 # noqa: E40
 )
 
 _SRC = open(os.path.join(_ROOT, "config.py"), encoding="utf-8").read()
+
+#: **本文件自身**的源码（阶段 200 的 N8 守卫要扫描它，故须与 `_SRC` 区分）。
+_SRC_SELF = open(os.path.abspath(__file__), encoding="utf-8").read()
 
 #: 大写常量快照（用于还原被测试改动的配置）。
 _UPPER = {n: getattr(config, n) for n in dir(config) if n.isupper()}
@@ -75,8 +92,28 @@ def _restore_config():
 
 
 def _set(**kw):
+    """临时改写 config 属性，**返回还原函数**（阶段 200 修：原实现只改不还原）。
+
+    阶段 200 实测的真缺陷（假红）：本文件所有 `_set()` 原先都「改完就不管」，还原
+    全靠模块级 autouse fixture 在**测试结束时**兜底。但**同一个测试内的循环**会
+    互相污染——`test_N3_default_out_of_range_is_caught` 遍历 5 组三元组，每组末尾
+    都把 DEFAULT 留在 `MIN - 10` 的脏值上，下一组/后续测试（`N3_defaults_in_range`、
+    `N6_baseline_is_clean`）读到的就是**根本不存在的「配置缺陷」**（实测
+    `DENOISE_STRENGTH_DEFAULT(-10) 不在 [0, 30] 内`，而干净值是 3）。
+    ⇒ 判据：**改全局单例状态必须自包含**——要么立刻还原，要么用 monkeypatch；
+    依赖「测试级 fixture 兜底」在循环内是不安全的（LESSONS 191 同源：验证装置须可证伪）。
+    """
+    old = {k: getattr(config, k) for k in kw}
     for k, v in kw.items():
         setattr(config, k, v)
+
+    def _restore():
+        for k, v in old.items():
+            try:
+                setattr(config, k, v)
+            except Exception:              # noqa: BLE001 - 只读属性等
+                pass
+    return _restore
 
 
 # ---------------------------------------------------------------------------
@@ -215,8 +252,11 @@ def test_N2_every_reversed_pair_is_caught():
             continue
         if not isinstance(va, (int, float)) or not isinstance(vb, (int, float)):
             continue
-        _set(**{a: vb, b: va})
-        probs = validate_config()
+        _undo = _set(**{a: vb, b: va})
+        try:
+            probs = validate_config()
+        finally:
+            _undo()                      # 阶段 200：逐项还原，勿让脏值流向下一个用例
         if not any(a in p or b in p for p in probs):
             missed.append(f"{a}/{b}")
     assert not missed, f"以下成对项反转后未被捕获（静默漏检窗口）：{missed}"
@@ -224,14 +264,17 @@ def test_N2_every_reversed_pair_is_caught():
 
 def test_N2_caught_message_names_both_sides_and_values():
     """捕获信息必须含**两侧变量名与数值**（用户据此定位）。"""
-    _set(DETECT_GRID_MIN_COVERAGE=0.5, DETECT_GRID_MAX_COVERAGE=0.1)
-    probs = validate_config()
-    hit = [p for p in probs if "DETECT_GRID_MIN_COVERAGE" in p]
-    assert hit, "网格覆盖率区间反转未被捕获"
-    msg = hit[0]
-    assert "DETECT_GRID_MAX_COVERAGE" in msg
-    assert "0.5" in msg and "0.1" in msg
-    assert "静默漏检" in msg or "恒不产出" in msg
+    _undo = _set(DETECT_GRID_MIN_COVERAGE=0.5, DETECT_GRID_MAX_COVERAGE=0.1)
+    try:
+        probs = validate_config()
+        hit = [p for p in probs if "DETECT_GRID_MIN_COVERAGE" in p]
+        assert hit, "网格覆盖率区间反转未被捕获"
+        msg = hit[0]
+        assert "DETECT_GRID_MAX_COVERAGE" in msg
+        assert "0.5" in msg and "0.1" in msg
+        assert "静默漏检" in msg or "恒不产出" in msg
+    finally:
+        _undo()          # 阶段 200：还原，避免污染后续用例
 
 
 # ---------------------------------------------------------------------------
@@ -263,14 +306,29 @@ def test_N3_default_out_of_range_is_caught():
         vmx = getattr(config, mx)
         if not isinstance(vmx, (int, float)):
             continue
-        _set(**{dname: vmx + 10})          # 推到上限之外
-        probs = validate_config()
+        # 阶段 200：MIN/MAX 的「干净值」必须在**任何改动之前**取好——若在循环里现取，
+        # 上一组残留的脏 DEFAULT 会污染本组的计算。
+        vmn = getattr(config, mn)
+        vdefault = getattr(config, dname)
+        _undo = _set(**{dname: vmx + 10})          # 推到上限之外
+        try:
+            probs = validate_config()
+        finally:
+            _undo()
         if not any(dname in p for p in probs):
             missed.append(dname)
-        _set(**{dname: getattr(config, mn) - 10})   # 推到下限之外
-        probs = validate_config()
+        _undo = _set(**{dname: vmn - 10})           # 推到下限之外
+        try:
+            probs = validate_config()
+        finally:
+            _undo()                                 # 关键：还原，否则默认值被留在区间外
         if not any(dname in p for p in probs):
             missed.append(f"{dname}(下界)")
+        # 防御：确认本组结束时 DEFAULT 已回到原值（否则后续用例会被污染）。
+        assert getattr(config, dname) == vdefault, (
+            f"{dname} 未还原（{getattr(config, dname)} != {vdefault}），"
+            f"会污染后续用例并制造假红"
+        )
     assert not missed, f"以下 DEFAULT 越界未被捕获：{missed}"
 
 
@@ -330,46 +388,76 @@ def test_N4_no_new_top_level_import_added():
     ("PDF_PAGE_IMAGE_FMT", "BOGUS", "PDF_PAGE_IMAGE_FMT"),
 ])
 def test_N5_enum_checks_still_fire(attr, value, keyword):
-    _set(**{attr: value})
-    probs = validate_config()
-    assert any(keyword in p for p in probs), f"{attr}={value} 未被捕获"
+    _undo = _set(**{attr: value})
+    try:
+        probs = validate_config()
+        assert any(keyword in p for p in probs), f"{attr}={value} 未被捕获"
+    finally:
+        _undo()
 
 
 def test_N5_tile_overlap_check_still_fires():
-    _set(TILE_OVERLAP=400, TILE_SIZE=512)
-    assert any("TILE_OVERLAP" in p for p in validate_config())
+    _undo = _set(TILE_OVERLAP=400, TILE_SIZE=512)
+    try:
+        assert any("TILE_OVERLAP" in p for p in validate_config())
+    finally:
+        _undo()
 
 
 def test_N5_tile_overlap_check_tolerates_violation_when_cross_site():
     """跨项依赖：TILE_OVERLAP=400 配 TILE_SIZE=1024（400 < 512）**不应**报警。"""
-    _set(TILE_OVERLAP=400, TILE_SIZE=1024)
-    assert not any("TILE_OVERLAP" in p for p in validate_config())
+    _undo = _set(TILE_OVERLAP=400, TILE_SIZE=1024)
+    try:
+        assert not any("TILE_OVERLAP" in p for p in validate_config())
+    finally:
+        _undo()
 
 
 def test_N5_failed_page_and_codec_checks_still_fire():
-    _set(VIDEO_CODEC_CANDIDATES=())
-    assert any("VIDEO_CODEC_CANDIDATES" in p for p in validate_config())
-    _set(VIDEO_FRAME_STEP=2, VIDEO_REUSE_MASK=False)
-    assert any("VIDEO_FRAME_STEP" in p for p in validate_config())
+    _undo = _set(VIDEO_CODEC_CANDIDATES=())
+    try:
+        assert any("VIDEO_CODEC_CANDIDATES" in p for p in validate_config())
+    finally:
+        _undo()
+    _undo = _set(VIDEO_FRAME_STEP=2, VIDEO_REUSE_MASK=False)
+    try:
+        assert any("VIDEO_FRAME_STEP" in p for p in validate_config())
+    finally:
+        _undo()
 
 
-def test_N5_sigma_k_and_coverage_ratio_checks_still_fire():
-    _set(DETECT_SIGMA_K=1.0)
-    assert any("DETECT_SIGMA_K" in p for p in validate_config())
-    _set(DETECT_MAX_COVERAGE_RATIO=0.05)
-    assert any("DETECT_MAX_COVERAGE_RATIO" in p for p in validate_config())
+def test_N5_sigma_k_and_coverage_ratio_checks_still_fires():
+    _undo = _set(DETECT_SIGMA_K=1.0)
+    try:
+        assert any("DETECT_SIGMA_K" in p for p in validate_config())
+    finally:
+        _undo()
+    _undo = _set(DETECT_MAX_COVERAGE_RATIO=0.05)
+    try:
+        assert any("DETECT_MAX_COVERAGE_RATIO" in p for p in validate_config())
+    finally:
+        _undo()
 
 
 def test_N5_feather_odd_check_still_fires():
-    _set(MASK_FEATHER_DEFAULT=4)          # 偶数 ⇒ 应告警
-    assert any("MASK_FEATHER_DEFAULT" in p for p in validate_config())
-    _set(MASK_FEATHER_DEFAULT=5)          # 奇数 ⇒ 不告警
-    assert not any("MASK_FEATHER_DEFAULT" in p for p in validate_config())
+    _undo = _set(MASK_FEATHER_DEFAULT=4)          # 偶数 ⇒ 应告警
+    try:
+        assert any("MASK_FEATHER_DEFAULT" in p for p in validate_config())
+    finally:
+        _undo()
+    _undo = _set(MASK_FEATHER_DEFAULT=5)          # 奇数 ⇒ 不告警
+    try:
+        assert not any("MASK_FEATHER_DEFAULT" in p for p in validate_config())
+    finally:
+        _undo()
 
 
 def test_N5_committed_scope_check_still_fires():
-    _set(WATERMARK_TYPE_COMMITTED=frozenset())
-    assert any("WATERMARK_TYPE_COMMITTED" in p for p in validate_config())
+    _undo = _set(WATERMARK_TYPE_COMMITTED=frozenset())
+    try:
+        assert any("WATERMARK_TYPE_COMMITTED" in p for p in validate_config())
+    finally:
+        _undo()
 
 
 # ---------------------------------------------------------------------------
@@ -400,19 +488,96 @@ def test_N6_meta_checks_are_idempotent():
 # ---------------------------------------------------------------------------
 
 def test_N7_pair_message_includes_names_values_and_consequence():
-    _set(DETECT_LOGO_CANNY_LO=200, DETECT_LOGO_CANNY_HI=100)
-    probs = validate_config()
-    hit = [p for p in probs if "DETECT_LOGO_CANNY_LO" in p]
-    assert hit, "CANNY 双阈值反转未被捕获"
-    msg = hit[0]
-    assert "DETECT_LOGO_CANNY_HI" in msg
-    assert "200" in msg and "100" in msg
-    assert ("静默漏检" in msg) or ("恒不产出" in msg) or ("未定义" in msg)
+    _undo = _set(DETECT_LOGO_CANNY_LO=200, DETECT_LOGO_CANNY_HI=100)
+    try:
+        probs = validate_config()
+        hit = [p for p in probs if "DETECT_LOGO_CANNY_LO" in p]
+        assert hit, "CANNY 双阈值反转未被捕获"
+        msg = hit[0]
+        assert "DETECT_LOGO_CANNY_HI" in msg
+        assert "200" in msg and "100" in msg
+        assert ("静默漏检" in msg) or ("恒不产出" in msg) or ("未定义" in msg)
+    finally:
+        _undo()
 
 
 def test_N7_triple_message_mentions_sync_action():
-    _set(MASK_THRESHOLD_DEFAULT=999)
-    probs = validate_config()
-    hit = [p for p in probs if "MASK_THRESHOLD_DEFAULT" in p]
-    assert hit, "DEFAULT 越界未被捕获"
-    assert "_env_" in hit[0] or "同步" in hit[0], "未提示「同步钳制参数与 MIN/MAX 常量」"
+    _undo = _set(MASK_THRESHOLD_DEFAULT=999)
+    try:
+        probs = validate_config()
+        hit = [p for p in probs if "MASK_THRESHOLD_DEFAULT" in p]
+        assert hit, "DEFAULT 越界未被捕获"
+        assert "_env_" in hit[0] or "同步" in hit[0], "未提示「同步钳制参数与 MIN/MAX 常量」"
+    finally:
+        _undo()
+
+
+# ---------------------------------------------------------------------------
+# N8 · 阶段 200：本文件自身不得污染全局单例（假红防护）
+# ---------------------------------------------------------------------------
+
+def test_N8_every_set_call_is_self_contained():
+    """所有 `_set(...)` 必须接住返回值并在 `finally` 里还原（源码层机械校验）。
+
+    为什么用源码断言而不是只靠行为测试：行为测试（`test_N8_no_residue_after_all_cases`）
+    只在**当前这批用例**的组合下有效；将来有人新增一个 `_set` 而忘了还原，
+    行为测试可能仍绿（若那个键恰好不被后续用例读），而源码断言会**当场**拦住。
+    两条互补，同族于 209「否定式断言比存在性检查更能拦回归」。
+    """
+    src = _SRC_SELF
+    offenders = []
+    for i, line in enumerate(src.splitlines(), 1):
+        s = line.strip()
+        if not s.startswith("_set("):
+            continue
+        if s.startswith("_undo = _set(") or s.startswith("_set(") and "=" in s and "return" in s:
+            continue
+        # 未接住返回值的裸调用（还原函数被丢弃 ⇒ 改动不会被还原）
+        offenders.append((i, s[:80]))
+    assert not offenders, (
+        f"以下 `_set(...)` 未接住还原函数（会污染全局 config，制造假红）：{offenders}"
+    )
+
+
+def test_N8_set_returns_a_working_undo():
+    """`_set` 返回的还原函数必须真的把值改回去（还原机制自身可证伪）。"""
+    before = config.MASK_DILATE_DEFAULT
+    undo = _set(MASK_DILATE_DEFAULT=before + 7)
+    assert config.MASK_DILATE_DEFAULT == before + 7, "_set 未生效，还原无从谈起"
+    undo()
+    assert config.MASK_DILATE_DEFAULT == before, "还原函数未把值改回去"
+
+
+def test_N8_no_residue_after_all_cases():
+    """跑完本文件全部用例后，config 必须**零残留**（不依赖任何 fixture 兜底）。
+
+    这是阶段 200 的核心不变式：假红的根源是「测试跑完把全局单例留在脏态」。
+    此处刻意**不调用** autouse fixture 的还原逻辑——若用例仍能自净，说明修复到位；
+    否则本断言会红，从而把「污染」这条缺陷钉死在守卫里（LESSONS 191 可证伪）。
+    """
+    watched = [k for k in dir(config) if k.isupper()]
+    before = {k: getattr(config, k) for k in watched}
+    order = re.findall(r"^def (test_[A-Za-z0-9_]+)", _SRC_SELF, re.M)
+    enum_cases = [("DEVICE_MODE", "bogus"), ("INPAINT_ENGINE", "bogus_engine"),
+                  ("OPENCV_INPAINT_METHOD", "bogus"), ("LOG_LEVEL", "bogus"),
+                  ("DEFAULT_OUTPUT_FORMAT", "BOGUS"), ("PDF_PAGE_IMAGE_FMT", "BOGUS")]
+    for name in order:
+        fn = globals().get(name)
+        if not callable(fn):
+            continue
+        params = list(inspect.signature(fn).parameters)
+        try:
+            if params[:1] == ["attr"]:          # parametrize 用例
+                for a, v in enum_cases:
+                    fn(a, v, a)
+            elif not params:                    # 无参用例
+                fn()
+        except Exception:                        # noqa: BLE001 - 失败也要继续跑完，才能验残留
+            pass
+    residue = {k: (before[k], getattr(config, k)) for k in watched
+               if before[k] != getattr(config, k)}
+    assert not residue, (
+        f"跑完全部用例后 config 仍有残留 ⇒ 会让后续用例假红（阶段 200 修复回退）："
+        f"{list(residue.items())[:6]}"
+    )
+    assert validate_config() == [], "残留导致 validate_config 产生不存在的告警（假红）"

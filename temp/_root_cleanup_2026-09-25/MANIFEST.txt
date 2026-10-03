@@ -1,8 +1,0 @@
-FAIL  NUL   OSError: [WinError 87] 参数错误。
-MOVED iso.out -> temp/_root_cleanup_2026-09-25/iso.out
-MOVED search.out -> temp/_root_cleanup_2026-09-25/search.out
-MOVED pytest41.log -> temp/_root_cleanup_2026-09-25/pytest41.log
-MOVED pytest41.out -> temp/_root_cleanup_2026-09-25/pytest41.out
-MOVED pytest41.xml -> temp/_root_cleanup_2026-09-25/pytest41.xml
-MOVED pytest42.out -> temp/_root_cleanup_2026-09-25/pytest42.out
-MOVED pytest42.xml -> temp/_root_cleanup_2026-09-25/pytest42.xml

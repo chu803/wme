@@ -1,4 +1,0 @@
-k=301 d=10: badge_cov=02_snow_mo=0.5 03_white_c=0.06 04_neon_st=0.55 05_fruit_p=0.3 06_flower_=0.47 07_glass_c=0.42 08_abstrac=0.25 09_vintage=0.39 10_lavende=0.5 test_01_or=0.56 | clean_FP=[0.021, 0.018, 0.016, 0.018]
-k=301 d=16: badge_cov=02_snow_mo=0.47 03_white_c=0.01 04_neon_st=0.45 05_fruit_p=0.26 06_flower_=0.42 07_glass_c=0.28 08_abstrac=0.16 09_vintage=0.36 10_lavende=0.43 test_01_or=0.53 | clean_FP=[0.016, 0.017, 0.005, 0.013]
-k=501 d=10: badge_cov=02_snow_mo=0.49 03_white_c=0.02 04_neon_st=0.55 05_fruit_p=0.41 06_flower_=0.48 07_glass_c=0.49 08_abstrac=0.2 09_vintage=0.45 10_lavende=0.47 test_01_or=0.59 | clean_FP=[0.033, 0.019, 0.027, 0.019]
-k=501 d=16: badge_cov=02_snow_mo=0.43 03_white_c=0.0 04_neon_st=0.46 05_fruit_p=0.36 06_flower_=0.41 07_glass_c=0.43 08_abstrac=0.13 09_vintage=0.39 10_lavende=0.4 test_01_or=0.56 | clean_FP=[0.03, 0.018, 0.022, 0.014]

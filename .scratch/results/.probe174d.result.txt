@@ -1,4 +1,0 @@
-S_MAX= 80: MICRO=0.562  mean_pred_cov=0.029 | 02_snow_mo=0.72 03_white_c=0.95 04_neon_st=0.85 05_fruit_p=0.66 06_flower_=0.39 07_glass_c=0.27 08_abstrac=0.03 09_vintage=0.23 10_lavende=0.85 test_01_or=0.68
-S_MAX=110: MICRO=0.536  mean_pred_cov=0.029 | 02_snow_mo=0.37 03_white_c=0.95 04_neon_st=0.85 05_fruit_p=0.75 06_flower_=0.39 07_glass_c=0.27 08_abstrac=0.03 09_vintage=0.23 10_lavende=0.85 test_01_or=0.68
-S_MAX=140: MICRO=0.477  mean_pred_cov=0.028 | 02_snow_mo=0.37 03_white_c=0.95 04_neon_st=0.85 05_fruit_p=0.15 06_flower_=0.39 07_glass_c=0.27 08_abstrac=0.03 09_vintage=0.23 10_lavende=0.85 test_01_or=0.68
-S_MAX=255: MICRO=0.477  mean_pred_cov=0.028 | 02_snow_mo=0.37 03_white_c=0.95 04_neon_st=0.85 05_fruit_p=0.15 06_flower_=0.39 07_glass_c=0.27 08_abstrac=0.03 09_vintage=0.23 10_lavende=0.85 test_01_or=0.68
