@@ -36,12 +36,31 @@ import main as m  # noqa: E402
 
 
 class _Args:
-    """parse_args 结果的替身。"""
+    """parse_args 结果的替身。
 
-    def __init__(self, selftest=False, no_download=False, skip_check=False):
+    阶段 202 修（**锚点腐化**，与 LESSONS 183 同族）：原实现只手抄 3 个属性
+    （selftest / no_download / skip_check），而 D1-Stage 2 给 `main.py` 加了
+    `--api` 分支后，`main()` 开始读 `args.api` / `args.api_host` / `args.api_port`
+    ⇒ 用例抛 `AttributeError: '_Args' object has no attribute 'api'`。
+    198 阶段没跑全库，所以这条腐化一直没被发现（LESSONS 208：改既有函数须全量回归）。
+
+    ⚠ **不要在这里调 `m.parse_args()` 取基线**：本文件多处用 monkeypatch 把它替换成
+    0 参 lambda（`lambda: _Args(...)`），桩构造时若反向调用它会
+    `TypeError: <lambda>() takes 0 positional arguments but 1 was given`
+    ——这是自引用，比原缺陷更糟。故此处**显式列出全部 6 个属性**，
+    并由 `test_args_stub_covers_every_cli_flag` 守卫与 `main.py` 的参数集对账
+    （期望值与真值来源对账，而非手抄后不管）。
+    """
+
+    def __init__(self, selftest=False, no_download=False, skip_check=False,
+                 api=False, api_host=None, api_port=None):
         self.selftest = selftest
         self.no_download = no_download
         self.skip_check = skip_check
+        # D1-Stage 2（`--api`）新增的三个字段，缺任一都会让 main() 抛 AttributeError
+        self.api = api
+        self.api_host = api_host
+        self.api_port = api_port
 
 
 def _fake_ui_app(build_ok=True, launch_rc=0):
@@ -186,3 +205,35 @@ def test_launch_ui_falls_back_to_selftest_when_gradio_present(monkeypatch):
     monkeypatch.setitem(sys.modules, "ui.app", _fake_ui_app(build_ok=False))
     monkeypatch.setattr(m, "run_selftest", lambda: 42)
     assert m.launch_ui() == 42
+
+
+# ---------------------------------------------------------------------------
+# 阶段 202：_Args 桩必须覆盖 main() 读取的**每一个**参数（防锚点腐化复发）
+# ---------------------------------------------------------------------------
+
+def test_args_stub_covers_every_cli_flag():
+    """桩的属性集必须与 `main.py` 定义的全部 CLI 参数**对账一致**。
+
+    为什么需要这条（LESSONS 183「有守卫≠有覆盖」的反面）：阶段 198 给 `main.py`
+    加了 `--api` / `--api-host` / `--api-port`，而本文件的 `_Args` 桩只列了 3 个属性
+    ⇒ `main()` 读 `args.api` 时抛 AttributeError。**198 没跑全库，所以没发现**。
+
+    这里做的是**与真值来源对账**（解析 `main.py` 源码里的 `add_argument`），
+    而不是「再手抄一份」——手抄的清单会随下次加参数再次腐化（同 LESSONS 196）。
+    """
+    import re as _re
+
+    _src = Path(m.__file__).read_text(encoding="utf-8")
+    flags = set(_re.findall(r'add_argument\(\s*[\'"](--[A-Za-z0-9_-]+)', _src))
+    assert flags, "未从 main.py 解析出任何 CLI 参数（解析式已失效，需更新）"
+    derived = {f[2:].replace("-", "_") for f in flags}
+    stub = set(vars(_Args()))
+    missing = derived - stub
+    assert not missing, (
+        f"_Args 桩缺少 main() 会读取的属性：{sorted(missing)}"
+        f"（CLI 参数 {sorted(flags)}）——加参数后须同步补桩，否则用例抛 AttributeError"
+    )
+    extra = stub - derived
+    assert not extra, (
+        f"_Args 桩有 main.py 未定义的多余属性：{sorted(extra)}（桩已腐化）"
+    )

@@ -38,7 +38,8 @@
 | B2 清单项 | ✅ | `188-打包元数据与仓库卫生清单.md` | 见清单 185 定义 |
 | B3 真实水印图 | ⛔ 待你出图 | `117-交图作战包-豆包生成真实水印图提示词.md` | 见清单 185 定义 |
 | B4 真实 FP 率测量 | ⛔ 待你出图 | `180-干净图基准与补全先验误报门禁.md`、`181-基线corner_logo非确定性再审计-纠正180误判.md` | 干净图误报率测量 |
-| D1 GPU/API 产品化 | 🔧 进行中 | `116-项目自我质检与竞品对标-龙头路线图.md`、`101-产品战略诊断-能力现状与最大问题.md`、`198-D1产品化GPU与API接入.md` | GPU 契约测试 + REST 接入 main/Docker 已落地；剩真机 GPU 实测 + Docker GPU 配方 |
+| D1 GPU/API 产品化 | ✅ 代码全收口 | `116-项目自我质检与竞品对标-龙头路线图.md`、`101-产品战略诊断-能力现状与最大问题.md`、`198-D1产品化GPU与API接入.md` | Stage 1~6 全落地（GPU 契约 / `main --api` / Dockerfile.gpu / 细粒度端点 / `--stage full` / 基线硬件守卫）；仅剩真机 GPU 实测 |
+| D1 并发策略（185 清单） | ✅ | `199-REST并发闸门.md` | `_BoundedThreadingHTTPServer` + `API_MAX_CONCURRENCY`（排队而非拒绝，health 豁免并自省） |
 | D2 批量/媒体页耗时展示 | ✅ | `193-D2批量媒体页耗时展示.md` | 与单图页共用 `format_elapsed` 接缝 |
 | E1 归档 | ✅ | `188-打包元数据与仓库卫生清单.md` | 根目录点文件归档至 `.scratch/` |
 | E2 仓库产物清理脚本 | ✅ | `195-E2仓库产物清理脚本.md` | `scripts/clean_artifacts.py`（dry-run/archive/delete） |
@@ -268,6 +269,10 @@
 - `195-E2仓库产物清理脚本.md`
 - `197-C5-Docker容器化.md`
 - `198-D1产品化GPU与API接入.md`
+- `199-REST并发闸门.md`
+- `200-config审计守卫假红根因.md`
+- `201-全库首次回归与basetemp缺陷.md`
+- `202-全量回归真实结论与两处真缺陷.md`
 
 ### 特殊编号
 
