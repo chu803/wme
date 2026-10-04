@@ -148,7 +148,7 @@ def _run_lama_tile(
     model,
     tile_img: np.ndarray,
     tile_mask: np.ndarray,
-    use_half: bool,
+    use_half: "bool | None" = None,
 ) -> np.ndarray:
     """
     对单块图像用 LaMa 模型执行一次修复。
@@ -157,12 +157,31 @@ def _run_lama_tile(
         model     : 已加载的 LaMa torch.jit 模型。
         tile_img  : 子图 H×W×3 uint8 RGB。
         tile_mask : 子掩码 H×W（0/255）。
-        use_half  : 是否以 float16 推理（需模型与输入同为 half）。
+        use_half  : **兼容参数**。默认 `None` ⇒ 由**模型 dtype 推导**（阶段 207 起，
+                    模型 dtype 是唯一真值来源，见下方说明）。显式传入时必须与模型
+                    dtype 一致，否则抛 `ValueError`——宁可响亮失败，也不做静默的
+                    dtype 错配（那会以 `RuntimeError: expected scalar type ...` 或
+                    更糟的数值垃圾形式表现）。
+
+    为什么改为「跟随模型 dtype」（阶段 207 实测）：
+        原先这里独立读 `use_fp16()`，与加载侧（`model_manager.load_lama_model`）
+        是否 `.half()` 是**两处真值来源**。当加载侧因「fp16 不安全」保持 float32、
+        而这里仍按 `use_fp16()` 转 half 时，就会直接 dtype 不匹配。
+        ⇒ 让输入跟随模型即可从结构上消除这类漂移。
 
     返回值：
         修复后的 H×W×3 uint8 RGB 数组。
     """
     import torch
+
+    _mdtype = next(model.parameters()).dtype
+    _model_half = _mdtype == torch.float16
+    if use_half is not None and bool(use_half) != _model_half:
+        raise ValueError(
+            f"use_half={use_half} 与模型 dtype={_mdtype} 不一致："
+            f"阶段 207 起以模型 dtype 为唯一真值来源，请传 None（或不传）。"
+        )
+    use_half = _model_half
 
     # 先把尺寸补齐到 8 的倍数（LaMa 网络结构要求）。
     padded_img, pad = pad_to_multiple(tile_img, config.MODEL_SIZE_ALIGN)
@@ -188,7 +207,6 @@ def _run_lama_tile(
     img_t = rgb_to_tensor(padded_img, device_str=device_str)
     mask_t = mask_to_tensor(padded_mask, device_str=device_str)
 
-    # 根据是否半精度统一 dtype（模型已在加载时转 half）。
     if use_half:
         img_t = img_t.half()
         mask_t = mask_t.half()
@@ -217,8 +235,10 @@ def _inpaint_lama_full(
         / 任意插件引擎统一生效，且空显存只在整次修复结束后释放一次。
     """
     model = load_lama_model(device)
-    use_half = use_fp16()
-    return _run_lama_tile(model, image, mask, use_half)
+    # 阶段 207：不再从 `use_fp16()` 取 half 决策——dtype 由**模型**决定
+    # （加载侧已按 `_FP16_UNSAFE_MODELS` 判断 LaMa 必须保持 float32）。
+    # 这里保持单一真值来源，避免「两处判断不一致」导致的 dtype 错配。
+    return _run_lama_tile(model, image, mask)
 
 
 def _tile_if_needed(

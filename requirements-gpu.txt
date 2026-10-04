@@ -11,15 +11,38 @@
 #  安装顺序（重要）：
 #    1) 先装完整依赖（CPU 版 torch 也一并装上无妨，下一步会覆盖）：
 #         pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
-#    2) 再装本文件，把 torch / torchvision 替换为 CUDA 12.1 版：
+#    2) 再装本文件，把 torch 替换为 CUDA 版：
 #         pip install -r requirements-gpu.txt
 #
+#  ⚠ 版本选择：**按显卡架构选 CUDA 版本**（阶段 207 修正）
+# ------------------------------------------------------------------------------
+#    此前本文件钉的是 `torch==2.3.1` + `cu121`，那个组合**装不出能用新卡的版本**：
+#      · cu121 的 torch 只含到 sm_90（Hopper）的 kernel；
+#      · RTX 50 系（Blackwell，**sm_120**）需要 **CUDA 12.8** 构建，
+#        即 `cu128` 源 + torch ≥ 2.7；
+#      · 且 torch 2.3.1 发布早于 Python 3.13，**没有 cp313 wheel** ⇒
+#        在 Python 3.13 上 `pip install` 会直接找不到匹配版本。
+#    实测（阶段 207 · RTX 5060 Laptop + Python 3.13 + torch 2.9.1+cu128）：
+#      `torch.cuda.is_available() == True`，`get_arch_list()` 含 `sm_120`，GPU 推理正常。
+#
+#  【对照表】按你的显卡与 Python 选一行
+#     · RTX 50 系（Blackwell / sm_120）+ Python 3.13  → cu128（本文件默认）
+#     · RTX 40/30 系（sm_89 / sm_86）+ Python 3.13     → cu128 亦可（向下兼容）
+#     · 老卡（sm_75 及以下）或 Python ≤ 3.12           → 可继续用 cu121
+#    换源就把下面 `--index-url` 末尾的 `cu128` 改掉即可（如 `cu121` / `cu118`）。
+#
 #  说明：
-#    - 下面两行会覆盖 requirements.txt 里的 CPU 版 torch/torchvision。
-#    - cu121 对应 CUDA 12.1 驱动；若你的驱动是 CUDA 11.8，请把末尾改为 cu118。
+#    - 本文件会**覆盖** requirements.txt 里的 CPU 版 torch。
+#    - torchvision **不需要**：本项目代码从不 import 它（仅在帮助文本里提及）。
+#      不装可省约 100MB 下载与一次版本配对风险。
 #    - 安装后无需改代码，程序启动时 DEVICE_MODE=auto 会自动探测并启用显卡。
+#    - ⚠ **fp16 半精度在 LaMa 上不可用**：LaMa 的 FFC 用复数运算，PyTorch 的
+#      ComplexHalf 至今实验性 ⇒ fp16 前向输出全 NaN。程序已内置防护
+#      （`core.model_manager._FP16_UNSAFE_MODELS` 把 LaMa 钉在 float32），
+#      故 `WME_DEVICE_USE_FP16` 保持默认即可，不要为 LaMa 手动转 half。
 # ==============================================================================
 
-torch==2.3.1
-torchvision==0.18.1
---index-url https://download.pytorch.org/whl/cu121
+# 与 requirements.txt 同版本（单一真值来源：同一 torch 版本，只是换 CUDA 构建）。
+# 需覆盖旧版时按上面对照表调整，并同步 `Dockerfile.gpu`（它从本文件安装）。
+torch==2.9.1
+--index-url https://download.pytorch.org/whl/cu128

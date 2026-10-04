@@ -708,13 +708,28 @@ def tensor_to_rgb(tensor: "object") -> np.ndarray:
 
     返回值：
         H×W×3 uint8 numpy 数组。
+
+    阶段 207 加固（**安全网**，实测依据）：
+        原实现只做 `clamp(0, 1)`，而 **`clamp` 拦不住 NaN**（`clamp(nan,0,1)` 仍是 nan）
+        ⇒ 一旦模型输出含 NaN（真实发生过：LaMa + fp16 下输出 100% NaN，见
+        `core/model_manager._FP16_UNSAFE_MODELS` 的实测记录），
+        `(arr*255).round().astype(np.uint8)` 会触发 “invalid value encountered in cast”
+        并把 NaN 静默变成 0 ⇒ **修复区域被填成黑色块，而调用方仍报 success**。
+        ⇒ 先 `nan_to_num` 把 NaN/±inf 映射到确定值，再做 clamp：
+            · NaN → 0（无信号 ⇒ 黑，至少是**确定且可复现**的行为）
+            · +inf → 1（白） / -inf → 0（黑）
+        这让「任何路径」都不再可能把 NaN 静默转成垃圾像素——
+        数值健全性由本函数兜底，而不依赖每个调用方自觉。
     """
     import torch
 
     # 先把张量搬到 CPU、脱离计算图。
     if hasattr(tensor, "detach"):
         tensor = tensor.detach()
-    t = tensor.cpu().clamp(0, 1)
+    t = tensor.cpu()
+    # NaN/±inf 净化（必须在 clamp 之前：clamp 对 NaN 无效）。
+    t = torch.nan_to_num(t, nan=0.0, posinf=1.0, neginf=0.0)
+    t = t.clamp(0, 1)
     # (1,3,H,W) → (3,H,W) → (H,W,3)
     arr = t.squeeze(0).permute(1, 2, 0).numpy()
     return (arr * 255.0).round().astype(np.uint8)

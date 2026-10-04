@@ -406,7 +406,7 @@ def start_server(host: Optional[str] = None, port: Optional[int] = None) -> None
     参数：
         host : 监听地址，缺省取 config.API_HOST（默认 127.0.0.1，仅本机）。
         port : 端口，缺省取 config.API_PORT（默认 7861）。
-        max_concurrency : 并发闸门，缺省取 config.API_MAX_CONCURRENCY（默认 2；0=不限）。
+        max_concurrency : 并发闸门，缺省取 config.API_MAX_CONCURRENCY（默认 4；0=不限）。
     """
     host = host or config.API_HOST
     port = port or config.API_PORT
@@ -474,7 +474,7 @@ h1{color:#1e3a8a}b{color:#b91c1c}</b></style></head>
 <h2>⑥ 并发与限流</h2>
 <p>本服务的每个请求都会跑一次完整推理（检测 + 修复），因此内置<b>并发闸门</b>：
 超出上限的请求会<b>排队等待</b>（不会收到错误码，只是变慢），以保证时延可预测、避免多人并发时拖垮机器。
-上限由环境变量 <code>WME_API_MAX_CONCURRENCY</code> 控制（默认 2，设为 0 关闭闸门）。
+上限由环境变量 <code>WME_API_MAX_CONCURRENCY</code> 控制（默认 4，设为 0 关闭闸门）。
 <code>GET /api/health</code> 的 <code>concurrency</code> 字段会实时回报 <code>active</code>（正在处理数）、
 <code>peak</code>（本进程峰值）与 <code>max_concurrency</code>（上限），健康检查本身不参与排队。</p>
 <p><b>注意：</b>默认仅监听 127.0.0.1（本机）。若需局域网/公网访问，请设置

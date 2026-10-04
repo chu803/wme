@@ -112,6 +112,26 @@ _INITED: bool = False
 # 模型缓存：路径 -> torch 模型对象（与 model_loader 的单例语义一致，但按路径区分）。
 _CACHE: dict[str, object] = {}
 
+#: **已知 fp16（半精度）不安全的模型** → 加载时强制保持 float32。
+#:
+#: 实测依据（阶段 207 · RTX 5060 + torch 2.9.1+cu128）：
+#:   · LaMa 的 FFC（Fast Fourier Convolution）使用**复数运算**，而 PyTorch 的
+#:     `ComplexHalf` 至今是实验性（运行时告警 “ComplexHalf support is experimental
+#:     and many operators don't support it yet”）⇒ fp16 前向**输出全 NaN**
+#:     （实测 2048×2048 图：12,582,912 / 12,582,912 个元素全为 NaN，值域 [nan, nan]）。
+#:   · 后果是**静默毁图**：`tensor_to_rgb` 的 `clamp(0,1)` 拦不住 NaN，
+#:     `astype(np.uint8)` 把 NaN 变 0 ⇒ 修复区域被填成黑色块。
+#:     实测掩码区均值 172.2 → **5.65**，近黑像素占比 **73.9%**（fp32 下为 161.96 / 0.0%）。
+#:   · 人眼复核：fp16 输出上出现大片黑色斑点 + 水印处一块纯黑矩形，而 API 仍报 success。
+#: ⇒ 该缺陷此前从未被发现，因为全部质量验证（172/177 real_gate）都跑在 CPU/fp32 上，
+#:   而 GPU 路径直到阶段 207 才第一次真正跑起来。
+_FP16_UNSAFE_MODELS = frozenset({"lama"})
+
+
+def _is_fp16_unsafe(name: str) -> bool:
+    """该模型是否**已知**不能安全使用 fp16（纯函数，便于测试）。"""
+    return str(name).lower() in _FP16_UNSAFE_MODELS
+
 
 def _resolve_path(filename: str):
     """把文件名解析为 MODEL_DIR 下的绝对路径。"""
@@ -536,12 +556,15 @@ def load_model(
         log.info("正在加载模型 %s：%s（映射至 %s）", slot.name, model_path, torch_device)
         model = torch.jit.load(model_path, map_location=torch_device)
         model.eval()
-        if device.is_gpu and config.DEVICE_USE_FP16:
+        if device.is_gpu and config.DEVICE_USE_FP16 and not _is_fp16_unsafe(slot.name):
             try:
                 model = model.half()
                 log.info("已启用半精度（float16）推理。")
             except Exception as exc:
                 log.warning("半精度转换失败，回退 float32：%s", exc)
+        elif device.is_gpu and config.DEVICE_USE_FP16 and _is_fp16_unsafe(slot.name):
+            log.info("模型 %s 已知 fp16 不安全，保持 float32（见 _FP16_UNSAFE_MODELS 的实测依据）。",
+                     slot.name)
         _CACHE[cache_key] = model
         log.info("模型 %s 加载完成。", slot.name)
         return model

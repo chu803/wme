@@ -6,10 +6,14 @@
 #  启用 CUDA 推理的镜像，配合 `python main.py --api` 或网页界面服务。
 #
 #  与默认 Dockerfile 的区别：
-#    1. 基础镜像换成 `nvidia/cuda:12.1.1-runtime-ubuntu22.04`（自带 CUDA 运行库，
-#       推理只需运行时库，不需要 nvcc 等开发库）。
-#    2. torch / torchvision 替换为 **CUDA 12.1 版**（从 PyTorch 官方 cu121 源安装），
-#       这是启用显卡加速的关键——默认 Dockerfile 装的是 CPU 版 torch。
+#    1. 基础镜像换成 `nvidia/cuda:12.8.1-runtime-ubuntu22.04`（自带 CUDA 运行库，
+#       推理只需运行时库，不需要 nvcc 等开发库）。**12.8 是 RTX 50 系（Blackwell /
+#       sm_120）的下限**——阶段 207 修正：原先的 12.1.1 + cu121 组合只覆盖到 sm_90，
+#       在 50 系卡上会因缺少对应 kernel 而不可用。
+#    2. torch 从 `requirements-gpu.txt` 安装（CUDA 版）——这是启用显卡加速的关键；
+#       默认 Dockerfile 装的是 CPU 版 torch。
+#       ⚠ **单一真值来源**（阶段 207）：版本与 CUDA 源都由 `requirements-gpu.txt` 决定，
+#       本文件**不再硬编码** torch 版本，避免「两处清单慢慢漂移」（同 184/187 教训）。
 #    3. 仍保持多阶段 + HEALTHCHECK + 非 root + `WME_` 前缀环境变量等全部契约。
 #
 #  用法：
@@ -28,7 +32,8 @@ ARG PYTHON_VERSION=3.11
 
 # ------------------------------ Stage 1 · builder -----------------------------
 # 用 nvidia/cuda runtime 基础镜像，既带 CUDA 运行库，又是 ubuntu，可装 python。
-FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04 AS builder
+# CUDA 12.8：RTX 50 系（Blackwell / sm_120）所需下限（阶段 207 修正，原为 12.1.1）。
+FROM nvidia/cuda:12.8.1-runtime-ubuntu22.04 AS builder
 
 # 构建期：装 python + 编译工具链（部分依赖可能需就地编译）。
 RUN apt-get update && apt-get install -y --no-install-recommends \
@@ -36,23 +41,24 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     && rm -rf /var/lib/apt/lists/* \
     && python3.11 -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
-# 先复制依赖清单。
-COPY requirements.txt /tmp/requirements.txt
+# 先复制依赖清单（两份：完整依赖 + GPU 补充清单）。
+COPY requirements.txt requirements-gpu.txt /tmp/
 
 # 安装全部依赖到独立前缀 /install（runtime 阶段整体拷贝）。
 # 第 1 步：按默认清单装（其中 torch 是 CPU 版，下一步会被 CUDA 版覆盖）。
 RUN python3.11 -m pip install --no-cache-dir --prefix=/install \
          -r /tmp/requirements.txt
 
-# 第 2 步：用 CUDA 12.1 版 torch 覆盖（cu121 源）。--no-deps 避免拉回 CPU 版依赖。
+# 第 2 步：用 CUDA 版 torch 覆盖。**版本与 CUDA 源均取自 requirements-gpu.txt**
+#   —— 本文件不硬编码，避免与清单漂移（单一真值来源）。
 #   ⚠️ 这步是 GPU 镜像的「灵魂」：torch 必须是 CUDA 版，否则 DEVICE_MODE=auto
 #      检测到 CUDA 也加载不了 GPU 权重（torch.cuda.is_available() 直接 False）。
+#   `--no-deps`：避免把 CPU 版 torch 的依赖再拉一遍。
 RUN python3.11 -m pip install --no-cache-dir --prefix=/install \
-        --no-deps --index-url https://download.pytorch.org/whl/cu121 \
-        torch==2.3.1 torchvision==0.18.1
+        --no-deps -r /tmp/requirements-gpu.txt
 
 # ------------------------------ Stage 2 · runtime -----------------------------
-FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04 AS runtime
+FROM nvidia/cuda:12.8.1-runtime-ubuntu22.04 AS runtime
 
 # 运行期系统库（OpenCV / Gradio 所需）+ python3.11 + ffmpeg（视频处理）。
 RUN apt-get update && apt-get install -y --no-install-recommends \
