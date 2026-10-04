@@ -399,7 +399,8 @@ class _Handler(BaseHTTPRequestHandler):
 # ==============================================================================
 # 第 3 节：服务启动
 # ==============================================================================
-def start_server(host: Optional[str] = None, port: Optional[int] = None) -> None:
+def start_server(host: Optional[str] = None, port: Optional[int] = None,
+                max_concurrency: Optional[int] = None) -> None:
     """
     启动 REST 服务并阻塞运行（直到 Ctrl+C）。
 

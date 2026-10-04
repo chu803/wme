@@ -46,6 +46,7 @@
 - E2 删除：`scripts/clean_artifacts.py`（dry-run/archive/delete 三模式，归档主路径）。
 
 ## 当前进度指针
-✅ C1-C5 / A2 / A5 / B2 / D1（四阶段 + 真机验证 Stage 6）/ E1-E3 / 189-206 全收口。
+✅ C1-C5 / A2 / A5 / B2 / D1（四阶段 + 真机验证 Stage 6）/ E1-E3 / 189-207 全收口；**208 server 入口函数缺陷审计**（audit_selector 全 45 模块闭环）。
 ⏳ 待用户交图：B1/B3/A1（真实水印图）、B4（真实 FP 率）；A4（ai_gradient 真渐变证伪骨架就绪，等你用豆包 v2 提示词出 3~5 张图闭环）。
 ⏳ D1 真机验证已做（207）：本机装 CUDA torch + `WME_DEVICE_MODE=auto` 启用 GPU；`API_MAX_CONCURRENCY` 默认 2→4（GPU/CPU 双标定）。
+🔴 **生产入口缺陷已修（208）**：`server.start_server` 签名漏 `max_concurrency` 形参 → 任何调用（`main.py --api`）抛 `UnboundLocalError`，且 `API_ENABLED` 守卫成死代码；已补回参数 + 4 例回归（tests/test_server_start.py）。
