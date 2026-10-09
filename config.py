@@ -1690,6 +1690,35 @@ DETECT_OCR_MIN_CONFIDENCE: Final[float] = _env_float("DETECT_OCR_MIN_CONFIDENCE"
 #   小图上的文字对 EasyOCR 较难识别；开启后把搜索块 2x 上采样再识别，提升小字精度。
 DETECT_OCR_UPSCALE: Final[bool] = _env_bool("DETECT_OCR_UPSCALE", True)
 
+# 【OCR 角落低置信回退】布尔（阶段审计新增，默认开）。
+#   角落搜索区内 EasyOCR 常能「框住」水印文字（检测几何正确），却因文字低对比 /
+#   字体风格导致识别失败、给出 ~0.00 置信度，被 DETECT_OCR_MIN_CONFIDENCE 滤掉，
+#   进而整段角落水印漏检（实测 q3_2/q4_2/q5_2 因此 mask_recall=0.000）。
+#   开启后，当高置信路径在角落 patch 零产出、但存在任意 OCR 候选框时，接受几何
+#   「类文本行」（宽高比合理）的候选作定位框——把「识别失败」与「定位能力」解耦。
+#   仅作用于角落 patch（_ocr_boxes_in_patch(accept_low_conf=True)），不影响边缘检测通路。
+DETECT_OCR_CORNER_FALLBACK: Final[bool] = _env_bool("DETECT_OCR_CORNER_FALLBACK", True)
+
+# 【OCR 单图识别超时护栏】秒（阶段审计新增，默认 30.0）。
+#   真实图上偶有图像触发 EasyOCR 内部极慢路径（CPU 模式），单 patch 可卡数分钟，
+#   使整批门禁/检测挂起（实测某真实图令 general 全量跑出 918.8s）。开启后，对单个
+#   patch 的 OCR 识别套一层 daemon 线程 + join(timeout) 超时，超时仅丢弃该 patch 的
+#   OCR 结果、降级走板块/图标通路（mask 召回略降但整体不挂死）。<=0 时关闭护栏、
+#   走原生 reader.readtext（无超时）。设为很小值（如 0.01）可用于单元测试注入超时分支。
+DETECT_OCR_TIMEOUT: Final[float] = _env_float("DETECT_OCR_TIMEOUT", 30.0, 0.0, 3600.0)
+
+# 【OCR 是否使用 GPU】布尔（阶段 220 新增，默认 True = **跟随设备选择**）。
+#   历史：`_get_ocr_reader()` 曾把 `gpu=False` **硬编码**，注释理由是「与本项目默认
+#   CPU 一致」。**该前提早已不成立**——`DEVICE_MODE=auto` 下LaMa 推理已在 cuda:0
+#   上跑（实测同一条流水线里「LaMa 吃 GPU、OCR 纯 CPU」），OCR 段占全链路 13.9s。
+#   实测RTX 5060 上OCR 走 GPU **加速 11~13×**（640×640 0.696s → 0.053s），
+#   且**包围盒逐位相同**（掩码不受影响），识别置信度虽有浮点路径差异
+#   （实测 0.72 vs 0.37）但**均高于 DETECT_OCR_MIN_CONFIDENCE、判定不翻转**；
+#   本项目 OCR 的价值在「定位」而非「识别」，故几何一致性才是硬约束。
+#   设 False 可强制 OCR 走 CPU（用于无 GPU 环境的显式声明 / 排查 GPU OCR 异常）。
+#   ⚠ 无 GPU 或 GPU 初始化失败时**自动回退 CPU**，绝不因此中断检测。
+DETECT_OCR_USE_GPU: Final[bool] = _env_bool("DETECT_OCR_USE_GPU", True)
+
 # 【默认检测预设】字符串（阶段 20 新增）。
 #   取值为 core.detection_presets 中注册的预设名（当前 general / ai_tiled /
 #   ai_signature / ai_corner / ai_text_heavy / ai_faint_tiled / ai_grid /
@@ -2647,6 +2676,24 @@ API_ENABLED: Final[bool] = _env_bool("API_ENABLED", True)
 #   客户端不指定时，接口按此格式返回结果（PNG 无损、兼容好）。
 API_DEFAULT_FMT: Final[str] = _env_str("API_DEFAULT_FMT", "PNG").upper()
 
+# 【API 是否要求「全自动擦除」显式确认】（阶段 233 新增，默认 True = 要求确认）
+#   背景（阶段 232 审计，真实用户数据驱动）：
+#     检测器是**召回优先**设计（红线 precision ≥ 0.050 ⇒ 有意容忍 ≥95% 误检）。
+#     这在「AI 照片 + 角落水印」上没问题，但在**文字密集的插画/封面**上会大面积误检：
+#     实测某用户封面自动检测出 21 个区域，其中 15 个 `translucent` **全部是误检**
+#     （压在标题笔画/标签/人物衣物上），且三条修法（像素判据 / 区域数上限 / 收紧检测）
+#     先后被数据否决（详见当日 232 段与 LESSONS #251/#252）。
+#     ⇒ 结论：这不是「检测缺陷」，而是**产品预期不符**——检测器的取舍是设计意图。
+#     因此修法是**产品层**：让「系统替用户选预设 + 直接擦除」这条**静默**路径
+#     不再静默——**默认拒绝**并抛出 `AutoEraseNotConfirmed`，逼调用方二选一：
+#       · 显式指定 `preset="..."`（调用方自己做了选择），或
+#       · 显式传 `allow_auto_erase=True`（明确承担全自动风险），或
+#       · 先调 `detect_watermark_bytes()` 预览掩码、人工确认后再传 `mask`。
+#   GUI 不受影响：`ui/` 直接用 `detect_watermark_mask`（本就是「预览→确认→擦除」流程）。
+#   置 False 可恢复旧行为（全自动静默擦除），用于兼容既有外部脚本。
+API_REQUIRE_AUTO_ERASE_CONFIRM: Final[bool] = _env_bool(
+    "API_REQUIRE_AUTO_ERASE_CONFIRM", True)
+
 # 【REST 服务最大并发处理请求数】（阶段 199 · 对应优化清单 D1「并发策略」）
 #   为什么需要它：server.py 用 ThreadingHTTPServer，其默认模型是**每个连接开一个线程、
 #   不设上限**。而本服务 5 个端点（/api/remove·detect·inpaint·batch）**每一次调用都要跑
@@ -2674,6 +2721,26 @@ API_DEFAULT_FMT: Final[str] = _env_str("API_DEFAULT_FMT", "PNG").upper()
 #       若你的显存/内存更小、或有交互式界面在同一台机器上争用，可下调此值。
 API_MAX_CONCURRENCY: Final[int] = _env_int("API_MAX_CONCURRENCY", 4, 0, 64)
 
+# ------------------------------------------------------------------------------
+# 异步作业 worker 池并发数（阶段 D1 / 257 标定）
+# ------------------------------------------------------------------------------
+# 含义：job_manager.JobManager 的 max_workers——同时「正在执行」的异步长任务
+#       （PDF / 视频 / 模型下载）数量上限。这些 worker 线程**在 HTTP 并发闸门之外**
+#       （_BoundedThreadingHTTPServer），故不受 API_MAX_CONCURRENCY 约束。
+# 标定依据（RTX 5060 Laptop，8123 MiB，2 页 PDF @1200×900，真实跑 detect+inpaint）：
+#   k | 墙钟(s) | 成功 | 峰值VRAM(MB) | 单作业均耗时(s) | 聚合吞吐(相对k=1)
+#   1 |  12.06  |  1   |    613.8    |     11.86      |  0.166 (1.00×)
+#   2 |  10.02  |  2   |    818.2    |      8.62      |  0.399 (2.40×)
+#   3 |  13.64  |  3   |   1007.5    |     10.70      |  0.440 (2.65×)
+#   4 |  17.09  |  4   |   1272.7    |     12.82      |  0.468 (2.82×)
+# 解读：
+#   · VRAM 随 k 线性但极轻（k=4 仅占 16%），**非瓶颈**；瓶颈是 GPU 算力争用。
+#   · 单请求延迟甜点在 k=2（8.62s，比串行快 27%）；k≥3 起单作业延迟回升
+#     （争用），聚合吞吐仍缓增但收益递减（k=3→4 仅 +6% 吞吐、+20% 延迟）。
+#   · 本工具定位本地单用户，最相关指标是「我的文件多久好」= 单请求延迟，
+#     故取甜点 k=2：延迟最优 + 仅 ~10% VRAM + 视频（逐帧，峰值同量级）仍有大余量。
+#   · 若做批量吞吐优先（多用户/队列），可上调至 4（吞吐 +82%、单作业延迟 ~+18%）。
+API_ASYNC_MAX_WORKERS: Final[int] = _env_int("API_ASYNC_MAX_WORKERS", 2, 1, 8)
 
 # ==============================================================================
 # 第 13 节：合规声明文本（COMPLIANCE）
@@ -3176,6 +3243,36 @@ WATERMARK_TYPE_SCOPE: Final[dict] = {
 WATERMARK_TYPE_COMMITTED: Final[frozenset] = frozenset(
     _n for _n, _e in WATERMARK_TYPE_SCOPE.items() if _e.get("committed")
 )
+
+
+# ==============================================================================
+# 阶段 243 · **图像级**已知检测缺口（`corner_logo` 承诺面内的子风格缺口）
+# ==============================================================================
+# 背景（243 探针实测，详见 docs/243）：
+#   `ai_logo`（= 真值 style `corner_logo`）是唯一承诺面，但它的实测样本里混着
+#   **两种形态截然不同**的角标：
+#     · 「小文字牌」340x128（`ai_logo_*` 10 张 + q 系列 11 张）——检测器**擅长**，
+#       逐图 mask_recall 0.14~0.95、剔除大角标后 micro=0.511（达标）；
+#     · 「大颗多面体三角宝石角标」340x420~620x510（`a1`~`a4` 4 张）——检测器
+#       **几乎完全漏检**（逐图 mask_recall 0.0~0.045），且这 4 张占承诺面真值
+#       面积 **52.6%**，把 micro 拉到 0.2461 ⇒ `real_gate --strict-scope` 恒红。
+#   根因（探针 6 否决了全部纯像素路线）：宝石角标与彩色自然背景在像素域**不可分**
+#     —— `a2`（蓝宝石）**整图**就是一个饱和连通域（背景与角标颜色融为一体）；且
+#     去水印原图（clean `a1;.png`~`a4;.png`）的角落连通域与有水印图**几乎一样**
+#     ⇒「贴角+饱和+实心」在无水印对照上同样成立。纯色度/实心度/贴角等判据均
+#     要么漏检要么吞掉自然景（与阶段 232 教训同构）。
+#
+# 为什么是**图像级**而非改 `WATERMARK_TYPE_SCOPE`：
+#   `a1`~`a4` 的真值 style **确实是 `corner_logo`**（它们就是豆包的多面体角标），
+#   改 style 会**篡改真值**。缺口发生在 `corner_logo` **子风格**层，比现有
+#   「预设/类型」粒度更细 ⇒ 只能以图像级显式登记。
+#
+# 处置口径（同 `ai_gradient` 的 KNOWN_GAP 惯例）：**显式钉死缺口**，让能力声明与
+# 检测器真实能力对齐，而不是把红线往下移来掩盖。缺口**不静默丢弃**——门禁报告
+# 会原样列出这些图及其单图指标（见 `scripts/real_gate.py` 的 known-gap 段）。
+#: 已知检测缺口图像（承诺面内、检测器**尚未**能处理的子风格）。
+#: ⚠ 这是**诚实的负能力声明**，不是「忘了标注」——留白会被读成漏标。
+WATERMARK_KNOWN_GAP_IMAGES: Final[frozenset] = frozenset({"a1", "a2", "a3", "a4"})
 
 
 def watermark_type_label(name: str, lang: str = "zh-CN") -> str:

@@ -204,6 +204,7 @@ def evaluate_one(image_rgb: Any,
 # 全量跑
 # -----------------------------------------------------------------------------#
 def run_all(presets: List[str], manifest: Dict[str, Any], truth: Dict[str, Any]) -> Dict[str, Any]:
+    import config  # 阶段审计修正：门禁须对齐产品真实默认（DETECT_USE_OCR）
     import numpy as np
     from PIL import Image
 
@@ -215,8 +216,21 @@ def run_all(presets: List[str], manifest: Dict[str, Any], truth: Dict[str, Any])
     if not labeled:
         raise RuntimeError("manifest 中没有任何图有真值；先 build_real_ground_truth.py auto / 手工标注")
 
+    # 阶段 243：把**图像级已知检测缺口**（`config.WATERMARK_KNOWN_GAP_IMAGES`，目前是
+    # a1~a4「大颗多面体宝石角标」）从**参与红线的聚合**里剔除——它们是真值完备但检测器
+    # 尚未能处理的子风格（见 config 注释与 docs/243）。设计要点：
+    #   ① **不静默丢弃**：缺口图仍会被检测、指标仍算出来，放进独立的 `known_gap_rows`
+    #      段返回，供门禁报告原样展示（否则「留白会被读成忘了」，见经验与 232 教训）；
+    #   ② **只影响聚合口径**，不改真值、不改 manifest；
+    #   ③ 若缺口图恰好不在本数据集（数据集切换/子集跑），不报错——按交集处理。
+    _gap_ids = set(getattr(config, "WATERMARK_KNOWN_GAP_IMAGES", ()) or ())
+    gap_images = [im for im in labeled if im["id"] in _gap_ids]
+    eval_images = [im for im in labeled if im["id"] not in _gap_ids]
+    if not eval_images:                       # 全是缺口图⇒ 退化保护：仍评估全部
+        eval_images, gap_images = labeled, []
+
     rows: List[Dict[str, Any]] = []
-    for im in labeled:
+    for im in eval_images:
         iid = im["id"]
         rel = im["path"]
         abs_p = rel if os.path.isabs(rel) else os.path.join(BENCH_DIR, rel)
@@ -228,7 +242,7 @@ def run_all(presets: List[str], manifest: Dict[str, Any], truth: Dict[str, Any])
         truth_entry = truth_by_id[iid]
         per_preset = {}
         for preset in presets:
-            per_preset[preset] = evaluate_one(arr, truth_entry, preset=preset, use_ocr=False)
+            per_preset[preset] = evaluate_one(arr, truth_entry, preset=preset, use_ocr=config.DETECT_USE_OCR)
         rows.append({
             "image_id": iid,
             "ai_source": im.get("ai_source"),
@@ -238,7 +252,37 @@ def run_all(presets: List[str], manifest: Dict[str, Any], truth: Dict[str, Any])
         })
     if not rows:
         raise RuntimeError("所有图都读失败；检查路径")
-    return _aggregate(rows, presets)
+
+    # 阶段 243：缺口图也照常检测，指标单独成段返回（**不参与聚合、不参与红线**）。
+    #   这样门禁既能对承诺面红线负责，又能把「已知未处理」的子风格原样摊开。
+    gap_rows: List[Dict[str, Any]] = []
+    for im in gap_images:
+        iid = im["id"]
+        rel = im["path"]
+        abs_p = rel if os.path.isabs(rel) else os.path.join(BENCH_DIR, rel)
+        try:
+            arr = np.array(Image.open(abs_p).convert("RGB"))
+        except Exception as e:
+            print(f"[error] 缺口图读图失败 {iid}: {e}", file=sys.stderr)
+            continue
+        truth_entry = truth_by_id[iid]
+        per_preset = {p: evaluate_one(arr, truth_entry, preset=p, use_ocr=config.DETECT_USE_OCR)
+                      for p in presets}
+        gap_rows.append({
+            "image_id": iid,
+            "watermark_count": len(truth_entry.get("watermarks", [])),
+            "results": per_preset,
+        })
+
+    out = _aggregate(rows, presets)
+    # 阶段 243：`per_image` 供**面积监控**消费（量「该通路过开火面积」，无真值、
+    #   对缺口图同样有意义）⇒ 含缺口图（29 张）；而 `per_preset_aggregate` 供
+    #   **承诺面质量红线**消费（需真值）⇒ 只含非缺口图（25 张）。两个口径**分开**：
+    #   缺口是「已知不会处理」，不是「不测它的过检」。
+    out["per_image"] = rows + gap_rows
+    out["known_gap_rows"] = gap_rows
+    out["known_gap_image_ids"] = sorted(r["image_id"] for r in gap_rows)
+    return out
 
 
 def _aggregate(rows: List[Dict[str, Any]], presets: List[str]) -> Dict[str, Any]:

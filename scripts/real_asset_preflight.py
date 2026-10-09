@@ -210,18 +210,25 @@ def gt_integrity_issues(truth: Dict[str, Any]) -> List[str]:
     这类指标建立在伪造真值上（详见 `docs/149`）。
 
     本函数抓这种"标签合规但内容伪造"的盲区，两条信号都只在样本足够多时触发，避免小数据集误报：
-      · 模板化：某个 bbox 在 ≥ `MIN_TEMPLATE_FREQ` 张不同图上逐字节相同
-        （不同图的同款水印位置本应各异，跨图逐字节复制 = 模板填充）。
+      · 模板化：某个 bbox 在 **过半（≥ `MIN_TEMPLATE_FRACTION`）的图上** 逐字节相同
+        （阶段 239 由绝对计数改为占图比：固定角标水印会自然在少数图上重复，
+        用占比可避免误伤豆包等生成器把水印放在固定角落的合法数据；
+        真正的模板填充是近乎全图一致，占比远超地板）。
       · 信息量过低：去重后的 bbox 数 / 总标注数 < `DEDUP_RATIO_FLOOR`
         （以 60 条标注为例，若只有 2 个互不相同的 bbox，则 2/60≈0.03，远低于地板）。
     """
-    MIN_TEMPLATE_FREQ = 3       # 同一 bbox 出现在 ≥3 张不同图上才判模板化
+    # 模板化判定改为「占图比」口径：同一 bbox 出现在**过半**图上才判（阶段 239）。
+    # 旧阈值「≥3 张」会把「AI 生成图固定角标水印」在少数图上的自然重复误判为模板填充
+    # ——豆包等生成器把水印放在固定角落，少数图共享同一 bbox 是合法现象，并非复制填充。
+    MIN_TEMPLATE_FRACTION = 0.5  # 同一 bbox 出现在 >50% 的图上 ⇒ 模板填充嫌疑
     DEDUP_RATIO_FLOOR = 0.5    # 去重 bbox 占比低于此值 ⇒ 信息量过低
     MIN_SAMPLE = 10            # 样本太少不判（避免误报）
 
     from collections import Counter
+    entries = truth.get("entries") or []
+    n_images = len(entries)
     bboxes: List[Tuple] = []
-    for e in (truth.get("entries") or []):
+    for e in entries:
         for w in (e.get("watermarks") or []):
             b = w.get("bbox")
             if isinstance(b, (list, tuple)) and len(b) == 4:
@@ -232,10 +239,13 @@ def gt_integrity_issues(truth: Dict[str, Any]) -> List[str]:
     distinct = len(set(bboxes))
     issues: List[str] = []
     top_box, top_n = Counter(bboxes).most_common(1)[0]
-    if top_n >= MIN_TEMPLATE_FREQ:
+    # 占比口径：3/29≈10%（固定角标，合法）不报；30/30=100%（149 事故模板填充）才报。
+    if n_images > 0 and (top_n / n_images) >= MIN_TEMPLATE_FRACTION:
+        pct = top_n / n_images
         issues.append(
-            f"[真值完整性] 模板化疑似：bbox {list(top_box)} 在 {top_n} 张不同图上逐字节相同"
-            f"（不同图的同款水印位置本应各异；标注却标 manual:measured）——疑似复制填充。")
+            f"[真值完整性] 模板化疑似：bbox {list(top_box)} 在 {top_n}/{n_images} 张图上逐字节相同"
+            f"（占比 {pct:.0%} ≥ {MIN_TEMPLATE_FRACTION:.0%}）；真实量取的水印位置应各异"
+            f"——疑似复制填充而非逐图量取。")
     ratio = distinct / total
     if ratio < DEDUP_RATIO_FLOOR:
         issues.append(

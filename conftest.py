@@ -146,3 +146,84 @@ def _isolate_runtime_dirs(tmp_path, monkeypatch):
         d.mkdir(parents=True, exist_ok=True)
         monkeypatch.setattr(config, attr, d)
     yield
+
+
+#: config 中**可变容器**类型（需深拷贝快照才能真正捕捉「原地修改」）
+_MUTABLE_TYPES = (list, dict, set, bytearray)
+
+
+@pytest.fixture(autouse=True)
+def _isolate_config_globals():
+    """隔离 `config` 模块的全局常量（阶段 248，autouse）。
+
+    背景（阶段 248 运行期检测器实测）
+    -------------------------------
+    `tests/test_tab_settings_audit129.py` 调 `ui.tab_settings.apply_superres_config(...)`
+    ——该函数会**直接写 `config.REAL_SUPERRES_ENABLED/SCALE/BACKEND`**；而用例的 `finally`
+    只还原 logger 与（阶段 247 后）级别，**不还原 config** ⇒ 实测把
+    `REAL_SUPERRES_SCALE` 2→4、`REAL_SUPERRES_BACKEND` esrgan→auto 泄漏给后续用例。
+    `tests/test_settings_superres.py::test_register_and_refresh_superres_widgets`
+    同款（写 3 个 config 全局量，`finally` 只 `clear_superres_widgets()`）。
+
+    这类泄漏**不抛错**，只是让后续用例在**另一组配置**下运行 ⇒ 表现为
+    「单跑绿、整批偶发红」，与 245/246/247 的全局状态污染同族。
+
+    做法（与 `_isolate_i18n_language` 同款：快照 → 还原）
+    -----------------------------------------------------
+    每个用例前后快照/还原 `config` 的**全大写**属性。比「逐点加还原」更彻底：
+      · 已有的 `monkeypatch.setattr(config, ...)` 不受影响（monkeypatch 先还原，
+        本夹具再还原到同一初值，幂等）；
+      · **忘记还原**的直接赋值会被自动纠正 ⇒ 从根上消除该类跨用例污染。
+
+    判据细节
+    --------
+      · 不可变标量：按**身份**（`is not`）判断是否被替换 → 只对真正改过的回写；
+      · 可变容器：快照用 `deepcopy`、按**值**比较 → 能捕捉「原地 append/更新」；
+      · 任何一步异常都吞掉（夹具不应成为新的失败源）。
+
+    ⚠ 局限：只覆盖 `config` 模块本身；其它单例（logger / i18n / model_manager）
+      各有专项夹具或守卫（245/246/247 / `restore_active_model`）。
+    """
+    try:
+        import config
+    except Exception:                # noqa: BLE001
+        yield
+        return
+
+    import copy as _copy
+
+    saved: dict = {}
+    for k in dir(config):
+        if not k.isupper():
+            continue
+        try:
+            v = getattr(config, k)
+        except Exception:            # noqa: BLE001
+            continue
+        if isinstance(v, _MUTABLE_TYPES):
+            try:
+                saved[k] = _copy.deepcopy(v)
+                continue
+            except Exception:        # noqa: BLE001
+                pass
+        saved[k] = v
+
+    yield
+
+    for k, v in saved.items():
+        try:
+            cur = getattr(config, k)
+        except Exception:            # noqa: BLE001
+            continue
+        try:
+            if isinstance(v, _MUTABLE_TYPES):
+                changed = (cur != v)
+            else:
+                changed = (cur is not v)
+        except Exception:            # noqa: BLE001
+            changed = False
+        if changed:
+            try:
+                setattr(config, k, v)
+            except Exception:        # noqa: BLE001
+                pass

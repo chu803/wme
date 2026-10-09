@@ -18,11 +18,21 @@
 
 | 类型 | 预设名 | 说明 | 承诺级别 | 验证状态 |
 |------|--------|------|----------|----------|
-| 角落 LOGO | `ai_logo` | 角落或边缘的实心标识 | ✅ **承诺处理** | **真实图已首次验证**（阶段 172 收编 10 张豆包生成真实图并逐图量取真值 `manual:measured`）：实测（10 图 · general）掩码召回 **0.562**、区域召回 0.800、精确率 0.069；合成用例亦已验证 |
+| 角落 LOGO | `ai_logo` | 角落或边缘的实心标识 | ✅ **承诺处理** | **真实图已验证**（阶段 172 收编豆包生成真实图并逐图量取真值 `manual:measured`；阶段 243 起为 **25 图**口径）：实测（25 图 · general）掩码召回 **0.511**、区域召回 0.840、精确率 0.079；合成用例亦已验证。⚠️ 已知子风格缺口见下方说明 |
 | 半透明平铺文字 | `ai_faint_tiled` | 几乎看不见、整图重复的文字水印 | ⚪ 不承诺 | 合成用例已验证；真实图**未验证**（且属信息论极限区） |
 | 底部/边缘小字 | `ai_text_heavy` | 底部条带文字、参数水印 | ⚪ 不承诺 | 合成用例已验证；真实图**未验证** |
 | 网格点阵 | `ai_grid` | 点阵、网格状水印 | ⚪ 不承诺 | 合成用例已验证；真实图**未验证** |
 | 全局渐变叠层 | `ai_gradient` | 整图渐变半透明叠层 | ⚪ 不承诺 | **未验证**：无合成用例、无真实标注（需用户确认后使用的兜底模式） |
+
+> ⚠️ **已知检测缺口 · 大颗多面体角标**（阶段 243）：承诺类型 `ai_logo` 覆盖的角标里，
+> 有一类**大颗多面体三角宝石角标**（豆包生成，340×420~620×510）**当前检测器基本检不出**
+> （逐图掩码召回 0.0~0.045）。原型验证已确认它在**像素域与彩色自然背景不可分**
+> （强证据：蓝色那图的**整幅画面**就是一个饱和连通域；且其**无水印原图**的角落特征与
+> 有水印图几乎相同），故本阶段**未**提升该能力，而是按 `ai_gradient` 的既有惯例把它
+> 登记为 `config.WATERMARK_KNOWN_GAP_IMAGES`，**显式排除于承诺面质量红线聚合**
+> （门禁报告会原样列出这些图及其指标，**不静默丢弃**；面积监控仍覆盖全部 29 张）。
+> 上表 25 图的数字即**剔除该缺口后**的实测值。要真正支持这类角标需语义/模板级判据
+> （新的工程层次），详见 `docs/243`。
 
 > ⚠️ **「能选」≠「承诺」**（阶段 95 明确能力面）：上表的**承诺级别**由
 > `config.WATERMARK_TYPE_SCOPE[*]["committed"]` 单一真值来源声明，承诺面
@@ -2179,6 +2189,42 @@ python scripts/make_demo_assets.py --engine opencv
 # 或对比两引擎（需要 torch+权重）
 python scripts/make_demo_assets.py --compare
 ```
+
+### 3.5 Docker 部署
+
+项目提供两个多阶段镜像文件（`Dockerfile` / `Dockerfile.gpu`），均以**非 root**、**WME_ 前缀环境变量**、**HEALTHCHECK**、**多阶段瘦身**构建。前置条件：本机已装 Docker（Desktop / Engine）。
+
+**CPU 版（默认）**
+
+```bash
+# 构建
+docker build -t watermark-eraser .
+
+# 运行（网页界面 + REST 服务）
+docker run -p 7860:7860 -p 7861:7861 \
+  -e WME_SERVER_HOST=0.0.0.0 \
+  -v "$PWD/outputs:/app/outputs" \
+  -v "$PWD/models:/app/models" \
+  watermark-eraser
+```
+
+**GPU 版（需 NVIDIA 驱动 + nvidia-container-toolkit）**
+
+```bash
+docker build -f Dockerfile.gpu -t watermark-eraser-gpu .
+docker run --gpus all -p 7860:7860 -p 7861:7861 \
+  -e WME_SERVER_HOST=0.0.0.0 -e WME_DEVICE_MODE=auto \
+  -v "$PWD/models:/app/models" \
+  watermark-eraser-gpu
+# 仅跑 REST（7861）：在上面的命令后追加覆盖命令 `python3 main.py --api`
+```
+
+**要点**
+- 权重（`models/big-lama.pt`）**不入镜像**，需挂载 `-v "$PWD/models:/app/models"` 或在容器内用 `download_model.py` 下载。
+- 环境变量必须带 `WME_` 前缀（`config.ENV_PREFIX`）才生效；裸 `SERVER_HOST` 会被静默忽略。
+- 构建上下文已由 `.dockerignore` 瘦身（开发/评测资产不入镜像，~3.6GB → ~4MB）。
+
+> ⚠️ **构建状态（诚实披露 · 阶段 210）**：镜像在开发机上**从未真正 `docker build` 过**（该机无 docker CLI）。已验证的是静态契约（`tests/test_dockerfile_contract.py` / `test_dockerfile_gpu_contract.py` 全绿）与构建上下文瘦身。首次构建请跑通：① `docker build` 成功；② `docker run` 后 `curl localhost:7860` 出页面、`curl localhost:7861/api/health` 返回 200；③ 挂载权重后用一张真实图端到端去水印。
 
 ## 4. 项目规模
 

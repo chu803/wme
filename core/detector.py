@@ -36,6 +36,7 @@ from __future__ import annotations
 
 import os as _os
 import sys as _sys
+import threading
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
@@ -115,6 +116,27 @@ def _get_ocr_reader():
 
     返回值：
         EasyOCR Reader 对象；若不可用返回 None。
+
+    设备选择（阶段 220）
+    --------------------
+    此前这里把 `gpu=False` **硬编码**，注释理由是「与本项目默认 CPU 一致」。
+    **该前提早已不成立**：`DEVICE_MODE=auto` 下 LaMa 已在 cuda:0 上跑，
+    而本模块的 OCR 仍留在 CPU —— 同一条流水线里「一半吃 GPU、一半纯 CPU」，
+    实测 OCR 段占全链路 13.9s（阶段 217/218 归因）。
+
+    现改为**跟随 `core.device_manager.select_device()`**（`auto` 语义：探测不到就
+    退回 CPU），并带**三重安全回退**，任何一步失败都只降级、绝不中断检测：
+        1. `DETECT_OCR_USE_GPU=False` → 直接 CPU；
+        2. 设备探测 / `select_device` 抛异常 → CPU；
+        3. `gpu=True` 初始化失败（显存不足 / 算子不兼容）→ **再试一次 CPU**。
+
+    为什么不用 `select_device("cuda")`：那是「强制 CUDA」语义，**无卡时会抛
+    RuntimeError**（见 device_manager）。OCR 是**可选增强**通路（关掉只影响文字
+    召回，不影响整体检测），绝不能因没 GPU 就让整条检测挂掉。
+
+    精度影响（阶段 219 实测）：GPU 与 CPU 的**包围盒逐位相同**（⇒ 掩码不变）；
+    识别置信度有浮点路径差异，但**均高于 `DETECT_OCR_MIN_CONFIDENCE`、判定不翻转**。
+    且本项目 OCR 的价值在「定位」而非「识别」（见 `_ocr_boxes_in_patch` 注释）。
     """
     global _OCR_READER
     if not _ocr_available():
@@ -123,15 +145,76 @@ def _get_ocr_reader():
         try:
             import easyocr  # type: ignore
 
-            # 仅检测英文 + 简体中文；gpu=False 默认用 CPU（与本项目默认 CPU 一致）。
-            _OCR_READER = easyocr.Reader(
-                ["en", "ch_sim"], gpu=False, verbose=False
-            )
-            log.info("EasyOCR 阅读器初始化完成（CPU 模式）。")
+            want_gpu = bool(getattr(config, "DETECT_OCR_USE_GPU", True))
+            if want_gpu:
+                try:
+                    from core.device_manager import select_device
+
+                    handle = select_device()  # auto 语义：无卡自动退 CPU，不抛
+                    want_gpu = getattr(handle.info, "kind", "cpu") == "cuda"
+                except Exception as exc:
+                    log.info("OCR 设备探测失败，回退 CPU：%s", exc)
+                    want_gpu = False
+
+            if want_gpu:
+                try:
+                    _OCR_READER = easyocr.Reader(
+                        ["en", "ch_sim"], gpu=True, verbose=False
+                    )
+                    log.info("EasyOCR 阅读器初始化完成（GPU 模式）。")
+                except Exception as exc:
+                    # GPU 不可用（显存不足 / 算子不兼容）→ 回退 CPU，绝不因此中断检测。
+                    log.warning("OCR 的 GPU 初始化失败，回退 CPU：%s", exc)
+                    _OCR_READER = easyocr.Reader(
+                        ["en", "ch_sim"], gpu=False, verbose=False
+                    )
+                    log.info("EasyOCR 阅读器初始化完成（CPU 模式）。")
+            else:
+                # 仅检测英文 + 简体中文。
+                # 注：此处 gpu=False 是**显式声明**（配置要求 CPU 或探测不到 GPU），
+                # 而不再是「想当然的默认」。
+                _OCR_READER = easyocr.Reader(
+                    ["en", "ch_sim"], gpu=False, verbose=False
+                )
+                log.info("EasyOCR 阅读器初始化完成（CPU 模式）。")
         except Exception as exc:
             log.warning("EasyOCR 初始化失败，文字检测降级：%s", exc)
             _OCR_READER = None
     return _OCR_READER
+
+
+def warm_up_ocr(blocking: bool = False) -> None:
+    """
+    预热 EasyOCR 阅读器，消除「首个检测请求」的冷启动卡顿（阶段 238）。
+
+    背景：EasyOCR Reader 首次初始化在 GPU 模式下约需数秒（实测 ~5s，见
+    `.scratch/probe_recommend_cost.py` 日志「EasyOCR 阅读器初始化完成（GPU 模式）」）。
+    这笔成本在**每个新进程的首个 `detect_watermark_mask` 调用**时支付——对长驻服务
+    （Gradio :7860 / REST :7861）而言，等于「第一个用户请求要干等数秒」。
+
+    本函数把成本**前移到服务启动期**（后台线程），让首个真实请求不再被阻塞。
+    设计约束（与项目铁律一致）：
+      · 输出中性：仅预填充 `_OCR_READER` 缓存，不改变任何检测逻辑/结果；
+      · 幂等：已初始化则 `_get_ocr_reader` 直接返回缓存，重复调用零副作用；
+      · 失败无害：OCR 是可选增强通路，任何异常都被 `_get_ocr_reader` 内部吞掉
+        （降级为 None），绝不中断启动或检测；
+      · 非阻塞默认：服务启动用 `blocking=False`，把 ~5s 初始化丢到守护线程，
+        调用方立即返回、端口照常监听；CLI 单图场景不调用（首图自然支付，行为不变）。
+
+    参数：
+        blocking : True 同步等待初始化完成；False（默认）丢到守护线程后台跑。
+    """
+    # 与 _get_ocr_reader 同闸门：OCR 总开关关闭时直接 no-op，绝不尝试加载。
+    if not config.DETECT_USE_OCR:
+        return
+    if blocking:
+        try:
+            _get_ocr_reader()
+        except Exception as exc:  # noqa: BLE001 - 兜底，理论上 _get_ocr_reader 已吞异常
+            log.debug("OCR 预热（同步）异常（不影响主流程）：%s", exc)
+        return
+    t = threading.Thread(target=_get_ocr_reader, name="ocr-warmup", daemon=True)
+    t.start()
 
 
 # ==============================================================================
@@ -595,9 +678,14 @@ def _suppress_natural_light(
     t_edge = float(config.DETECT_NATURAL_GUARD_EDGE) * float(scale)
     t_ratio = float(config.DETECT_NATURAL_GUARD_RATIO)
     h, w = cand.shape[:2]
-    out = np.zeros_like(cand)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    kept = 0
+    # 阶段 211（性能）：循环内**只收集保留的连通域编号**，不做像素写回。
+    # 旧写法 `out[labels == i] = 255` 是 O(keep × H × W)：真实图 area≥16 的候选
+    # 实测达 1589 个，2048² 全图比较 + 写回合计占本守卫 63% 耗时（语句级实测
+    # cmp 45.2% + assign 18.2%），是检测阶段（1.45s）的最大单点瓶颈。
+    # 改为「编号 → 值」LUT 一次查表：O(H × W) 一次遍历，输出**逐位等价**
+    # （同为 uint8 0/255；实测 np.array_equal 为 True，见 tests/test_perf_guard_rewrite.py）。
+    keep_ids: list = []
     for i in range(1, num):
         x, y, bw, bh, area = stats[i]
         if area < 16:
@@ -618,13 +706,17 @@ def _suppress_natural_light(
         # 若用候选像素均值，极淡平铺 ratio 掉到 4.5，会落进光影区间被误杀。
         inner_mean = float(crop.mean())
         if edge_sharp >= t_edge or edge_sharp / max(inner_mean, 1e-6) >= t_ratio:
-            out[labels == i] = 255
-            kept += 1
+            keep_ids.append(i)
+    kept = len(keep_ids)
     dropped = num - 1 - kept
     if dropped > 0:
         log.debug("自然光影守卫：抑制 %d/%d 个平滑候选块（edge<%.0f 且 ratio<%.1f）。",
                   dropped, num - 1, t_edge, t_ratio)
-    return out
+    if not keep_ids:
+        return np.zeros_like(cand)
+    lut = np.zeros(num, dtype=np.uint8)
+    lut[np.asarray(keep_ids, np.intp)] = 255
+    return lut[labels]
 
 
 def _suppress_texture_like(
@@ -669,9 +761,10 @@ def _suppress_texture_like(
     t_share = float(config.DETECT_TEXTURE_GUARD_SHARE)
     num, labels, stats, _ = cv2.connectedComponentsWithStats(cand, connectivity=8)
     h, w = cand.shape[:2]
-    out = np.zeros_like(cand)
     kernel = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (5, 5))
-    kept = 0
+    # 阶段 211（性能）：同自然光影守卫——循环内只收集编号，LUT 一次查表写回，
+    # 消除 O(keep × H × W) 的全图比较（逐位等价，见 tests/test_perf_guard_rewrite.py）。
+    keep_ids: list = []
     for i in range(1, num):
         x, y, bw, bh, area = stats[i]
         x1, y1 = min(w, x + bw), min(h, y + bh)
@@ -687,18 +780,21 @@ def _suppress_texture_like(
         gmean = float(g_sel.mean())
         if gmean <= 1e-6:
             # 残差完全平坦：无梯度可分，交给既有面积过滤，本守卫不表态。
-            out[labels == i] = 255
-            kept += 1
+            keep_ids.append(i)
             continue
         density = float((g_sel > t_share * gmean).mean())
         if density <= t_density:
-            out[labels == i] = 255
-            kept += 1
+            keep_ids.append(i)
+    kept = len(keep_ids)
     dropped = num - 1 - kept
     if dropped > 0:
         log.debug("纹理稠密守卫：抑制 %d/%d 个稠密候选块（density>%.2f）。",
                   dropped, num - 1, t_density)
-    return out
+    if not keep_ids:
+        return np.zeros_like(cand)
+    lut = np.zeros(num, dtype=np.uint8)
+    lut[np.asarray(keep_ids, np.intp)] = 255
+    return lut[labels]
 
 
 def _sensitivity_to_ksigma(sensitivity: float) -> float:
@@ -914,8 +1010,13 @@ def _components_mask(
     if not keep:
         return mask
     # 逐个把「连通域自身像素」置 255，而非其包围盒。
-    for i in keep:
-        mask[labels == i] = 255
+    # 阶段 211（性能）：LUT 查表一次等价替代「循环内逐域全图比较」。
+    # 旧写法 mask[labels == i] 是 O(keep × H × W)；本函数是所有掩码生成的必经
+    # 路径，真实图 keep 常达数千 ⇒ 单此一行即可吃掉检测阶段大量时间。
+    # 输出逐位等价（同为 uint8 0/255；实测 np.array_equal 为 True）。
+    lut = np.zeros(num, dtype=np.uint8)
+    lut[np.asarray(keep, np.intp)] = 255
+    mask = lut[labels]
 
     if dilate > 0:
         dk = cv2.getStructuringElement(
@@ -1269,8 +1370,38 @@ def _apply_plate_completion_prior(
         mask_parts.append(part)
 
 
+# 【OCR 单图识别超时护栏】以独立 daemon 线程 + join(timeout) 实现。
+# 真实图上偶有图像触发 EasyOCR 内部极慢路径（CPU 模式，torch/cv2 均释放 GIL），
+# 单 patch 可卡数分钟，使整批门禁/检测挂起（实测某真实图令 general 全量跑出 918.8s）。
+# daemon 线程后台跑完不阻塞解释器退出；join(timeout) 在 GIL 释放型调用上可靠返回，
+# 超时即丢弃该 patch 的 OCR 结果（降级走板块/图标通路）。timeout <= 0 时关闭护栏。
+def _ocr_readtext(reader, bgr, timeout: float):
+    """在独立线程跑 EasyOCR.readtext；超时即视为该 patch 无 OCR 结果。"""
+    if not timeout or timeout <= 0:
+        return reader.readtext(bgr)
+    import threading
+    box: dict = {}
+
+    def _run():
+        try:
+            box["r"] = reader.readtext(bgr)
+        except Exception as exc:  # 主线程重新抛出，走 _ocr_boxes_in_patch 既有 except
+            box["e"] = exc
+
+    th = threading.Thread(target=_run, daemon=True)
+    th.start()
+    th.join(timeout)
+    if th.is_alive():
+        log.warning("OCR 单图识别超时（>%.1fs），该 patch 视为无 OCR 结果", timeout)
+        return []
+    if "e" in box:
+        raise box["e"]
+    return box.get("r", [])
+
+
 def _ocr_boxes_in_patch(
-    rgb_patch: np.ndarray, px: int, py: int
+    rgb_patch: np.ndarray, px: int, py: int,
+    accept_low_conf: bool = False,
 ) -> List[Tuple[int, int, int, int]]:
     """
     在单个裁剪块上调用 EasyOCR，返回映射到「原图坐标」的文字框包围盒。
@@ -1278,6 +1409,7 @@ def _ocr_boxes_in_patch(
     参数说明：
         rgb_patch : 从原图裁剪出的搜索区 (ph, pw, 3)。
         px, py    : 该搜索区在原图的左上角坐标（用于坐标平移）。
+        accept_low_conf : 是否启用「角落低置信回退」（仅角落 patch 传 True）。
 
     返回值：
         包围盒列表 [(x, y, w, h), ...]（原图坐标系）。无 OCR 时返回空。
@@ -1288,6 +1420,9 @@ def _ocr_boxes_in_patch(
           显著提升小字召回率。
         - 置信度过滤：丢弃 item[2] < config.DETECT_OCR_MIN_CONFIDENCE（默认 0.25）
           的低置信框，抑制背景误报。
+        - 角落低置信回退（阶段审计）：高置信路径零产出、但 OCR 仍「框到」某区域时，
+          接受几何「类文本行」（宽高比合理）的候选作定位框。OCR 在角落水印上的价值
+          是**定位**而非**识别**——检测框几何常正确，识别失败只拉低置信度。
     """
     reader = _get_ocr_reader()
     if reader is None:
@@ -1303,18 +1438,16 @@ def _ocr_boxes_in_patch(
                 scale = 2.0
                 bgr = cv2.resize(bgr, None, fx=scale, fy=scale,
                                  interpolation=cv2.INTER_CUBIC)
-        results = reader.readtext(bgr)
+        results = _ocr_readtext(reader, bgr, config.DETECT_OCR_TIMEOUT)
     except Exception as exc:
         log.warning("OCR 在角落区域识别失败：%s", exc)
         return []
 
     min_conf = config.DETECT_OCR_MIN_CONFIDENCE
-    boxes = []
+    raw: List[Tuple[float, int, int, int, int]] = []
     for item in results:
         # item: (polygon_4pts, text, confidence)
         conf = item[2] if len(item) >= 3 else 0.0
-        if conf < min_conf:
-            continue  # 低置信框丢弃，抑制误报
         polygon = item[0]
         xs = [int(p[0] / scale) for p in polygon]
         ys = [int(p[1] / scale) for p in polygon]
@@ -1322,7 +1455,19 @@ def _ocr_boxes_in_patch(
         x1, y1 = min(rgb_patch.shape[1], max(xs)), min(rgb_patch.shape[0], max(ys))
         bw, bh = x1 - x0, y1 - y0
         if bw > 2 and bh > 2:
-            boxes.append((px + x0, py + y0, bw, bh))
+            raw.append((conf, px + x0, py + y0, bw, bh))
+    boxes = [(x, y, w, h) for (c, x, y, w, h) in raw if c >= min_conf]
+    if (not boxes and accept_low_conf
+            and config.DETECT_OCR_CORNER_FALLBACK and raw):
+        # 角落回退：高置信路径零产出，但 OCR 仍「框到」了某区域——
+        # 角落里出现文字框本身是强水印信号（角落罕有合法密集文字）。
+        # 接受几何「类文本行」的候选作定位框，将「识别失败」与「定位」解耦。
+        raw.sort(key=lambda t: t[0], reverse=True)
+        for (c, x, y, w, h) in raw:
+            ar = max(w, h) / max(1, min(w, h))
+            if 1.3 <= ar <= 25 and w >= 12 and h >= 6:
+                boxes.append((x, y, w, h))
+                break
     return boxes
 
 
@@ -1553,7 +1698,7 @@ def detect_corner_logo(
                 ))
         # 优先 OCR。
         if use_ocr and _ocr_available():
-            boxes = _ocr_boxes_in_patch(patch, px, py)
+            boxes = _ocr_boxes_in_patch(patch, px, py, accept_low_conf=True)
             if boxes:
                 # 阶段 100：此处原有 `used_ocr_here = True`，但它从未被读取——
                 # `detect_corner_logo` 只返回 regions，调用方按 `r.kind == KIND_OCR_TEXT`

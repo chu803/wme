@@ -10,6 +10,15 @@
 #            -v "$PWD/outputs:/app/outputs" \
 #            -v "$PWD/models:/app/models" \
 #            watermark-eraser
+#
+#  ⚠️ 构建状态（阶段 210 · 诚实披露）：本文件在开发机上**从未真正 `docker build` 过**
+#     （该机无 docker CLI / Docker Desktop）。已验证的是**静态契约**
+#     （tests/test_dockerfile_contract.py：多阶段/HEALTHCHECK/WME_ 前缀/EXPOSE/非 root/
+#     ENTRYPOINT/依赖单一真值来源，全绿）与**构建上下文瘦身**
+#     （.dockerignore 已把 3.66GB 上下文压到 4.4MB，见该文件）。
+#     首次在有 Docker 的机器上构建时，请至少跑通：① `docker build` 成功；
+#     ② `docker run` 后 `curl localhost:7860` 出页面、`curl localhost:7861/api/health` 返回 200；
+#     ③ 权重挂载后用一张真实图端到端去水印。详见 README「3.5 Docker 部署」小节。
 #  说明：
 #    1. 环境变量一律带 WME_ 前缀（`config.ENV_PREFIX`）——不带前缀会被 config 忽略：
 #       ✅ WME_SERVER_HOST / WME_SERVER_PORT / WME_SERVER_OPEN_BROWSER
@@ -90,12 +99,17 @@ USER appuser
 ENTRYPOINT ["python", "main.py"]
 
 # ------------------------------------------------------------------------------
-#  【GPU 镜像参考配方】（如需 NVIDIA 显卡加速，可改用如下基础镜像再装 CUDA torch）
-#  FROM nvidia/cuda:12.1.1-runtime-ubuntu22.04
+#  【GPU 镜像参考配方】
+#  ⚠ 本项目**已有独立的 Dockerfile.gpu**（阶段 197建、250 修解释器错配）——要显卡加速
+#    直接用它，不要照抄下面的片段（阶段 250：下列片段是「曾经可行」的历史写法，
+#    其 `python3` 与 `python3.11` 的错配、以及已过时的 cu121 时代假设都可能让镜像起不来）。
+#  FROM nvidia/cuda:12.8.1-runtime-ubuntu22.04        # ← 与 requirements-gpu.txt 的 cu128 源匹配
 #  RUN apt-get update && apt-get install -y --no-install-recommends \
 #          python3.11 python3-pip libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 ffmpeg \
 #          && rm -rf /var/lib/apt/lists/*
-#  ... 其余步骤同上，但 builder 阶段把 torch 换成 CUDA 版（见 requirements-gpu.txt）...
+#  # 关键：依赖装进 3.11 后，必须让 `python3` 也指向 3.11，或在 ENTRYPOINT 里显式写
+#  #      `python3.11`（Ubuntu 22.04 的 `python3` 是 3.10，找不到 3.11 的 site-packages）。
+#  ... 其余步骤见 Dockerfile.gpu，但 builder 阶段把 torch 换成 CUDA 版（见 requirements-gpu.txt）...
 #  运行（网页界面）：docker run --gpus all -p 7860:7860 -p 7861:7861 -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu
-#  运行（仅 REST 服务）：docker run --gpus all -p 7861:7861 -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu python main.py --api
+#  运行（仅 REST 服务）：docker run --gpus all -p 7861:7861 -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu python3.11 main.py --api
 # ------------------------------------------------------------------------------

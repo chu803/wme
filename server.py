@@ -54,6 +54,7 @@ import json
 import base64
 import socket
 import threading
+import urllib.parse as _urllib_parse        # 阶段 251：解析 ?name= 查询串（模型校验端点）
 from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 from typing import Any, Dict, Optional
 
@@ -66,6 +67,7 @@ if _ROOT not in _sys.path:
 
 import config
 import api
+import job_manager as JM  # 阶段 255：异步作业模型（PDF/视频/模型下载）
 from utils.logger import get_logger
 
 log = get_logger("server")
@@ -94,12 +96,17 @@ def _collect_params(body: Dict[str, Any]) -> Dict[str, Any]:
                 "artifact_reduce", "artifact_amount",
                 "superres", "superres_amount",
                 "real_superres", "real_scale", "real_backend",
-                "dual_run"):
+                "dual_run",
+                # 阶段 233：显式允许「自动选预设 + 直接擦除」。
+                #   REST 是**客户端显式发起的处理请求**，但「自动选预设」意味着
+                #   服务端替客户端拿主意；对文字密集插画可能大面积误检，
+                #   故同样要求客户端显式表态（详见 api.AutoEraseNotConfirmed）。
+                "allow_auto_erase"):
         if key in body:
             params[key] = body[key]
     for bool_key in ("dual_run", "auto_preset", "evaluate", "poisson_blend",
                      "texture_transfer", "artifact_reduce", "superres",
-                     "real_superres"):
+                     "real_superres", "allow_auto_erase"):
         if bool_key in params and isinstance(params[bool_key], str):
             params[bool_key] = params[bool_key].strip().lower() in (
                 "1", "true", "yes", "on")
@@ -130,6 +137,17 @@ def _process_one_b64(image_b64: str, params: Dict[str, Any]) -> Dict[str, Any]:
 
     try:
         out_bytes, qr = api.remove_watermark_bytes(raw, **params)
+    except api.AutoEraseNotConfirmed as exc:
+        # 阶段 233：**单独识别**，让客户端能程序化区分
+        # 「参数需要确认」与「处理真的失败」——否则客户端会把二者混为一谈。
+        return {
+            "status": "needs_confirmation",
+            "error": str(exc),
+            "hint": ("请显式指定 preset，或传 allow_auto_erase=true，"
+                     "或先调 /api/detect 预览掩码后再传 mask"),
+            "regions": None,
+            "used_ocr": None,
+        }
     except Exception as exc:  # noqa: BLE001 - 单张出错不影响服务可用性。
         return {"status": "failed", "error": str(exc)}
 
@@ -261,11 +279,16 @@ class _BoundedThreadingHTTPServer(ThreadingHTTPServer):
 
 
 def _is_exempt_from_gate(request: Any) -> bool:
-    """判断该请求是否豁免并发闸门（健康检查 / 用法页）。
+    """判断该请求是否豁免并发闸门（健康检查 / 用法页 / **只读轻量查询**）。
 
     实现要点：用 `MSG_PEEK` **只窥探不消费**首行——此时 handler 的 `rfile` 尚未创建，
     直接 `recv` 会把请求行从 socket 里取走，导致后面解析失败。任何异常都按
     「不豁免」处理（fail-closed：宁可排队，也不给未鉴权的重活开免检通道）。
+
+    阶段 251：新增豁免 `/api/capabilities` 与 `/api/models*`。它们是**纯只读、
+    毫秒级**的查询（模型槽清单 / 当前槽 / 权重校验），若也排队，则服务繁忙时
+    调用方**恰恰最需要**自省「用哪个模型、权重齐不齐」却拿不到——可观测性被
+    闸门本身挡住。只读端点无副作用，豁免不构成旁路风险（推理类端点仍全部排队）。
     """
     try:
         head = request.recv(256, socket.MSG_PEEK)
@@ -274,7 +297,12 @@ def _is_exempt_from_gate(request: Any) -> bool:
         line = head.split(b"\r\n", 1)[0]
         if not line.startswith(b"GET "):
             return False
-        return b"/api/health" in line or line.endswith(b" /")
+        if line.endswith(b" /"):
+            return True
+        return (b"/api/health" in line
+                or b"/api/capabilities" in line
+                or b"/api/models" in line
+                or b"/api/jobs" in line)  # 阶段 255：作业轮询是只读轻量查询
     except Exception:  # noqa: BLE001 - 窥探失败即视为不豁免
         return False
 
@@ -331,6 +359,71 @@ class _Handler(BaseHTTPRequestHandler):
         self.end_headers()
         self.wfile.write(data)
 
+    # ---- 阶段 255：异步作业轮询 / 文件下载 ----
+    def _handle_get_job(self) -> None:
+        """处理 GET /api/jobs/{id}[/file]。
+
+        路由规则：先把查询串切掉，再按 '/' 切分剩余路径。
+          · {id} 且无 /file 后缀  -> 返回作业结构化状态（job_to_dict）。
+          · {id}/file            -> 流式下载 result 文件（PDF/视频等）。
+        """
+        # 去掉查询串，避免 ?x=1 干扰切分。
+        path_only = self.path.split("?", 1)[0]
+        rest = path_only[len("/api/jobs/"):]
+        parts = [p for p in rest.split("/") if p != ""]
+        if not parts:
+            self._send_json(400, {"error": "缺少 job id（用法：GET /api/jobs/{id}）"})
+            return
+        jid = parts[0]
+        job = JM.JOB_MANAGER.get(jid)
+        if job is None:
+            self._send_json(404, {"error": f"作业不存在：{jid}"})
+            return
+        # /file 后缀：下载结果文件。
+        if len(parts) >= 2 and parts[1].startswith("file"):
+            out_path = job.out_path
+            if not out_path or not _os.path.exists(out_path):
+                self._send_json(404, {"error": "结果文件不存在或尚未生成",
+                                      "status": job.status})
+                return
+            self._send_file(out_path)
+            return
+        self._send_json(200, JM.job_to_dict(job))
+
+    def _send_file(self, path: str) -> None:
+        """把本地结果文件流式回写（按扩展名选 Content-Type，分块读避免整文件进内存）。"""
+        ext = _os.path.splitext(path)[1].lower()
+        ctype = {
+            ".pdf": "application/pdf",
+            ".mp4": "video/mp4",
+            ".png": "image/png",
+            ".jpg": "image/jpeg",
+            ".jpeg": "image/jpeg",
+            ".webp": "image/webp",
+        }.get(ext, "application/octet-stream")
+        try:
+            size = _os.path.getsize(path)
+        except OSError as exc:
+            self._send_json(500, {"error": f"读取结果文件失败：{exc}"})
+            return
+        self.send_response(200)
+        self._set_common_headers()
+        self.send_header("Content-Type", ctype)
+        self.send_header("Content-Length", str(size))
+        self.send_header(
+            "Content-Disposition",
+            f'attachment; filename="{_os.path.basename(path)}"')
+        self.end_headers()
+        with open(path, "rb") as f:
+            while True:
+                chunk = f.read(1024 * 1024)
+                if not chunk:
+                    break
+                try:
+                    self.wfile.write(chunk)
+                except (BrokenPipeError, ConnectionResetError):  # 客户端断开
+                    break
+
     # ---- GET ----
     def do_GET(self) -> None:  # noqa: N802
         if self.path.startswith("/api/health"):
@@ -340,10 +433,33 @@ class _Handler(BaseHTTPRequestHandler):
             if callable(_stats):
                 payload["concurrency"] = _stats()
             self._send_json(200, payload)
+        # ---- 阶段 251：能力自发现 + 模型查询（只读，轻量）----
+        # 动机：此前 `get_capabilities` 只作为 /api/health 的一部分出现（语义混杂），
+        # 且 api.py 的模型管理族（list/active/verify）**完全没有 HTTP 端点** ——
+        # 容器化部署时调用方无法查询「装了哪些模型、当前用哪个、权重完整吗」。
+        elif self.path.startswith("/api/capabilities"):
+            self._send_json(200, api.get_capabilities())
+        # ⚠ 顺序要紧：更「长」的路径必须排在前面，否则会被 startswith 短前缀吃掉。
+        elif self.path.startswith("/api/models/active"):
+            self._send_json(200, {"active": api.get_active_model()})
+        elif self.path.startswith("/api/models/verify"):
+            # 允许 ?name=<槽名>；缺省校验当前 active 槽。
+            qs = _urllib_parse.parse_qs(_urllib_parse.urlparse(self.path).query)
+            name = (qs.get("name") or [None])[0]
+            self._send_json(200, api.verify_model(name))
+        elif self.path.startswith("/api/models"):
+            self._send_json(200, {"models": api.list_models()})
+        # ---- 阶段 255：异步作业模型（短轮询，只读、豁免闸门）----
+        # GET /api/jobs/{id}      -> 轮询状态 / 进度 / 结果
+        # GET /api/jobs/{id}/file -> 下载结果文件（PDF/视频等）
+        elif self.path.startswith("/api/jobs/"):
+            self._handle_get_job()
         elif self.path == "/" or self.path == "":
             self._send_html(200, _USAGE_HTML)
         else:
-            self._send_json(404, {"error": "未知路径，请访问 /api/health 或 POST /api/remove"})
+            self._send_json(404, {"error": "未知路径。请访问 GET / （用法页）或 "
+                                "GET /api/health、/api/capabilities、/api/models；"
+                                "POST /api/remove、/api/detect、/api/inpaint、/api/batch"})
 
     # ---- POST ----
     def do_POST(self) -> None:  # noqa: N802
@@ -392,6 +508,29 @@ class _Handler(BaseHTTPRequestHandler):
             params = _collect_params(body.get("params", {}) or {})
             results = [_process_one_b64(im, params) for im in images]
             self._send_json(200, {"results": results})
+        # ---- 阶段 255：异步作业提交（毫秒级，仅入队，重活在 worker 线程）----
+        elif self.path.startswith("/api/jobs"):
+            body = self._read_body()
+            if body is None:
+                return
+            kind = body.get("kind")
+            params = body.get("params", {}) or {}
+            if not isinstance(kind, str) or not kind:
+                self._send_json(400, {"error": "缺少 kind 字段（任务类型）"})
+                return
+            if not isinstance(params, dict):
+                self._send_json(400, {"error": "params 必须是 JSON 对象"})
+                return
+            jid = JM.JOB_MANAGER.submit(kind, params)
+            if jid is None:
+                registered = sorted(JM.JOB_MANAGER._runners.keys())
+                self._send_json(400, {
+                    "error": f"未知任务类型：{kind!r}",
+                    "registered": registered,
+                })
+                return
+            self._send_json(200, {"status": "queued", "job_id": jid,
+                                  "poll": f"/api/jobs/{jid}"})
         else:
             self._send_json(404, {"error": "未知路径"})
 
@@ -423,6 +562,16 @@ def start_server(host: Optional[str] = None, port: Optional[int] = None,
     httpd = _BoundedThreadingHTTPServer((host, port), _Handler,
                                         max_concurrency=max_concurrency)
     url = f"http://{host}:{port}"
+
+    # 阶段 238：REST 服务启动即后台预热 EasyOCR，消除首个 /api/detect|remove 请求的
+    # 冷启动卡顿（GPU 模式约 ~5s）。非阻塞守护线程，不影响端口监听与首个连接。
+    try:
+        if config.DETECT_USE_OCR:
+            from core.detector import warm_up_ocr
+            warm_up_ocr(blocking=False)
+    except Exception:  # noqa: BLE001 - 预热失败绝不影响服务启动
+        pass
+
     print("=" * 60)
     print("AI 智能水印擦除工作台 —— REST 服务已启动")
     print(f"  健康检查 : GET  {url}/api/health")
@@ -430,6 +579,9 @@ def start_server(host: Optional[str] = None, port: Optional[int] = None,
     print(f"  仅检测   : POST {url}/api/detect")
     print(f"  按掩码修 : POST {url}/api/inpaint")
     print(f"  批量处理 : POST {url}/api/batch")
+    print(f"  异步作业 : POST {url}/api/jobs  -> 提交（pdf/video/model_download）")
+    print(f"             GET  {url}/api/jobs/{{id}}      -> 轮询状态/进度")
+    print(f"             GET  {url}/api/jobs/{{id}}/file -> 下载结果")
     print(f"  并发上限 : {max_concurrency or '不限（已关闭闸门）'}"
           f"（超出的请求排队等待，不报错）")
     if host == "0.0.0.0":
@@ -472,12 +624,49 @@ h1{color:#1e3a8a}b{color:#b91c1c}</b></style></head>
 <h2>⑤ 按掩码修复（POST /api/inpaint）</h2>
 <pre>{ "image": "&lt;base64 原图&gt;", "mask": "&lt;base64 掩码&gt;", "engine": "opencv" }</pre>
 <p>跳过自动检测，直接用你提供的掩码修复——适合「先 detect 预览、再用外部模型/人工圈定掩码」的两段式流程。</p>
-<h2>⑥ 并发与限流</h2>
-<p>本服务的每个请求都会跑一次完整推理（检测 + 修复），因此内置<b>并发闸门</b>：
+<h2>⑥ 能力自发现（阶段 251 新增）</h2>
+<pre>GET /api/capabilities</pre>
+<p>返回本服务支持的能力清单（引擎、格式、参数可选值等），供调用方<b>自发现</b>而无需硬编码。
+此前这份能力清单只作为 <code>/api/health</code> 响应里的一部分出现（语义混杂：健康 ≠ 能力），
+现拆为独立端点；<code>/api/health</code> 为<b>向后兼容</b>仍包含它。</p>
+<h2>⑦ 模型查询（阶段 251 新增，只读）</h2>
+<pre>GET /api/models# 列出全部模型槽
+GET /api/models/active        # 当前使用的模型槽
+GET /api/models/verify?name=lama  # 校验权重完整性（省略 name 则校验当前槽）</pre>
+<p>用于<b>容器化部署时的自省</b>：镜像里预置了哪些模型、当前用哪个、权重是否完整/被截断，
+都能直接查询，不必进容器执行 CLI。这三个端点都是<b>只读、毫秒级</b>，因此<b>豁免并发闸门</b>
+——服务繁忙时恰恰最需要它们来定位问题。</p>
+<p><b>长任务</b>（PDF 擦除 / 视频擦除 / 模型下载）不再提供「同步 POST」，因为它们会占用推理闸门
+数分钟甚至数十分钟、把其它请求堵在队列里——改用下面的<b>异步作业模型</b>（阶段 255）：</p>
+<pre>POST /api/jobs { "kind": "pdf" | "video" | "model_download", "params": { ... } }
+  -> { "status": "queued", "job_id": "xxxx", "poll": "/api/jobs/xxxx" }
+GET  /api/jobs/{id}        -> { "status","progress","message","result", ... }
+GET  /api/jobs/{id}/file   -> 下载结果文件（PDF/视频）</pre>
+<p>提交即返回 <code>job_id</code>（毫秒级、只入队），真正的重活在<b>并发闸门之外的 worker 线程</b>跑，
+因此不再占用推理闸门槽位；轮询端点是<b>只读</b>，同样<b>豁免闸门</b>。
+<code>kind</code> 可选值即下方「已注册任务类型」；PDF 的 <code>params</code> 含 <code>file</code>（PDF 的 base64）
+与其它擦除参数，视频追加 <code>ext</code>，模型下载含 <code>name</code>。</p>
+<p><b>仍不提供</b>：<code>POST /api/models/active</code>（切换模型）是<b>写操作</b>需配套确认机制，
+暂未开放为 HTTP 端点——这与异步作业模型无关，属另一项变更，需先设计确认流程。</p>
+<h2>⑧ 异步长任务（阶段 255 新增）</h2>
+<pre>POST /api/jobs { "kind": "pdf", "params": { "file": "&lt;base64 PDF&gt;", "engine": "opencv" } }
+  -> { "status": "queued", "job_id": "xxxx", "poll": "/api/jobs/xxxx" }
+GET  /api/jobs/xxxx        -> 状态 / 进度（0~1）/ 结果
+GET  /api/jobs/xxxx/file   -> 下载生成后的 PDF/视频</pre>
+<p>PDF、视频擦除与模型下载都是<b>分钟级到数十分钟级</b>的长任务。若做成同步 POST，会<b>占住并发闸门
+槽位</b>数分钟，把其它推理请求全堵在队列里。阶段 255 用「提交即返回 + 后台 worker 线程」把长任务
+<b>异步化</b>：提交（POST）只在请求线程里干「建 job + 入队」两件轻活、毫秒返回；真正的重活在
+<b>并发闸门之外的 daemon worker 线程</b>执行，故不占推理闸门槽位。轮询（GET）端点是<b>只读</b>，
+同样<b>豁免闸门</b>——服务繁忙时也能查进度。任务类型可扩展：<code>kind</code> 缺省支持
+<code>pdf</code> / <code>video</code> / <code>model_download</code>；未知类型会被拒绝（400 并回显已注册类型）。</p>
+<h2>⑨ 并发与限流</h2>
+<p>本服务的每个<b>推理</b>请求都会跑一次完整流程（检测 + 修复），因此内置<b>并发闸门</b>：
 超出上限的请求会<b>排队等待</b>（不会收到错误码，只是变慢），以保证时延可预测、避免多人并发时拖垮机器。
 上限由环境变量 <code>WME_API_MAX_CONCURRENCY</code> 控制（默认 4，设为 0 关闭闸门）。
 <code>GET /api/health</code> 的 <code>concurrency</code> 字段会实时回报 <code>active</code>（正在处理数）、
-<code>peak</code>（本进程峰值）与 <code>max_concurrency</code>（上限），健康检查本身不参与排队。</p>
+<code>peak</code>（本进程峰值）与 <code>max_concurrency</code>（上限）。
+<b>豁免排队</b>的只读端点：<code>/api/health</code>、<code>/api/capabilities</code>、
+<code>/api/models*</code>、<code>/api/jobs*</code> 与本页——它们无副作用，服务繁忙时仍可用来自省。</p>
 <p><b>注意：</b>默认仅监听 127.0.0.1（本机）。若需局域网/公网访问，请设置
 <code>API_HOST=0.0.0.0</code> 并自行做好防火墙与鉴权，避免被他人滥用。</p>
 </body></html>"""
@@ -512,7 +701,10 @@ if __name__ == "__main__":
     print(f"用例1通过：/api/health -> device={h['device']} lama={h['lama_available']}")
 
     # 单图处理
-    req = json.dumps({"image": b64, "engine": "opencv", "evaluate": True}).encode("utf-8")
+    # ⚠ 阶段 233 起：未显式指定 preset 的「自动选预设 + 直接擦除」会被确认门拦下
+    # （needs_confirmation），故自检需显式表态 allow_auto_erase=true 才能走通真实擦除链路。
+    req = json.dumps({"image": b64, "engine": "opencv", "evaluate": True,
+                     "allow_auto_erase": True}).encode("utf-8")
     req_obj = urllib.request.Request(
         f"{base}/api/remove", data=req,
         headers={"Content-Type": "application/json"}, method="POST",
@@ -524,8 +716,9 @@ if __name__ == "__main__":
     print(f"用例2通过：/api/remove -> 返回结果 {len(resp['result'])} 字符，"
           f"质量分 {qr.get('score')}（{qr.get('level')}）")
 
-    # 批量处理
-    req2 = json.dumps({"images": [b64, b64], "params": {"engine": "opencv"}}).encode("utf-8")
+    # 批量处理（同样需显式 allow_auto_erase，见阶段 233 确认门）
+    req2 = json.dumps({"images": [b64, b64],
+                      "params": {"engine": "opencv", "allow_auto_erase": True}}).encode("utf-8")
     req_obj2 = urllib.request.Request(
         f"{base}/api/batch", data=req2,
         headers={"Content-Type": "application/json"}, method="POST",

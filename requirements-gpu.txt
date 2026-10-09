@@ -42,7 +42,14 @@
 #      故 `WME_DEVICE_USE_FP16` 保持默认即可，不要为 LaMa 手动转 half。
 # ==============================================================================
 
-# 与 requirements.txt 同版本（单一真值来源：同一 torch 版本，只是换 CUDA 构建）。
-# 需覆盖旧版时按上面对照表调整，并同步 `Dockerfile.gpu`（它从本文件安装）。
+# 与 requirements.txt **同版本**（同一 torch 版本，只换 CUDA 构建）。
+#   阶段 250：此前 requirements.txt 钉 2.3.1、本文件钉 2.9.1 ⇒ 两处「同版本」是
+#   **失实宣称**（CPU 镜像 / GPU 镜像 / 开发机三套 torch）。现已把 requirements.txt
+#   统一到 2.9.1，本句才成立。
+#   由 `scripts/docker_consistency_check.py` 的 **W1** 守卫机器判定（两处版本号
+#   不一致即报 WARN）——「单一真值来源」从此不是靠自觉，而是可机器核验。
+# 需覆盖版本时：改**两处**（本文件 + requirements.txt），并同步 `Dockerfile.gpu`
+#（它从本文件安装）。若换 CUDA 源（cuXXX），还要同步 Dockerfile.gpu 的
+# FROM nvidia/cuda:<对应版本>（**E2** 守卫判定）。
 torch==2.9.1
 --index-url https://download.pytorch.org/whl/cu128

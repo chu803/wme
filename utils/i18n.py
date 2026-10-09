@@ -1647,18 +1647,29 @@ _STATE_FILE: "str | None" = None
 
 
 def _state_path() -> str:
-    """语言持久化文件路径（落在缓存目录下）。"""
+    """语言持久化文件路径（落在缓存目录下）。
+
+    阶段 249 修**派生路径被全局缓存**缺陷：原实现把「由 config.CACHE_DIR 派生
+    的路径」**永久缓存**进模块全局 `_STATE_FILE` ⇒ 一旦 CACHE_DIR 在运行中被改变
+    （测试夹具即如此；任何「运行中改缓存目录」的场景亦然），后续读写会继续指向
+    **旧**目录——状态文件写进随后被清理的位置且永不自愈（248 运行期检测器实测：
+    批末 `_STATE_FILE` 残留第一个用例的 tmp 路径）。
+
+    现语义：`_STATE_FILE` 只是**显式覆盖钩子**（默认 None = 跟随 CACHE_DIR 现算；
+    测试/自检可显式赋值以重定向，monkeypatch 会自动还原）。派生路径现算成本
+    可忽略（一次字符串拼接），缓存收益为零。
+    """
     global _STATE_FILE
-    if _STATE_FILE is None:
-        d = getattr(config, "CACHE_DIR", None)
-        if d is None:
-            d = _os.path.join(_ROOT, "cache")
-        try:
-            _os.makedirs(d, exist_ok=True)
-        except Exception:  # noqa: BLE001
-            pass
-        _STATE_FILE = _os.path.join(str(d), "i18n_state.json")
-    return _STATE_FILE
+    if _STATE_FILE is not None:
+        return _STATE_FILE       # 显式覆盖优先（测试 / 自检重定向用）
+    d = getattr(config, "CACHE_DIR", None)
+    if d is None:
+        d = _os.path.join(_ROOT, "cache")
+    try:
+        _os.makedirs(d, exist_ok=True)
+    except Exception:  # noqa: BLE001
+        pass
+    return _os.path.join(str(d), "i18n_state.json")
 
 
 def available_languages() -> list:

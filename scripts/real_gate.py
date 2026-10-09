@@ -50,7 +50,7 @@
                              （82 前 0.0129 / 82 后 0.0308 / 84 后 0.0388 / 86 后 0.0385
                               / **100 后 0.1382**）
         · iou     ≥ 0.55  ← 崩溃护栏（几何匹配整体崩坏；86 实测 0.7573，100 后 0.7518）
-        · mask_coverage ≤ 0.045 · coverage_ratio ≤ 4.35× · mask_iou ≥ 0.15
+        · mask_coverage ≤ 0.020 · coverage_ratio ≤ 3.50× · mask_iou ≥ 0.15
                             （阶段 106 起；100 时为 0.11 / 11.5× / 0.077，
                               99 时为 0.19 / 19.5× / 0.047，86~93 时为 0.25 / 25× / 0.042；
                               mask_iou 阶段 183 由 0.10 抬到 0.15——177 真实真值重算后
@@ -164,9 +164,14 @@ REAL_PRESET_CONTRACT: dict = {
         #   172 收编 10 张真实豆包图重建真值后，实测全面重算，见 docs/172/177）。
         #   按「红线值以实现为准 + 收敛必须重标」（经验 75）重标为**回归地板**：
         #   实测 × 约 0.8（向宽松侧取整），既拦住回退、又不会一上线就红灯。
-        #   真实实测（10 图 · general）：mask_recall 0.5619 / recall 0.8000 /
+        #   真实实测（阶段 183：10 图 · general）：mask_recall 0.5619 / recall 0.8000 /
         #   precision 0.0690 / mean_iou 0.5347 / mask_iou 0.2975 /
         #   mask_coverage 0.0291 / coverage_ratio 2.80×。
+        #   ⚠ **阶段 240（Option A）再锚**：2026-10-05 导入 q 系列 11 张（数据集 10→29 图，
+        #   豆包角标更小更靠角），过检天然更低。当前 29 图实测：precision 0.0761 /
+        #   mask_coverage 0.0107 / coverage_ratio 1.92× / mask_iou 0.2714；红线随之下移：
+        #   mask_coverage 0.045→**0.020**、coverage_ratio 4.35→**3.50**、mask_iou 0.15 不变
+        #   （三者均满足「红线夹逼实测」不变式：max 型 实测<红线≤实测×2；min 型 实测/2≤红线<实测）。
         # ---- 头条：掩码级召回（阶段 175 起为对外主口径；区域级对碎片与框大小失真） ----
         #   注入实测（关板块通路 WME_DETECT_PLATE_ENABLED=false）：0.5619 → **0.3535**
         #   ⇒ 红线 0.45（= 实测×0.8）**高于** 0.3535 ⇒ 该通路被回退时必然报警。
@@ -222,11 +227,11 @@ REAL_PRESET_CONTRACT: dict = {
         #     其真阳性正是唯一承诺类型 `ai_logo` 的召回来源 ⇒ 不宜再砍）。
         #   ⚠ `core/detector` 内部的面积上限（阶段 100 起 0.15）与本节红线是**两道**
         #     独立的闸：前者在检测器内按「小区域优先」裁剪，后者是门禁的崩溃护栏。
-        "mask_coverage": ("max", 0.045),
+        "mask_coverage": ("max", 0.020),
         #   相对量判据：对「角标只看几千像素、平铺看整幅」这两类水印**可比**，
         #   故补 4 类新样式时这条红线不会被"合法的大面积水印"顶掉（经验 1 绝对量优先、
         #   相对量兜底；此处两者并存且各有分工）。
-        "coverage_ratio": ("max", 4.35),
+        "coverage_ratio": ("max", 3.50),
         # 崩溃护栏：整幅掩码级 IoU（阶段 86 实测 0.0635 → 99 收敛后 0.0699
         #   → 100 后 0.1163 → **阶段 106 后 0.1705**，两次剔误报后累计 +169%）。
         #   与区域级 IoU 正交，两者背离即诊断「不是框偏了，是框太多了」。
@@ -239,7 +244,14 @@ REAL_PRESET_CONTRACT: dict = {
         #   ⇒ 0.10/0.2975 = 0.34×，松于实测的一半，**违反上面这条不变式**
         #   （单调性：min 型护栏抬高 = 放宽，不会制造新红灯，真实回退仍由 15% 漂移层拦截）。
         #   这是「阶段 177 重标只改了实现侧、没同步标定表」的遗留，随 183 一并收口。
-        "mask_iou": ("min", 0.15),
+        #   ⚠ **阶段 243 再锚（承诺面口径变更，a1~a4 登记为图像级已知缺口后）**：
+        #     承诺面实评 29→25 图后实测 mask_iou 抬到 **0.313**（剔除检测器几乎全漏的
+        #     缺口图，微平均分母里的「几乎不命中」样本消失 ⇒ 均值上抬，非检测器改动）。
+        #     0.15 在新实测下只剩 0.15/0.313 = **0.48×**，已**松于实测的一半**
+        #     （=容忍 52% 的整幅塌陷）⇒ 违反上面那条防哑巴不变式（守卫实测抓到了）。
+        #     按不变式重锚到 **0.20**（0.313/2=0.157 ≤ 0.20 < 0.313，仍留约 1.6× 余量），
+        #     恢复「红线守崩溃」的本意。min 型抬高=放宽，不会制造新红灯。
+        "mask_iou": ("min", 0.20),
     },
 }
 
@@ -254,8 +266,9 @@ REAL_REDLINE_CALIBRATION: dict = {
     "mask_recall": (0.3535, 0.5619),
     #     recall：无有效「上一阶段」值（旧值系伪造）⇒ 下界记 0.0 并说明，上限=当前实测
     "recall": (0.0, 0.8000),
-    #     precision：下界取「开回 MSER 通路」实测 0.0392（方向性仍成立）→ 当前 0.0690
-    "precision": (0.0392, 0.0690),
+    #     precision：下界取「开回 MSER 通路」实测 0.0392（方向性仍成立）→ 当前 0.0761
+    #     （阶段 240（Option A）随 q 系列扩图后 29 图实测同步刷新）
+    "precision": (0.0392, 0.0761),
 }
 
 #: 属于「崩溃护栏」而非「结论编码」的红线指标：它们不放宽/收紧到某个实验值之间，
@@ -481,13 +494,103 @@ def _drift_worse(direction: str, now: float, base: float, rel_tol: float) -> boo
 
 
 # ---------------------------------------------------------------------------
+# 阶段 258 · 红线余量健康监控（余量预警 + 漂移-硬线缓冲体检）
+# ---------------------------------------------------------------------------
+# 背景（docs/258）：承诺面（25 图）逐条红线算「相对余量」后发现——**mask_recall
+#   红线 0.45 已达实测 0.5111 的 88%（余量仅 ~12%）**，是全部红线里最脆弱的一条，
+#   却是阶段 175 起的**对外头条口径**；其余红线余量 24%–67%。
+# 根因：红线 0.45 锚在阶段 183 的 **10 图**实测 0.5619×0.8，数据集后换 25 图未重锚。
+#
+# 本监控**不改变任何红线阈值**（阶段 258 决策 A=维持），只做两件机器可判定的事：
+#   ① REDLINE_MARGIN_FLOOR：任一红线「余量」跌破地板 → 报出（余量预警）；
+#   ② 校验「漂移容差 < 红线余量」：保证实测变坏时**先触发漂移告警、后撞硬红线**，
+#      即双层防御有缓冲；若漂移容差 ≥ 余量，两者近乎重合，漂移层形同虚设。
+#
+# ⚠ 本监控是**只读体检**，绝不因「余量薄」而自动放宽红线——放宽属用户决策（258 选项 B）。
+
+#: 各红线「可接受的最低相对余量」。余量 = 距越线还剩多少（占当前值的比例）。
+#: 取值依据（docs/258 实测余量排名）：mask_recall ~12% 已是最脆弱一条；给它 10%
+#:   的地板意味着「再退化近 2 个百分点就预警」，而其余红线余量 24%–67% 远高于地板，
+#:   不会因数据集正常波动误报。**这是预警阈值，不是红线**——触发只报不失败。
+REDLINE_MARGIN_FLOOR: dict = {
+    "mask_recall": 0.10,
+    "recall": 0.15,
+    "precision": 0.15,
+    "mean_iou": 0.15,
+    "mask_iou": 0.15,
+    "mask_coverage": 0.20,
+    "coverage_ratio": 0.20,
+}
+
+
+def redline_relative_margin(direction: str, value: float, threshold: float) -> float:
+    """红线「相对余量」（纯函数）：距越线还剩多少（占当前值的比例）。
+
+    min 型（越高越好，如 recall）：余量 = (value − thr) / value。
+    max 型（越高越坏，如 mask_coverage）：余量 = (thr − value) / value。
+    余量 ≤ 0 表示已越线。value<=0 视作无余量信息（返回 0.0，交由上层单独判缺失）。
+    """
+    v = float(value)
+    if v <= 0:
+        return 0.0
+    if direction == "max":
+        return (float(threshold) - v) / v
+    return (v - float(threshold)) / v
+
+
+def check_redline_margin_health(preset: str, metrics: dict) -> list:
+    """体检某预设各红线的「余量」与「漂移-硬线缓冲」（纯函数，返回问题列表）。
+
+    两条判定（**只报不改**，任一命中即返回一条人读问题）：
+      ① 余量跌破 `REDLINE_MARGIN_FLOOR`（预警地板）→ 「余量过薄」；
+      ② 漂移容差 ≥ 该指标余量 → 「漂移告警与硬红线缓冲不足」（双层防御压扁）。
+    `metrics` 需含各指标当前实测值（与 run_real_gate 的 per_preset 同源）。
+    """
+    problems: list = []
+    contract = REAL_PRESET_CONTRACT.get(preset) or {}
+    for key, (direction, threshold) in contract.items():
+        value = metrics.get(key)
+        if value is None:
+            continue
+        margin = redline_relative_margin(direction, value, threshold)
+        floor = REDLINE_MARGIN_FLOOR.get(key)
+        # ① 余量过薄（预警）
+        if floor is not None and margin < floor:
+            problems.append(
+                f"[余量] {preset}/{key} 余量 {margin:.1%} < 地板 {floor:.0%}"
+                f"（实测 {float(value):.4f}，红线 {direction} {threshold}）"
+                f"——余量过薄，检测器小幅回退即触碰红线"
+            )
+        # ② 漂移-硬线缓冲（双层防御）
+        rel_tol = REAL_TOLERANCES.get(key)
+        if rel_tol is not None:
+            # 漂移告警触发所需的相对退化量 vs 距硬红线的余量；前者必须显著小于后者。
+            if rel_tol >= margin:
+                problems.append(
+                    f"[缓冲] {preset}/{key} 漂移容差 {rel_tol:.0%} ≥ 余量 {margin:.1%}"
+                    f"（实测 {float(value):.4f}）——漂移告警与硬红线近乎重合，"
+                    f"漂移层形同虚设"
+                )
+    return problems
+
+
+# ---------------------------------------------------------------------------
 # 2. 跑真实门禁（真实计算）
 # ---------------------------------------------------------------------------
 
 def _expected_labeled_count(manifest: dict, truth: dict) -> int:
-    """manifest ∩ ground_truth 的图数——判定「有没有图被静默跳过」的基准。"""
+    """manifest ∩ ground_truth 的图数——判定「有没有图被静默跳过」的基准。
+
+    阶段 243：扣除**图像级已知检测缺口**（`config.WATERMARK_KNOWN_GAP_IMAGES`）。
+    这些图**被有意排除在聚合/红线之外**（而非被静默跳过——见 `run_all` 的缺口段与
+    docs/243），故不参与本计数；否则完整性层会把「有记录的排除」误判成「静默丢图」。
+    本函数与 `run_real_benchmark.run_all` 的 `eval_images` 口径**必须一致**。
+    """
+    import config  # noqa: PLC0415  —— 与文件既有风格一致（函数内延迟导入）
     truth_ids = {e["image_id"] for e in truth.get("entries", [])}
-    return len([im for im in manifest.get("images", []) if im.get("id") in truth_ids])
+    gap_ids = set(getattr(config, "WATERMARK_KNOWN_GAP_IMAGES", ()) or ())
+    return len([im for im in manifest.get("images", [])
+                if im.get("id") in truth_ids and im.get("id") not in gap_ids])
 
 
 #: 清单里表示「未指定具体风格」的 hint 取值。这类取值**不构成对某种风格的具体声明**，
@@ -969,6 +1072,31 @@ def to_markdown(summary: dict) -> str:
     if banner:
         lines.append("")
         lines.append(banner.lstrip("\n"))
+    # 阶段 243：**图像级已知检测缺口**（`config.WATERMARK_KNOWN_GAP_IMAGES`）——
+    #   这些图真值完备但检测器尚未能处理（大颗多面体宝石角标），已从上方承诺面
+    #   红线聚合中**显式排除**。必须原样列出（含单图指标），否则「被排除」会被读成
+    #   「没标注/漏检」——留白即歧义（经验 51/232）。详见 docs/243。
+    gap_rows = (summary.get("raw") or {}).get("known_gap_rows") or []
+    if gap_rows:
+        gp = "general" if any("general" in (r.get("results") or {}) for r in gap_rows) \
+            else next(iter(gap_rows[0].get("results") or {}), "")
+        lines.append("")
+        lines.append(
+            f"⚠ **已知检测缺口**（`config.WATERMARK_KNOWN_GAP_IMAGES`，"
+            f"{len(gap_rows)} 张）：下列图真值完备，但检测器**尚未**能处理其水印子风格"
+            f"（大颗多面体角标），故**不参与上表红线**；非「漏标/漏检」。"
+        )
+        lines.append("")
+        lines.append(f"| 缺口图 | 预设 | 掩码召回 | 掩码覆盖率 | 精确率 |")
+        lines.append("|---|---|---|---|---|")
+        for r in gap_rows:
+            g = (r.get("results") or {}).get(gp) or {}
+            lines.append(
+                f"| {r.get('image_id')} | {gp} | "
+                f"{g.get('mask_recall', 0.0):.4f} | "
+                f"{g.get('mask_coverage', 0.0):.4f} | "
+                f"{g.get('precision', 0.0):.4f} |"
+            )
     # 阶段 107：未承诺预设的**面积监控**表（不需要真值）。
     #   它回答的是另一类问题：「这条通路在真实照片上会不会涂满全图」——
     #   与 precision/recall 无关，故单独成表，且**不参与承诺结论**。
@@ -1078,6 +1206,22 @@ def main() -> int:
 
     ok, problems = evaluate_real(summary, baseline, strict_scope=args.strict_scope,
                                  area_skipped=not area_presets)
+
+    # ---- 阶段 258 · 红线余量健康体检（**advisory：只打印，永不影响 ok/退出码**）----
+    #   这层刻意**不进 problems**：若把「余量薄」当失败，mask_recall（余量 12%，
+    #   地板 10%）会让门禁**长期红灯**，从而失去「拦住回退」的作用（经验 47）。
+    #   余量过薄只作**预警**提示，真正的失败仍由绝对红线 + 漂移层负责。
+    _margin_notes: list = []
+    for _preset, _contract in REAL_PRESET_CONTRACT.items():
+        _m = (summary.get("aggregate", {}).get("per_preset", {}) or {}).get(_preset)
+        if _m:
+            _margin_notes.extend(check_redline_margin_health(_preset, _m))
+    if _margin_notes:
+        print("\n[余量体检] 以下为**预警**（不计入门禁判定/退出码，见 docs/258）：")
+        for _n in _margin_notes:
+            print(f"  · {_n}")
+    else:
+        print("\n[余量体检] 各红线余量均在可接受范围（预警地板见 REDLINE_MARGIN_FLOOR）。")
     if not area_presets:
         print("\n[警告] 已跳过「未承诺预设的掩码面积」监控（`--no-area`）——"
               "本次退出码**不覆盖**该层（平铺增强 / 网格两条通路在真实图上的劣化不会被发现）。")

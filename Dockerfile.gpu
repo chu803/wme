@@ -100,12 +100,27 @@ ENV PYTHONUNBUFFERED=1 \
 EXPOSE 7860
 EXPOSE 7861
 
-# HEALTHCHECK：轮询 Gradio 首页是否就绪（用容器自带 python，免装 curl）。
+# 阶段 250 修**解释器错配（P0·确定性启动失败）**：本镜像装的是 `python3.11`
+#   （依赖落在 `/usr/local/lib/python3.11/site-packages`），但 Ubuntu 22.04 自带的
+#   `/usr/bin/python3` 是 **Python 3.10**——它只搜索 `python3.10` 的 dist-packages，
+#   **找不到** python3.11 的 site-packages ⇒ 旧写法 `ENTRYPOINT ["python3", ...]`
+#   启动即 `ModuleNotFoundError: No module named 'torch'`（gradio/opencv 同理）。
+#   本机无 docker CLI 也能静态判定：ENTRYPOINT/CMD 的解释器必须与装依赖的解释器**同一个**。
+#   这里做两件事（缺一不可）：
+#     ① symlink：让 `python3` / `python` 也指向 3.11——使用户 `docker exec` 进去后
+#        手工执行 `python3 xxx` 的行为与镜像内一致（否则 exec 进去是 3.10，同样找不到包）；
+#     ② 下方 ENTRYPOINT / HEALTHCHECK **显式**写 `python3.11`——不依赖 symlink 即可正确。
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
+    && ln -sf /usr/bin/python3.11 /usr/local/bin/python3 \
+    && ln -sf /usr/bin/python3.11 /usr/local/bin/python
+
+# HEALTHCHECK：轮询 Gradio 首页是否就绪（用容器自带 python3.11，免装 curl）。
 HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
-    CMD python3 -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('WME_SERVER_PORT','7860')+'/', timeout=4)"
+    CMD python3.11 -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('WME_SERVER_PORT','7860')+'/', timeout=4)"
 
 USER appuser
 
 # 入口：运行主程序（main.py 内部会做目录自检、模型就绪、启动 Gradio）。
-#   仅跑 REST 时覆盖命令为 `python main.py --api`（见上方用法示例）。
-ENTRYPOINT ["python3", "main.py"]
+#   ⚠ 必须显式 `python3.11`：镜像依赖装在 3.11，而系统 `python3` 是 3.10（见上方说明）。
+#   仅跑 REST 时覆盖命令为 `python3.11 main.py --api`（见上方用法示例）。
+ENTRYPOINT ["python3.11", "main.py"]

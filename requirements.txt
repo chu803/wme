@@ -20,9 +20,17 @@
 #        pip install -r requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 #
 #     4) 【有 NVIDIA 显卡的用户】额外执行下面这条命令，替换为 GPU 版 PyTorch
-#        pip uninstall -y torch torchvision
-#        pip install torch==2.3.1 torchvision==0.18.1 --index-url https://download.pytorch.org/whl/cu121
+#        pip uninstall -y torch
+#        pip install torch==2.9.1 --index-url https://download.pytorch.org/whl/cu128
 #
+#        说明（阶段 250 更新）：
+#          · 源由 cu121 改为 **cu128**——cu121 的 torch 只含到 sm_90（Hopper）kernel，
+#            **不支持 RTX 50 系（Blackwell / sm_120）**；cu128 向下兼容 40/30 系。
+#            （阶段 207 实测：RTX 5060 Laptop + torch 2.9.1+cu128 的 get_arch_list()
+#              含 sm_120，GPU 推理正常。）
+#          · 不再装 torchvision——本项目代码零 import 它（见下方第一组说明）。
+#        ⚠ 若你的环境是 Python ≤3.12 且老卡（sm_75 及以下），可能要回到 cu121 源；
+#          换源只需改 `--index-url` 末尾的 cuXXX。
 #     说明：本文件默认安装的是 CPU 版 PyTorch，任何电脑都能跑通；
 #          只有装了第 4 步，程序才会真正启用显卡加速。
 # ==============================================================================
@@ -43,12 +51,21 @@
 # 【第一组】深度学习推理框架 —— LaMa 模型运行的地基
 # ------------------------------------------------------------------------------
 # torch：PyTorch 主框架，负责加载 big-lama.pt 权重并执行神经网络推理。
-#        锁定 2.3.1 是因为该版本对 TorchScript 的兼容性最稳，且支持 Python 3.9~3.12。
-torch==2.3.1
+#   阶段 250 统一到 **2.9.1**（此前此处钉 2.3.1，而 requirements-gpu.txt 钉 2.9.1
+#   ⇒ CPU 镜像 / GPU 镜像 / 开发机三套 torch；且gpu 清单曾自称「与本文件同版本」
+#   ——声明与事实不符）。统一后本项目**只有一个 torch 版本真相**。
+#   另：2.3.1 发布早于 Python 3.13，**无 cp313 wheel**，故 Python ≥3.13 环境
+#   根本装不上它（阶段 207 实测本机 3.13 只能跑 2.9.1+cu128）。
+#   版本若需变更，**requirements.txt 与 requirements-gpu.txt 必须同步**
+#   （由 scripts/docker_consistency_check.py 的 W1 守卫）。
+torch==2.9.1
 
-# torchvision：提供图像张量变换工具（归一化、插值、格式转换）。
-#              版本号必须与 torch 严格配套，否则会出现 C++ 符号找不到的报错。
-torchvision==0.18.1
+# 注：**本项目不再依赖 torchvision**。阶段 250 实测全库代码**零 import torchvision**
+#   （仅帮助文本里提及），它此前被钉死 0.18.1 只带来「必须与 torch 严格配套」的
+#   版本耦合负担（旧版 torch 2.3.1 正是被它拖住无法升级的一个原因）。
+#   若将来真要用 torchvision，请同时在本文件与 requirements-gpu.txt 钉**配套版本**
+#   并让 docker_consistency_check 的 W1/W2 重新变绿。
+
 
 
 # ------------------------------------------------------------------------------

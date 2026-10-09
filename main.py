@@ -233,6 +233,19 @@ def warm_up_model() -> None:
     if not config.STARTUP_WARMUP_MODEL:
         return
 
+    # 阶段 238：启动期预热 EasyOCR（后台守护线程，不阻塞界面启动）。
+    #   与 LaMa 模型预热解耦：即便模型缺失也照常预热 OCR，首个检测请求不再冷启动卡顿。
+    try:
+        from core.detector import warm_up_ocr
+
+        if config.DETECT_USE_OCR:
+            warm_up_ocr(blocking=False)
+            print("  [OCR]  ⏳ EasyOCR 正在后台预热（首次检测不再冷启动卡顿）。")
+        else:
+            print("  [OCR]  ℹ️  DETECT_USE_OCR 关闭，跳过 OCR 预热。")
+    except Exception as exc:  # noqa: BLE001 - 预热失败绝不影响启动
+        log.debug("OCR 预热触发异常（不影响启动）：%s", exc)
+
     from core.model_loader import is_model_available, load_lama_model
     from utils.exceptions import (
         ModelCorruptedError,

@@ -195,6 +195,12 @@ AUDITED_SINCE: dict = {
     "core/detection_presets": 143,
     "utils/path_helper": 144,
     "config": 145,
+    # ⚠ 阶段 209 补登：server 在阶段 208 已审计（start_server 签名缺参 UnboundLocalError
+    #   修复 + tests/test_server_start.py 4 例回归），但当时漏登 AUDITED_SINCE——导致
+    #   `--unaudited` 长期把 server 误列为「下一站」。补登以闭合全 45 模块审计环。
+    #   自检（KNOWN_AUDITED ⊆ AUDITED_SINCE / 登记键必须真被扫到）不拦此举，因 server
+    #   确系顶层模块且 71 个引用用例已覆盖。
+    "server": 208,
 }
 
 #: 已审但**只覆盖部分子通路**的模块及其仍未审的部分（供 `--module` / 决策时参考）。

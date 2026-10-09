@@ -16,6 +16,20 @@ logs/
 temp/
 assets/
 
+# 阶段 210（C5 硬化）· 构建上下文瘦身：以下目录**运行期不被 app 引用**
+#   （已核验：main.py / core / ui / services / utils 对 scripts、docs 的 import 与
+#   路径字面量引用均为 0；benchmark_real/benchmark_prompted 仅被 scripts/ 门禁与
+#   tests/ 引用，属开发/评测资产）。此前它们会被 `COPY . .` 拷进 runtime 镜像，
+#   白白多占 ~260MB（Dockerfile 已多阶段瘦身，这些是剩余的大头）。
+#   ⚠ 若将来要在容器内跑 real_gate 等门禁，需改为挂载而非写进镜像。
+benchmark_real/
+benchmark_prompted/
+docs/
+# 探针/临时脚本（.workbuddy/ 已排除；.scratch/ 是根级临时探针目录）
+.scratch/
+# pytest 残留临时 basetemp（ci_env_probe 等在根目录留下的 .pytest_* 目录）
+.pytest_*
+
 # 环境与密钥
 .env
 *.local

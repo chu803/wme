@@ -10,12 +10,24 @@
 
                 from api import remove_watermark, remove_watermark_bytes
 
-                # 处理一张本地图片
-                res = remove_watermark("原图.jpg", dst="结果.png", evaluate=True)
+                # 处理一张本地图片（阶段 233 起：全自动擦除须显式允许，见下）
+                res = remove_watermark("原图.jpg", dst="结果.png", evaluate=True,
+                                       allow_auto_erase=True)
                 print(res.status, res.out_path, res.quality)
 
                 # 处理内存里的字节（例如从网络收到的图片）
-                out_bytes, qr = remove_watermark_bytes(image_bytes, fmt="PNG")
+                out_bytes, qr = remove_watermark_bytes(image_bytes, fmt="PNG",
+                                                       allow_auto_erase=True)
+
+                # ⚠ 阶段 233：不传 allow_auto_erase 且未指定 preset 时，
+                #   会抛 AutoEraseNotConfirmed —— 检测器是「召回优先」设计
+                #   （红线有意容忍高误检），在**文字密集的插画/封面**上
+                #   「自动选预设 + 直接擦除」可能大面积误检。请任选其一：
+                #     · 显式指定 preset（如 preset="ai_logo"）；或
+                #     · 显式传 allow_auto_erase=True 承担全自动风险；或
+                #     · 先 detect_watermark_bytes() 预览掩码、确认后再传 mask。
+                #   GUI 不受影响（本就是「预览→确认→擦除」流程）。
+                #   恢复旧行为：config.API_REQUIRE_AUTO_ERASE_CONFIRM=False。
 
                 # 处理 numpy 数组（例如从摄像头 / 视频帧读到的帧）
                 out_arr, qr = remove_watermark_array(frame_bgr)
@@ -102,6 +114,96 @@ class RemoveResult:
                 extra += f" [质量分 {self.quality.score} · {self.quality.level}]"
             return base + extra
         return base + f" ({self.error})"
+
+
+# ==============================================================================
+# 第 1.5 节：全自动擦除的确认门（阶段 233）
+# ==============================================================================
+class AutoEraseNotConfirmed(RuntimeError):
+    """**「系统替用户选预设 + 直接擦除」这条静默路径被拒绝**时抛出（阶段 233）。
+
+    为什么是异常而不是「返回原图 / 返回状态码」：
+        本门的目的是**绝不能被静默忽略**。若返回原图，调用方会把「没擦」误当成
+        「擦干净了」；若只加一个 `status` 字段，旧调用方不看也会静默通过。
+        抛异常则**无法忽略**，且异常消息直接给出三条可行出路。
+
+    背景（阶段 232 审计结论）：检测器是**召回优先**设计（红线 precision ≥ 0.050，
+    有意容忍 ≥95% 误检）。在**文字密集的插画/封面**上会大面积误检
+    （实测某用户封面 21 区域中 15 个 translucent **全是误检**）。
+    三条「改进检测器」的路径先后被数据否决（像素判据不可分 / 区域数不是信号 /
+    收紧会撞红线）⇒ 定性为**产品预期不符**，故在**产品层**要求显式确认。
+
+    三条出路：
+        ① 显式指定 `preset="ai_logo"` 等——调用方自己做了选择，即视为已确认；
+        ② 显式传 `allow_auto_erase=True`——明确承担全自动风险；
+        ③ 先调 `api.detect_watermark_bytes()` 预览掩码，人工确认后再传 `mask` 修复。
+
+    可用 `config.API_REQUIRE_AUTO_ERASE_CONFIRM=False`（或环境变量
+    `WME_API_REQUIRE_AUTO_ERASE_CONFIRM=0`）恢复旧的全自动静默行为。
+    """
+
+    def __init__(self, *, entry: str, hint: str = "") -> None:
+        self.entry = entry
+        self.hint = hint
+        super().__init__(
+            f"已拒绝「自动选预设 + 直接擦除」（入口 {entry}）：该路径在文字密集的"
+            f"插画/封面上可能大面积误检（检测器为召回优先，有意容忍高误检）。\n"
+            f"请任选其一：\n"
+            f"  · 显式指定 preset（如 preset=\"ai_logo\"），或\n"
+            f"  · 显式传 allow_auto_erase=True 承担全自动风险，或\n"
+            f"  · 先调 detect_watermark_bytes() 预览掩码、确认后再传 mask。\n"
+            f"如需恢复旧的全自动行为：config.API_REQUIRE_AUTO_ERASE_CONFIRM=False"
+            f"（或 WME_API_REQUIRE_AUTO_ERASE_CONFIRM=0）。"
+            + (f"\n{hint}" if hint else "")
+        )
+
+
+def _guard_auto_erase(
+    *,
+    entry: str,
+    preset: Optional[str],
+    auto_preset: bool,
+    allow_auto_erase: bool,
+) -> None:
+    """确认门判定（纯函数式，便于单测；不抛则放行）。
+
+    放行条件（任一满足即可，逻辑上互斥）：
+      · 配置关闭了该门（`API_REQUIRE_AUTO_ERASE_CONFIRM=False`）；
+      · 调用方**显式指定**了 preset（`preset is not None`）——已做出选择；
+      · 调用方**显式允许**（`allow_auto_erase=True`）；
+      · 未启用 `auto_preset`（系统不会替调用方选预设 ⇒ 不构成「静默」）。
+
+    拒绝条件：以上皆非 —— 即「调用方没指定预设、又让系统自动选、还没显式允许」。
+    """
+    from config import API_REQUIRE_AUTO_ERASE_CONFIRM  # 局部取，便于测试 monkeypatch
+
+    if not API_REQUIRE_AUTO_ERASE_CONFIRM:
+        return
+    if preset is not None:
+        return
+    if allow_auto_erase:
+        return
+    if not auto_preset:
+        return
+    raise AutoEraseNotConfirmed(entry=entry)
+
+
+def detect_auto_erase_required(
+    *,
+    preset: Optional[str],
+    auto_preset: bool = True,
+    allow_auto_erase: bool = False,
+) -> bool:
+    """**只查询不抛**：当前参数组合是否会被确认门拒绝。
+
+    供 CLI / REST / 脚本在**动手前**探测，提前给出提示而不必等异常。
+    """
+    try:
+        _guard_auto_erase(entry="probe", preset=preset, auto_preset=auto_preset,
+                          allow_auto_erase=allow_auto_erase)
+        return False
+    except AutoEraseNotConfirmed:
+        return True
 
 
 # ==============================================================================
@@ -463,6 +565,7 @@ def remove_watermark(
     real_scale: Optional[int] = None,
     real_backend: Optional[str] = None,
     dual_run: Optional[bool] = None,
+    allow_auto_erase: bool = False,
 ) -> RemoveResult:
     """
     处理一张本地图片文件，返回 RemoveResult。
@@ -475,8 +578,14 @@ def remove_watermark(
         fmt     : 输出格式（PNG/JPG/WEBP/TIFF/AVIF），缺省取 config。
         quality : 画质 1~100（仅 JPG/WebP 生效）。
         evaluate: True 时处理完评估质量，结果放入 RemoveResult.quality。
+        allow_auto_erase: **显式允许「自动选预设 + 直接擦除」**（阶段 233）。
+                  默认 False ⇒ 若同时 `preset=None` 且 `auto_preset=True`，
+                  会抛 `AutoEraseNotConfirmed`（详见该类文档）。GUI 走预览确认流程，
+                  故不受影响；脚本/批量若确要全自动，请显式传 True。
     其余为修复参数，缺省取 config。
     """
+    _guard_auto_erase(entry="remove_watermark", preset=preset,
+                      auto_preset=auto_preset, allow_auto_erase=allow_auto_erase)
     out_dir = _os.path.dirname(_os.path.abspath(dst)) if dst else None
     rd = process_file(
         src,
@@ -579,13 +688,21 @@ def remove_watermark_bytes(
     real_scale: Optional[int] = None,
     real_backend: Optional[str] = None,
     dual_run: Optional[bool] = None,
+    allow_auto_erase: bool = False,
 ) -> tuple[bytes, Optional[QualityReport]]:
     """
     处理内存里的图片字节（例如从 HTTP 请求 / 数据库读到的图），返回 (结果字节, 质量报告)。
 
     注意：字节模式按 BGR 三通道解码（OpenCV 默认），透明通道会被丢弃；
           若需保留透明通道，请用 remove_watermark() 文件接口。
+
+    阶段 233：新增 `allow_auto_erase`（默认 False）。若同时 `preset=None` 且
+    `auto_preset=True` 且未显式允许，会抛 `AutoEraseNotConfirmed`——
+    因为「系统替用户选预设 + 直接擦除」在文字密集插画上可能大面积误检。
+    详见 `AutoEraseNotConfirmed` 与 `config.API_REQUIRE_AUTO_ERASE_CONFIRM`。
     """
+    _guard_auto_erase(entry="remove_watermark_bytes", preset=preset,
+                      auto_preset=auto_preset, allow_auto_erase=allow_auto_erase)
     fmt = (fmt or config.API_DEFAULT_FMT).upper()
     arr = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
     if arr is None:
@@ -844,8 +961,14 @@ def batch_remove(
     quality: Optional[int] = None,
     evaluate: bool = False,
     dual_run: Optional[bool] = None,
+    allow_auto_erase: bool = False,
 ) -> list[RemoveResult]:
-    """批量处理一组本地图片到指定目录，返回 RemoveResult 列表。"""
+    """批量处理一组本地图片到指定目录，返回 RemoveResult 列表。
+
+    阶段 233：转发 `allow_auto_erase` 给 `remove_watermark`。
+    ⚠ 若不转发，确认门会让**每一张**都被判 failed（异常被下面单张容错吞掉），
+    表现为「整批静默全失败」——这正是本门要避免的**静默**形态。
+    """
     out_dir = str(out_dir)
     _os.makedirs(out_dir, exist_ok=True)
     results: list[RemoveResult] = []
@@ -858,6 +981,7 @@ def batch_remove(
                 preset=preset, auto_preset=auto_preset,
                 fmt=fmt, quality=quality, evaluate=evaluate,
                 dual_run=dual_run,
+                allow_auto_erase=allow_auto_erase,
             )
             # 重定向到用户指定目录（remove_watermark 默认落 outputs/，这里统一挪过来）。
             if res.out_path and _os.path.exists(res.out_path):
@@ -1069,7 +1193,8 @@ if __name__ == "__main__":
     arr = cv2.cvtColor(np.array(img), cv2.COLOR_RGB2BGR)
 
     print("== 用例1：字节接口 ==")
-    out_b, qr = remove_watermark_bytes(raw_bytes, engine="opencv", evaluate=True)
+    out_b, qr = remove_watermark_bytes(raw_bytes, engine="opencv", evaluate=True,
+                                       allow_auto_erase=True)
     back = cv2.imdecode(np.frombuffer(out_b, np.uint8), cv2.IMREAD_COLOR)
     assert back is not None and back.size > 0, "字节接口返回空图"
     print(f"  通过：返回 {len(out_b)} 字节，质量分 {qr.score if qr else 'N/A'}（{qr.level if qr else '-'}）")
@@ -1090,15 +1215,35 @@ if __name__ == "__main__":
     img.save(tmp_in.name)
     tmp_out = tempfile.NamedTemporaryFile(suffix=".png", delete=False)
     tmp_out.close()
-    res = remove_watermark(tmp_in.name, dst=tmp_out.name, engine="opencv", evaluate=True)
+    res = remove_watermark(tmp_in.name, dst=tmp_out.name, engine="opencv", evaluate=True,
+                           allow_auto_erase=True)
     assert res.status == "success" and _os.path.exists(tmp_out.name), "文件接口失败"
     print(f"  通过：{res}")
 
     print("== 用例4：批量接口 ==")
     bdir = tempfile.mkdtemp(prefix="wme_api_batch_")
-    res_list = batch_remove([tmp_in.name], bdir, engine="opencv")
+    res_list = batch_remove([tmp_in.name], bdir, engine="opencv",
+                            allow_auto_erase=True)
     assert len(res_list) == 1 and res_list[0].status == "success", "批量接口失败"
     print(f"  通过：批量 {len(res_list)} 张，状态 {res_list[0].status}")
+
+    print("== 用例4b：全自动擦除确认门 ==")
+    # 阶段 233：默认必须拒绝「自动选预设 + 直接擦除」。
+    try:
+        remove_watermark(tmp_in.name, dst=tmp_out.name, engine="opencv")
+    except AutoEraseNotConfirmed:
+        print("  通过：未显式允许时如实拒绝（AutoEraseNotConfirmed）")
+    else:
+        raise AssertionError("确认门失效：未显式允许却通过了全自动擦除")
+    # 关掉配置应恢复旧行为（可逆杠杆）。
+    _old_gate = config.API_REQUIRE_AUTO_ERASE_CONFIRM
+    config.API_REQUIRE_AUTO_ERASE_CONFIRM = False
+    try:
+        _r = remove_watermark(tmp_in.name, dst=tmp_out.name, engine="opencv")
+        assert _r.status == "success", "关闭确认门后应恢复旧行为"
+        print("  通过：关闭确认门可恢复全自动（可逆）")
+    finally:
+        config.API_REQUIRE_AUTO_ERASE_CONFIRM = _old_gate
 
     print("== 用例5：能力快照 ==")
     caps = get_capabilities()
