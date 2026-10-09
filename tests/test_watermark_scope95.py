@@ -63,8 +63,11 @@ TRUTH_PATH = os.path.join(_ROOT, "benchmark_real", "ground_truth.json")
 #: ⚠ **阶段 183 重锚**：上述值标定于**伪造真值期**（149 判定 60 条 GT 系模板复制；
 #: 172 收编真实图 + 逐图实测真值 → 177 全面重算）。因本夹具是「当前实测」语义，
 #: 随 183 的一致性审计同步到真实真值实测值（177 基线，杠杆 OFF）。
-_MEASURED = {"n": 30, "precision": 0.0690, "recall": 0.8000, "mean_iou": 0.5347,
-             "mask_iou": 0.2975, "mask_coverage": 0.0291, "coverage_ratio": 2.80}
+#: ⚠ **阶段 240（Option A）再锚**：2026-10-05 导入 q 系列 11 张（数据集 10→29 图，
+#: 豆包角标更小更靠角）使过检天然更低；当前 29 图实测 precision **0.0761** /
+#: mask_iou **0.2714** / mask_coverage **0.0107** / coverage_ratio **1.92**，本夹具随之同步。
+_MEASURED = {"n": 30, "precision": 0.0761, "recall": 0.8000, "mean_iou": 0.5347,
+             "mask_iou": 0.2714, "mask_coverage": 0.0107, "coverage_ratio": 1.92}
 
 
 def _metrics(**over) -> dict:

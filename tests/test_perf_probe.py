@@ -103,26 +103,33 @@ def test_iter_workload_uses_benchmark_images_first(tmp_path):
 
 
 def test_baseline_comparable_rejects_source_and_stage_mismatch():
-    ok, why = pp.baseline_comparable(_base(), {"source": "synthetic", "stage": "detect",
-                                               "repeat": 3, "device": "cpu",
-                                               "gpu_name": None})
+    # 阶段 215：以下 meta 字面量必须带全部可比性维度（engine/runs），
+    # 否则会先被判「结构过旧」而跳过，根本测不到「口径不同」这一层。
+    _m = {"repeat": 3, "device": "cpu", "gpu_name": None,
+          "engine": None, "runs": 10,
+          "real_superres_enabled": False, "real_superres_scale": 1,
+          "real_superres_backend": "auto"}
+    ok, why = pp.baseline_comparable(_base(), dict(_m, source="synthetic",
+                                                   stage="detect"))
     assert not ok and "source" in why
-    ok2, why2 = pp.baseline_comparable(_base(), {"source": "benchmark", "stage": "inpaint",
-                                                 "repeat": 3, "device": "cpu",
-                                                 "gpu_name": None})
+    ok2, why2 = pp.baseline_comparable(_base(), dict(_m, source="benchmark",
+                                                     stage="inpaint"))
     assert not ok2 and "stage" in why2
-    ok3, why3 = pp.baseline_comparable(_base(), {"source": "benchmark", "stage": "detect",
-                                                 "repeat": 1, "device": "cpu",
-                                                 "gpu_name": None})
+    ok3, why3 = pp.baseline_comparable(_base(), dict(_m, source="benchmark",
+                                                     stage="detect", repeat=1))
     assert not ok3 and "repeat" in why3, "工作量口径不同（重复次数）也不可比"
-    ok4, _ = pp.baseline_comparable(_base(), {"source": "benchmark", "stage": "detect",
-                                              "repeat": 3, "device": "cpu", "gpu_name": None})
-    assert ok4
+    ok4, why4 = pp.baseline_comparable(_base(), dict(_m, source="benchmark",
+                                                     stage="detect"))
+    assert ok4, f"口径完全一致应判可比，实际：{why4}"
 
 
 def test_baseline_comparable_rejects_detect_vs_full():
     ok, why = pp.baseline_comparable(_base(), {"source": "benchmark", "stage": "full",
-                                              "repeat": 3, "device": "cpu", "gpu_name": None})
+                                              "repeat": 3, "device": "cpu", "gpu_name": None,
+                                              "engine": None, "runs": 10,
+                                              "real_superres_enabled": False,
+                                              "real_superres_scale": 1,
+                                              "real_superres_backend": "auto"})
     assert not ok and "stage" in why, "detect 基线与 full 全链路基线不可比"
 
 
@@ -172,9 +179,16 @@ def test_measure_full_stage_wires_api_and_records_stage(monkeypatch):
                              warmup=False, seed=3)
     assert meta["stage"] == "full"
     assert len(times) == 1 and times[0] >= 0.0
-    assert len(calls) == 1 and calls[0].get("engine") == "lama", (
-        "full 阶段默认应走 lama 引擎以验证 GPU 收益"
-    )
+    # 阶段 214：除工作量的 1 次外，**还会多 2 次锚点测量**（轮首 + 轮尾测同一张图），
+    # 用于抓「本轮内渐进劣化」。故此处断言「≥3 次」而非「恰好 1 次」，
+    # 但每-次都必须是 lama 引擎（锚点测量也须走同一全链路，否则不可比）。
+    assert len(calls) == 3, (
+        f"full 阶段应有 1 次工作量 + 2 次锚点测量（共 3 次），实际 {len(calls)}")
+    assert all(c.get("engine") == "lama" for c in calls), (
+        f"锚点测量也必须走 lama 全链路（否则与工作量的口径不一致）：{calls}")
+    assert meta.get("anchor_name"), "必须记录锚点图名（供人工判读）"
+    assert meta.get("anchor_head") is not None and meta.get("anchor_tail") is not None
+    assert meta.get(pp.ANCHOR_KEY) is not None, "必须写入锚点比"
 
 
 def test_refresh_rules_mark_p95_as_higher_is_worse():
@@ -190,12 +204,21 @@ def test_refresh_rules_mark_p95_as_higher_is_worse():
 
 def _base(p95=1.0, device="cpu", gpu_name=None):
     return {"version": pp.BASELINE_VERSION, "p95": p95, "source": "benchmark",
-            "stage": "detect", "repeat": 3, "device": device, "gpu_name": gpu_name}
+            "stage": "detect", "repeat": 3, "device": device, "gpu_name": gpu_name,
+            # 阶段 215：补两个可比性维度。缺任一个都会被判「结构过旧」而跳过，
+            # 根本测不到护栏层 ⇒ 用例变成「假绿」（LESSONS 81 的连带损伤）。
+            "engine": None, "runs": 10,
+            # 阶段 263：补三个超分可比性维度（与 _meta 保持一致，否则会先被判结构过旧）。
+            "real_superres_enabled": False, "real_superres_scale": 1,
+            "real_superres_backend": "auto"}
 
 
 def _meta(source="benchmark", stage="detect", repeat=3, device="cpu", gpu_name=None):
     return {"source": source, "stage": stage, "repeat": repeat,
-            "device": device, "gpu_name": gpu_name}
+            "device": device, "gpu_name": gpu_name,
+            "engine": None, "runs": 10,
+            "real_superres_enabled": False, "real_superres_scale": 1,
+            "real_superres_backend": "auto"}
 
 
 def test_no_baseline_skips_never_passes():
@@ -206,13 +229,17 @@ def test_no_baseline_skips_never_passes():
 
 
 def test_within_regression_rail_passes():
-    code, reasons = pp.gate_decision(_base(1.0), {"p95": 1.2}, _meta(), tol=0.30)
+    #阶段 212：本组四例只测**护栏/目标层**（第 3 层），故显式声明跳过第 2 层
+    #   噪声闸门（它由 test_perf_gate_staleness.py 专项覆盖）。生产路径绝不这样调用。
+    code, reasons = pp.gate_decision(_base(1.0), {"p95": 1.2}, _meta(), tol=0.30,
+                                     skip_noise_gate=True)
     assert code == 0, reasons
     assert any("在护栏内" in r for r in reasons)
 
 
 def test_over_regression_rail_fails():
-    code, reasons = pp.gate_decision(_base(1.0), {"p95": 1.31}, _meta(), tol=0.30)
+    code, reasons = pp.gate_decision(_base(1.0), {"p95": 1.31}, _meta(), tol=0.30,
+                                     skip_noise_gate=True)
     assert code == 1, reasons
     assert any("超护栏" in r for r in reasons)
 
@@ -220,14 +247,16 @@ def test_over_regression_rail_fails():
 def test_absolute_target_is_reported_but_not_gated_by_default():
     """CPU 上必然超 1.5s：默认只报告差距，不制造常红。"""
     code, reasons = pp.gate_decision(_base(1.0), {"p95": 1.2}, _meta(), tol=0.30,
-                                     enforce_target=False, target=0.1)
+                                     enforce_target=False, target=0.1,
+                                     skip_noise_gate=True)
     assert code == 0, reasons
     assert any("未启用 --enforce-target" in r for r in reasons)
 
 
 def test_enforce_target_turns_it_into_a_red_line():
     code, reasons = pp.gate_decision(_base(1.0), {"p95": 1.2}, _meta(), tol=0.30,
-                                     enforce_target=True, target=0.1)
+                                     enforce_target=True, target=0.1,
+                                     skip_noise_gate=True)
     assert code == 1, reasons
     assert any("超目标" in r for r in reasons)
 

@@ -46,10 +46,11 @@ def _summary(area_only, per_preset=None, area_presets=None):
         "config": {"presets": ["general"], "area_presets": list(area_presets or area_only),
                    "n_images": 30, "n_expected": 30, "dataset_dir": "benchmark_real"},
         "aggregate": {"per_preset": per_preset or {"general": {
-            # 阶段 183：由伪造真值期锚点（0.1552/1.0/0.7518/0.1705/0.0365/3.75）
-            # 同步到真实真值实测（177 基线，杠杆 OFF）。
-            "n": 30, "precision": 0.0690, "recall": 0.8, "mean_iou": 0.5347,
-            "mask_iou": 0.2975, "mask_coverage": 0.0291, "coverage_ratio": 2.8,
+            # 阶段 183：由伪造真值期锚点同步到真实真值实测（177 基线，杠杆 OFF）。
+            # 阶段 240（Option A）：q 系列扩图后 29 图实测 precision 0.0761 /
+            # mask_iou 0.2714 / mask_coverage 0.0107 / coverage_ratio 1.92，本夹具随之同步。
+            "n": 30, "precision": 0.0761, "recall": 0.8, "mean_iou": 0.5347,
+            "mask_iou": 0.2714, "mask_coverage": 0.0107, "coverage_ratio": 1.92,
         }}, "area_only": area_only, "n_images": 30},
     }
 

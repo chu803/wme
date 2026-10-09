@@ -69,9 +69,19 @@ _REAL_BASELINE = os.path.join(_ROOT, "benchmark_real", "quality_baseline.json")
 #:   并重建基线文件）。177 漏改了本表 ⇒ `test_real_baseline_reflects_the_mser_removal`
 #:   长期常红（守卫失效）。183 按当前基线重锚，并已用
 #:   `real_gate.py --presets general --no-area`（杠杆 OFF 默认）复现：逐位一致。
+#: ⚠ **阶段 240（Option A）再锚**：2026-10-05 导入 q 系列 11 张（数据集 10→29 图，
+#:   豆包角标更小更靠角）使过检天然更低；当时 29 图实测 precision 0.0761 /
+#:   mask_iou 0.2714 / mask_coverage 0.0107 / coverage_ratio 1.92，本表随之同步
+#:   （与基线文件逐位一致）。
+#: ⚠ **阶段 243 再锚（承诺面口径变更）**：`a1`~`a4`（大颗多面体宝石角标）已登记为
+#:   `config.WATERMARK_KNOWN_GAP_IMAGES` 并**显式排除于承诺面红线聚合**（报告原样列出）。
+#:   承诺面实评 29→**25 图**，实测变为 precision 0.0789 / mask_iou 0.313 /
+#:   mask_coverage 0.012 / coverage_ratio 2.21（本表随之同步，与基线文件逐位一致）。
+#:   ⚠ 下表 `MSER_ON` 是**注入反例**基准（开回 MSER 的历史实测），与承诺面口径无关，
+#:   **保持不变**——它守的是「MSER 回退会被抓住」，不随数据集演进而重标。
 #: 本表语义是「快照 == 当前默认配置的实测」，故每次刷新基线都要同步（经验 81 的合法连带损伤）。
-MSER_OFF = {"precision": 0.0690, "mask_iou": 0.2975,
-            "mask_coverage": 0.0291, "coverage_ratio": 2.80}
+MSER_OFF = {"precision": 0.0789, "mask_iou": 0.313,
+            "mask_coverage": 0.012, "coverage_ratio": 2.21}
 #: 把开关开回去后的实测（真实图跑 `WME_DETECT_CORNER_MSER_ENABLED=1` 得到；阶段 100 口径）。
 MSER_ON = {"precision": 0.0392, "mask_iou": 0.0699,
            "mask_coverage": 0.1266, "coverage_ratio": 13.00}

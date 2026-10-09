@@ -295,6 +295,8 @@ def test_plate_closing_rejoins_ink_fragmented_plate_on_dark_bg(monkeypatch):
 
 _REAL_IMG_DIR = os.path.join(_ROOT, "benchmark_real", "images")
 _REAL_PLATE = (25, 28, 49, 37)          # 真值：左上 AI 白色圆角标 @1024²
+# 固定真值定义在 @1024² 像素坐标系下，白牌覆盖测试**只在此尺寸**的图上有效。
+_WHITE_PLATE_TRUTH_SIDE = 1024
 
 
 def _real_images():
@@ -306,6 +308,22 @@ def _real_images():
     )
 
 
+def _image_size(path: str):
+    with Image.open(path) as im:
+        return im.size  # (width, height)
+
+
+def _in_white_plate_scope(path: str) -> bool:
+    """白牌覆盖测试仅对 **1024×1024** 图生效（固定真值的坐标系约束）。
+
+    非 1024² 的导入资产（1–4.png、`a1–a4.png`、`q*` 的 2720×1520、`ai_logo_*` 的
+    2048²）水印既不在 (25,28) 处、也不在 1024² 坐标系，对本用例恒为 miss——纳入即
+    数据集范围漂移。尺寸闸门同时覆盖「排除各文字角标家族」需求，且对未来任何非 1024²
+    导入资产免疫。
+    """
+    return _image_size(path) == (_WHITE_PLATE_TRUTH_SIDE, _WHITE_PLATE_TRUTH_SIDE)
+
+
 @pytest.mark.skipif(not _real_images(), reason="benchmark_real 数据集未就位")
 def test_plate_channel_covers_all_real_white_logos(monkeypatch):
     """真实 30 图上白角标必须 **30/30** 由板块通路直接检出（F3 的最终验收）。
@@ -314,13 +332,19 @@ def test_plate_channel_covers_all_real_white_logos(monkeypatch):
     这里把 MSER 通路置空以**隔离归因**——命中的框只能来自板块通路。
 
     同时断言框贴合（IoU ≥ 0.6），防止用「框膨胀」冒充命中。
+
+    范围约定（阶段审计修订）：固定真值 `_REAL_PLATE=(25,28,49,37)` 定义在 **@1024²**
+    像素坐标系下，只对 **1024×1024** 的风景图适用。其余导入资产属于**不同水印类型 /
+    不同分辨率**（1–4.png 2048²/1728×2416、`a1–a4.png` 与 `q*` 2720×1520 的右下角
+    「豆包AI」文字角标、`ai_logo_*` 2048² 的右下角板）——其水印既不在 (25,28) 处、
+    也不在 1024² 坐标系，对本用例的固定真值恒为 miss（实测 best IoU=0.0）。把它们纳入
+    本白牌覆盖测试是**数据集范围漂移**（by-design，非代码回归）。故**仅取 1024×1024**
+    图入测；这一条尺寸闸门同时覆盖了「排除 ai_logo_*/q*/a*/1-4.png」的需求，且对未来
+    任何非 1024² 的导入资产免疫（不会因新增资产而静默扩大误判面）。
     """
     monkeypatch.setattr(det, "_mser_boxes_in_patch", lambda *a, **k: [])
-    # 阶段 173：排除 `ai_logo_*` —— 它们由阶段 172 收编，水印是**右下角「豆包AI」板**
-    #   （足迹 340x128 @2048²，见 `ground_truth.json`），本用例的固定真值
-    #   `_REAL_PLATE=(25,28,49,37)@1024²` 对它们**不适用**（不是同一处水印）。
-    images = [p for p in _real_images()
-              if not os.path.basename(p).lower().startswith("ai_logo")]
+    images = [p for p in _real_images() if _in_white_plate_scope(p)]
+    assert images, "benchmark_real 中没有任何 1024×1024 风景图，测试范围约定失效"
     per_image, misses, loose = [], [], []
     for path in images:
         arr = np.array(Image.open(path).convert("RGB"))
@@ -343,4 +367,34 @@ def test_plate_channel_covers_all_real_white_logos(monkeypatch):
         f"{misses}；各图最佳 IoU={per_image}"
     )
     assert not loose, f"检出框过松（IoU<0.6）：{loose}"
+
+
+@pytest.mark.skipif(not _real_images(), reason="benchmark_real 数据集未就位")
+def test_white_plate_scope_excludes_text_corner_logo_imports():
+    """反例守卫：锁死「白牌覆盖测试仅跑 1024² 图」的范围约定。
+
+    历史回归：阶段审计前本用例按 `startswith("ai_logo")` 排除，q 系列导入后
+    `q*`(2720×1520)、`a1–a4.png`(2720×1520)、`1–4.png`(2048²/1728×2416) 仍被纳入，
+    它们的水印既不在 (25,28) 也不在 1024² 坐标系，best IoU 恒为 0.0，使 miss 数从
+    6 暴涨到 25。本用例把范围闸门钉死——**任何非 1024² 资产都必须在范围外**，
+    防止「排除 ai_logo* 即可」的半成品修复让漂移复发。
+    """
+    all_imgs = _real_images()
+    # 已知「不同水印类型」导入资产家族（右下角文字角标 / 非 1024²）。
+    _EXCLUDED_FAMILIES = ("q", "a", "ai_logo", "1.", "2.", "3.", "4.")
+    for path in all_imgs:
+        base = os.path.basename(path).lower()
+        is_known_text_logo_family = base.startswith(_EXCLUDED_FAMILIES)
+        if is_known_text_logo_family:
+            assert not _in_white_plate_scope(path), (
+                f"范围约定失效：{base} 属已知文字角标家族却仍落入白牌覆盖测试范围"
+                f"（尺寸 {_image_size(path)}，预期被 1024² 闸门排除）"
+            )
+    # 反例存在性：数据集中确有非 1024² 资产，范围闸门才有意义（否则闸门空转）。
+    non_1024 = [p for p in all_imgs if not _in_white_plate_scope(p)]
+    assert non_1024, "benchmark_real 已无任何非 1024² 图——范围闸口失去意义（数据集已变？）"
+    # 正向不变量：范围集非空且都是 1024²。
+    scoped = [p for p in all_imgs if _in_white_plate_scope(p)]
+    assert scoped, "白牌覆盖测试的范围集为空"
+    assert all(_image_size(p) == (1024, 1024) for p in scoped)
 

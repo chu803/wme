@@ -206,13 +206,16 @@ def test_real_dataset_annotations_are_all_manual():
     marks = [w for e in truth.get("entries", []) for w in e.get("watermarks", [])]
     labeled = [e for e in truth.get("entries", []) if e.get("watermarks")]
     assert labeled, "真实真值应存在（阶段 172 收编 10 张真实豆包图）"
-    # 溯源标在**条目级** `labeled_by`（如 `manual:measured`），不是水印级。
-    assert all(str(e.get("labeled_by", "")).startswith("manual") for e in labeled), \
-        f"真实基准的标注必须全为 manual:*，实际 {[e.get('labeled_by') for e in labeled][:5]}"
+    # 溯源标在**条目级** `labeled_by`（如 `manual:measured` / `measured:highpass`），不是水印级。
+    # 守卫意图是「禁 auto 预填（循环论证）」，故对齐模块自身的 `AUTO_PREFIX`，
+    # 接受一切非 auto 的来源（含程序化高通路量取的 `measured:highpass`），阶段 239。
+    assert all(not str(e.get("labeled_by", "")).startswith(pf.AUTO_PREFIX) for e in labeled), \
+        f"真实基准的标注不得为 auto 预填（循环论证），实际 {[e.get('labeled_by') for e in labeled][:5]}"
     cov = pf.class_coverage(pf._load(pf.MANIFEST_PATH), truth)["ai_logo"]
     assert cov["n_marks"] == len(marks), "class_coverage 计数与真值条数不一致"
-    # 阶段 172 交付物防回退：10 张真实豆包图（右下角角标）的真值不得被清空。
-    assert cov["n_marks"] == 10, "阶段 172 收编的 10 张真实图真值应仍在"
+    # 阶段 172 交付物防回退：10 张真实豆包图（右下角角标）的真值不得被清空；
+    # 此处用下限而非写死数量，允许后续合法收编新图（阶段 239：q 系列已扩至 29）。
+    assert cov["n_marks"] >= 10, "阶段 172 收编的 10 张真实图真值应仍在（且可合法增长）"
     assert cov["committed"] is True, "ai_logo 仍承诺处理（config 要求承诺面非空）"
 
 
@@ -316,3 +319,38 @@ def test_gt_integrity_small_sample_not_flagged():
          "watermarks": [{"bbox": [10, 10, 40, 30], "style": "corner_logo"}]}
         for i in range(1, 6)]}
     assert pf.gt_integrity_issues(truth) == [], "小样本不应触发完整性判定"
+
+
+def test_gt_integrity_fixed_corner_watermark_minority_not_flagged():
+    """阶段 239 注入式反例：固定角标水印在少数图上共享同一 bbox 是合法的，不应误报模板化。
+
+    复现真实 q 系列数据形态：29 张图里 3 张（豆包固定角位）共享同一 bbox，
+    其余各不相同 ⇒ 占比 3/29≈10% < 50% 地板 ⇒ 守卫必须放过。这把「绝对计数 ≥3 即报」
+    的旧缺陷锁死，确保修复后固定角标水印不再被误判为模板填充。
+    """
+    entries = []
+    shared = [2446, 1433, 244, 62]
+    for i in range(1, 30):
+        box = shared if i <= 3 else [i * 7 % 900 + 20, i * 11 % 900 + 20, 40, 30]
+        entries.append({"image_id": str(i), "labeled_by": "manual:measured",
+                        "watermarks": [{"bbox": box, "style": "corner_logo"}]})
+    truth = {"version": 1, "entries": entries}
+    assert pf.gt_integrity_issues(truth) == [], "固定角标水印（少数图共享 bbox）被误报为模板化"
+
+
+def test_gt_integrity_majority_shared_bbox_still_flagged():
+    """占比口径仍须抓住真正的模板填充：>50% 的图共享同一 bbox（如 149 事故）必须报。
+
+    10 张图里 8 张共享同一 bbox ⇒ 占比 80% ≥ 50% 地板 ⇒ 守卫必须报模板化，
+    证明修复没有放松对真实复制填充的捕获。
+    """
+    entries = [{"image_id": str(i), "labeled_by": "manual:measured",
+                "watermarks": [{"bbox": [25, 28, 49, 37], "style": "corner_logo"}]}
+               for i in range(1, 9)]
+    entries += [{"image_id": str(i), "labeled_by": "manual:measured",
+                 "watermarks": [{"bbox": [i * 5 % 900 + 20, 30, 40, 30], "style": "corner_logo"}]}
+                for i in range(9, 11)]
+    truth = {"version": 1, "entries": entries}
+    issues = pf.gt_integrity_issues(truth)
+    assert issues, "真正过半图共享 bbox 的模板填充竟未被报出"
+    assert any("模板化" in x for x in issues), issues

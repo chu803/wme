@@ -40,12 +40,27 @@ def fresh_logger(monkeypatch, tmp_path):
 
     yield L
 
-    # 关闭本次在 tmp 里新建的 handler，并还原全局引用（不动真实 handler 的开合状态）
+    # 阶段 246 修**夹具级**全局污染（本阶段实测：修复前本文件跑完残留 **24 个**
+    #   `t90.*` logger，每个挂着 5 个**已关闭**的 handler ⇒ 245 只修了 1 个反例，
+    #   是「修症状」；根因在此处——夹具只 `close()` 共享 handler，**从不从
+    #   logger 上摘除**，于是每个用过 `fresh_logger.get_logger(...)` 的用例
+    #   都会把关闭的 handler 留在**全局注册表**里跨用例存活。
+    #   危害：后续任何用例若用到同名 logger，写入已关闭的流 ⇒
+    #   `ValueError: I/O operation on closed file` / `--- Logging error ---` 假红。
+    #   ⇒ 还原必须同时做两件事：① `removeHandler`（摘除）② `close()`（关句柄）。
+    #   只 close 不摘除 = 残留；只摘不 close = 漏句柄。顺序：先摘后关。
+    for lg in list(L._logger_cache.values()):
+        try:
+            for h in list(lg.handlers):
+                lg.removeHandler(h)
+        except Exception:  # noqa: BLE001
+            pass
     for h in list(L._shared_handlers.values()):
         try:
             h.close()
         except Exception:
             pass
+    # 还原全局引用（不动真实 handler 的开合状态）
     L._shared_handlers = old_shared
     L._logger_cache = old_cache
     L._initialized = old_init
@@ -159,6 +174,14 @@ def test_stale_multi_handler_would_break_rotation(fresh_logger):
     h1, h2 = standalone(), standalone()
     lg1 = logging.getLogger("t90.old1")
     lg2 = logging.getLogger("t90.old2")
+    # 阶段 245 修**全局注册表泄漏**：本反例作用于全局 `logging` 单例，若不还原，
+    #   handler（已关闭）与 propagate=False 会**跨用例存活** ⇒ 后续任何
+    #   `getLogger("t90.old1").warning(...)` 都会写向已关闭的流而抛错，把无关
+    #   用例搞红（本文件 rotation 用例长期 flaky 的真根因；守卫见
+    #   `tests/test_logging_global_leak245.py`）。
+    #   故先存快照、再在 finally 里**摘 handler + 还原 propagate/level**。
+    saved = [(lg, list(lg.handlers), lg.propagate, lg.level)
+             for lg in (lg1, lg2)]
     for lg, h in ((lg1, h1), (lg2, h2)):
         lg.handlers.clear()
         lg.propagate = False
@@ -176,8 +199,14 @@ def test_stale_multi_handler_would_break_rotation(fresh_logger):
             lg2.warning("Z" * 60)
     finally:
         sys.stderr = old_stderr
+        for lg in (lg1, lg2):
+            lg.handlers.clear()          # 先摘除（含已关闭的 h1/h2）
         h1.close()
         h2.close()
+        for lg, handlers, propagate, level in saved:
+            lg.handlers.extend(handlers)  # 还原原handler 集合
+            lg.propagate = propagate      # 还原传播标志
+            lg.setLevel(level)            # 还原级别
 
     assert "--- Logging error ---" in err.getvalue(), "旧的多 handler 形态本应轮转失败"
 
@@ -285,6 +314,52 @@ def test_get_logger_does_not_close_shared_handlers(fresh_logger):
     # 共享 handler 不得因配置新 logger 而被关闭
     for h in shared:
         assert getattr(h, "_closed", False) is not True
+
+
+# --------------------------------------------------------------------------- #
+# 阶段 246 · 夹具自身的守卫（必须放在**本文件内**才能用到真实夹具）
+# --------------------------------------------------------------------------- #
+def test_zz_fixture_teardown_leaves_no_closed_handler(fresh_logger):
+    """本用例的**teardown 之后**（即下一个用例运行时）全局 logger 必须干净。
+
+    为什么放在本文件：只有这里能拿到**真实的 `fresh_logger` 夹具**并让pytest
+    真正执行它的 teardown。放在别的文件里只能「复刻」一份夹具逻辑——那测的是
+    复刻品，不是被测实现（守卫与实现漂移 ⇒ 哑巴守卫，245/246 两次踩过）。
+
+    机制：夹具 teardown 在**本用例之后**执行，故断言必须放在**下一个**用例里。
+    用文件名排序（`test_zz_`前缀保证排在本文件最后）+ 独立用例来实现「后置断言」。
+    """
+    probe = "t90.teardownprobe"
+    lg = fresh_logger.get_logger(probe)
+    assert lg is logging.getLogger(probe), "前提失效：get_logger 未返回全局同一logger"
+    assert len(lg.handlers) > 0, "前提失效：夹具路径未挂 handler，无从测泄漏"
+    # 故意不清理：让夹具 teardown 去清理，本用例只负责「布场」
+
+
+def test_zzz_fixture_teardown_actually_detached(fresh_logger):
+    """**后置断言**：上一个用例（`test_zz_fixture_teardown_leaves_no_closed_handler`）
+    的布场 logger，其残留必须已被夹具 teardown 摘除干净。
+
+    这里再走一遍夹具，是为了让 pytest 执行**又一次**真实 teardown——
+    于是本用例同时验证：夹具的「先摘除、后关闭」逻辑**可重复执行且幂等**
+    （重复 teardown 不应报错、也不应把 handler 重新挂回去）。
+    """
+    probe = "t90.teardownprobe"
+    lg = logging.getLogger(probe)
+    # 上一个用例布场的 handler，若夹具正确则此刻已被摘除（可能已无 handler）
+    leaked = [
+        type(h).__module__ + "." + type(h).__name__
+        for h in lg.handlers
+        if not (type(h).__module__ or "").startswith(("_pytest", "pytest"))
+        and (getattr(h, "_closed", False)
+             or getattr(getattr(h, "stream", None), "closed", False))
+    ]
+    assert not leaked, (
+        f"夹具 teardown 未把 {probe!r} 上本项目的 handler 摘干净，残留已关闭的：{leaked}\n"
+        f"  ⇒ fresh_logger 只 close() 不 removeHandler() ⇒ 关闭的 handler 留在全局注册表，"
+        f"跨用例存活，后续用例写向已关闭的流 ⇒ 假红"
+        f"（阶段 246 实测：修复前跑完本文件残留 24 个 t90.* logger × 5 个关闭 handler）")
+    lg.handlers.clear()
 
 
 # --------------------------------------------------------------------------- #

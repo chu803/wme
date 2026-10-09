@@ -55,6 +55,11 @@ MODULES = [
     ("ui/compare_view.py", []),  # Stage 126：补子进程守卫（回调纯函数自检）
     ("services/auto_pipeline.py", []),  # Stage 127：补子进程守卫（含新增 manual 模式用例）
     ("services/validators.py", []),  # Stage 130：补子进程守卫（自检用例4/5 曾因存在性检查先行而崩）
+    # 阶段 250：`docker_consistency_check.py` 是**只读**静态审计（只读 Dockerfile /
+    # .dockerignore / requirements*.txt + os.walk 估算体积，无任何写操作），可离线
+    # 安全跑且退出码有明确语义（0/1/2）⇒ 登记为子进程守卫（真跑一次验「无副作用 +
+    # rc 符合预期」）。其规则正确性另由 tests/test_docker_consistency250.py 8 例覆盖。
+    ("scripts/docker_consistency_check.py", []),
     ("services/pdf_service.py", []),  # Stage 131：补子进程守卫（整份 PDF 流程自检）
     ("services/cache_service.py", []),  # Stage 132：自检已隔离到临时目录，可安全登记
     ("utils/exceptions.py", []),  # Stage 133：自检已补断言（树完整性 + 路径抽取），可安全登记
@@ -117,6 +122,11 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     # （会拖垮自检套件）。其自身有 `--check` 零副作用自检与 `tests/test_ci_env_probe.py` 守卫。
     "scripts/ci_env_probe.py": "S CI 环境等价性探针（默认模式跑全量，另见 --check）",
     "scripts/collect_real_assets.py": "S 资产收集（含网络）",
+    # 阶段 233 补登：该文件由**阶段 224** 新建时漏登记（当时只跑了性能子集测试，
+    # 未跑到本元测试 ⇒ 我当场没发现）。其 `__main__` 是**交互式测量**（sleep 约 10 秒
+    # 采样 CPU 负载）且只打印、不断言 ⇒ 不适合做子进程守卫（会拖慢套件且无可判定输出）。
+    # 它自身有 `tests/test_cpu_load_probe.py` 守卫覆盖其判据正确性。
+    "scripts/cpu_load.py": "S CPU 负载测量工具（交互式，输出随环境变化，无可判定断言）",
     "scripts/detector_diag.py": "S 检测器诊断",
     "scripts/detector_mask_dilate_audit.py": "S 掩码膨胀审计",
     "scripts/e2e_real_probe.py": "S 端到端修复侧门禁（慢）",

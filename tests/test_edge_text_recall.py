@@ -51,6 +51,7 @@ if _SCRIPTS not in _sys.path:
 import config  # noqa: E402
 from core.detector import (  # noqa: E402
     detect_watermark_mask,
+    detect_edge_text,
     _absolute_residual_bin,
     _abs_rows_from_bin,
     _dedup_boxes,
@@ -195,29 +196,47 @@ def test_clean_images_still_low_fpr(base_kind):
 # 4. 开关断言：abs_delta=0 应完全关闭第二通路（回退到阶段 51 行为）
 # ---------------------------------------------------------------------------
 
+def _edge_text_region_count(base_kind: str, seed: int = 7) -> int:
+    """
+    隔离单测辅助：直接调用 `detect_edge_text`，排除 translucent/ocr 等其它通路的干扰，
+    仅验证 `DETECT_EDGE_ABS_DELTA` 开关对「第二通路」的控制是否生效。
+
+    为什么不用全管线 recall：阶段 237 实测发现，`ai_text_heavy` 预设同时启用
+    `enable_translucent`，而 translucent 通路也会命中边缘文字水印（区域甚至被标成
+    `ocr_text`），导致全管线 recall 在任何 abs_delta 下都恒为 ~100%——开关在端到端
+    层面「看不出效果」是测试混淆，并非逃生开关失效。
+    """
+    base = BASE_KINDS[base_kind](seed)
+    wm_fn, preset, _cn = CASES["edge_text"]
+    marked = wm_fn(base)
+    rgb = np.asarray(marked)
+    h, w = rgb.shape[:2]
+    regs = detect_edge_text(rgb, config.DETECT_EDGE_BAND_RATIO, h * w, False)
+    return len(regs)
+
+
 def test_abs_path_disabled_restores_legacy_behavior(monkeypatch):
     """
-    abs_delta=0 时必须回退到阶段 51 行为——这是用户可用的逃生开关。
+    abs_delta=0 时必须回退到阶段 51 行为（仅 Otsu 投影通路、第二通路关闭）——这是用户可用的逃生开关。
 
-    同时它也反证了「召回提升确实来自第二通路」，而非测试底图碰巧变了。
+    阶段 237 实测：abs_delta=0 时 `detect_edge_text` 返回 0 区域（第二通路确被关闭，
+    与 `_projection_boxes(abs_delta=0)` 行为一致）；abs_delta=45 时返回 2 区域。
     """
     monkeypatch.setattr(config, "DETECT_EDGE_ABS_DELTA", 0.0)
-    m = _edge_metrics("textured")
-    # 关闭后召回应回落到修复前水平（实测 15.3%），不给上界会随实现漂移，
-    # 故只断言「显著低于开启时的 98%」。
-    assert m["recall"] < 0.5, (
-        f"abs_delta=0 时召回仍为 {m['recall']*100:.1f}%，"
+    n_off = _edge_text_region_count("textured")
+    assert n_off == 0, (
+        f"abs_delta=0 时 detect_edge_text 仍返回 {n_off} 个区域，"
         f"说明第二通路未被开关正确关闭"
     )
 
 
 def test_abs_path_enabled_beats_disabled(monkeypatch):
-    """开启第二通路后的召回必须显著高于关闭时（A/B 对照）。"""
+    """开启第二通路后 detect_edge_text 的区域数必须严格多于关闭时（A/B 隔离对照）。"""
     monkeypatch.setattr(config, "DETECT_EDGE_ABS_DELTA", 0.0)
-    off = _edge_metrics("photo")["recall"]
+    off = _edge_text_region_count("photo")
     monkeypatch.setattr(config, "DETECT_EDGE_ABS_DELTA", 45.0)
-    on = _edge_metrics("photo")["recall"]
-    assert on > off + 0.3, f"开启后召回 {on*100:.1f}% 未显著高于关闭时 {off*100:.1f}%"
+    on = _edge_text_region_count("photo")
+    assert on > off, f"开启后区域数 {on} 未多于关闭时 {off}（第二通路开关应起效）"
 
 
 # ---------------------------------------------------------------------------

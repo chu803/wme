@@ -148,7 +148,8 @@ def test_remove_watermark_forwards_dual_run(monkeypatch):
 
     monkeypatch.setattr(api, "process_file", _fake_process_file)
     try:
-        api.remove_watermark("x.png", dual_run=True)
+        # 阶段 233：须显式允许，否则确认门会在转发**之前**抛出，本用例就测不到转发。
+        api.remove_watermark("x.png", dual_run=True, allow_auto_erase=True)
     except Exception:  # noqa: BLE001 - 返回值 None 后续可能报错，此处只关心转发
         pass
     assert captured.get("dual_run") is True
@@ -166,7 +167,9 @@ def test_remove_watermark_bytes_forwards_dual_run(monkeypatch):
 
     monkeypatch.setattr(api, "process_image", _fake_process_image)
     try:
-        api.remove_watermark_bytes(base64.b64decode(_b64_png()), dual_run=True)
+        # 阶段 233：同上，须显式允许才能走到转发。
+        api.remove_watermark_bytes(base64.b64decode(_b64_png()), dual_run=True,
+                                   allow_auto_erase=True)
     except Exception:  # noqa: BLE001 - 假引擎返回值不完整，此处只关心转发
         pass
     assert captured.get("dual_run") is True

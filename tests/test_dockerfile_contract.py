@@ -85,3 +85,28 @@ def test_entrypoint_runs_main():
 def test_dependencies_come_from_requirements():
     """依赖单一真值来源：Dockerfile 必须从 requirements.txt 安装，不另起一份清单。"""
     assert "requirements.txt" in _text(), "Dockerfile 未从 requirements.txt 安装依赖"
+
+
+# ---------------------------------------------------------------------------
+# 阶段 210（C5 硬化）· 构建上下文瘦身守卫
+# ---------------------------------------------------------------------------
+
+def test_dockerignore_slims_build_context():
+    """`.dockerignore` 必须排除「运行期不被 app 引用」的大目录。
+
+    背景：Dockerfile 用 `COPY . .` 拷源码，任何未被 `.dockerignore` 排除的目录都会
+    进镜像。阶段 210 实测 `benchmark_real/`(154MB)、`docs/`(66MB)、
+    `benchmark_prompted/`(39MB) 等**开发/评测资产**运行期完全不被引用
+    （main.py/core/ui/services/utils 对其 import 与路径引用均为 0），却会被原样
+    拷进 runtime 镜像，白占 ~260MB。本守卫钉死这些排除项，防未来回归重新吹大镜像。
+    """
+    text = _DOCKERIGNORE.read_text(encoding="utf-8")
+    for entry in ("benchmark_real/", "benchmark_prompted/", "docs/", ".scratch/"):
+        assert entry in text, f".dockerignore 未排除 {entry}（会把它拷进 runtime 镜像）"
+
+
+def test_dockerignore_still_excludes_secrets_and_vcs():
+    """既有排除项不得被误删：VCS / 权重 / 密钥 / 用户数据仍须在镜像之外。"""
+    text = _DOCKERIGNORE.read_text(encoding="utf-8")
+    for entry in (".git/", "models/", ".env", "outputs/", "cache/"):
+        assert entry in text, f".dockerignore 丢失既有排除项 {entry}（有泄密/膨胀风险）"

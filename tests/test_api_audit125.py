@@ -29,7 +29,7 @@ def test_remove_watermark_poisson_blend_gate_warns(tmp_path):
     outp = tmp_path / "out.png"
     _make_watermark_png(str(inp))
     res = api.remove_watermark(
-        str(inp), dst=str(outp), engine="opencv",
+        str(inp), dst=str(outp), engine="opencv", allow_auto_erase=True,
         poisson_blend=True, real_superres=False, superres=False,
     )
     assert res.status == "success"
@@ -43,7 +43,7 @@ def test_remove_watermark_texture_transfer_gate_warns(tmp_path):
     outp = tmp_path / "out.png"
     _make_watermark_png(str(inp))
     res = api.remove_watermark(
-        str(inp), dst=str(outp), engine="opencv",
+        str(inp), dst=str(outp), engine="opencv", allow_auto_erase=True,
         texture_transfer=True, real_superres=False, superres=False,
     )
     assert res.status == "success"
@@ -56,7 +56,7 @@ def test_remove_watermark_no_gate_warning_when_not_requested(tmp_path):
     outp = tmp_path / "out.png"
     _make_watermark_png(str(inp))
     res = api.remove_watermark(
-        str(inp), dst=str(outp), engine="opencv",
+        str(inp), dst=str(outp), engine="opencv", allow_auto_erase=True,
         real_superres=False, superres=False,
     )
     assert not any(

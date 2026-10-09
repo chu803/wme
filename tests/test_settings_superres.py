@@ -108,6 +108,12 @@ def test_apply_user_overrides_env_precedence(monkeypatch, overrides_path):
 
 def test_register_and_refresh_superres_widgets():
     clear_superres_widgets()
+    # 阶段 248：本用例写 3 个 config 全局量，**必须还原**——原 `finally` 只
+    #   `clear_superres_widgets()`，从不还原 config ⇒ 实测把
+    #   REAL_SUPERRES_SCALE/BACKEND 泄漏给后续用例（运行期检测器抓到）。
+    _orig = (config.REAL_SUPERRES_ENABLED,
+             config.REAL_SUPERRES_SCALE,
+             config.REAL_SUPERRES_BACKEND)
     try:
         # 用占位对象模拟功能页控件（刷新只构造 gr.update，无需真实组件）。
         class _Fake:
@@ -126,6 +132,9 @@ def test_register_and_refresh_superres_widgets():
         assert updates[2].get("value") == "esrgan"
     finally:
         clear_superres_widgets()
+        (config.REAL_SUPERRES_ENABLED,
+         config.REAL_SUPERRES_SCALE,
+         config.REAL_SUPERRES_BACKEND) = _orig    # 阶段 248：还原 config
 
 
 def test_apply_superres_config_updates_config_and_returns():

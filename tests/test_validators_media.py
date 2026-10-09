@@ -42,7 +42,16 @@ from utils.path_helper import (  # noqa: E402
 )
 from utils.i18n import t, set_language  # noqa: E402
 
-set_language("zh-CN")
+@pytest.fixture(autouse=True)
+def _lang_zh():
+    """阶段 249：语言设置从**模块级**移入夹具。
+
+    模块级 set_language() 发生在**收集期**（先于一切夹具），conftest 的
+    `_isolate_i18n_language` 只能保存已污染的值再还原，挡不住它；移入夹具后
+    收集期零副作用，每个用例仍拿到 zh-CN（本夹具 setup 时设置、conftest 的
+    teardown 还原）。
+    """
+    set_language("zh-CN")
 
 
 # ------------------------------------------------------------------------------

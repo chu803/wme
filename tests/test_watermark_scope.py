@@ -37,8 +37,8 @@ TRUTH_PATH = os.path.join(_ROOT, "benchmark_real", "ground_truth.json")
 # 构造确定数据
 # ---------------------------------------------------------------------------
 
-def _m(n=30, precision=0.0690, recall=0.8000, mean_iou=0.5347, mask_iou=0.2975,
-       mask_coverage=0.0291, coverage_ratio=2.80):
+def _m(n=30, precision=0.0761, recall=0.8000, mean_iou=0.5347, mask_iou=0.2714,
+       mask_coverage=0.0107, coverage_ratio=1.92):
     """一组「恰好等于当前基线」的指标（各字段可覆盖以构造越线场景）。
 
     演进：阶段 86 基线（coverage 0.1618 / ratio 16.62 / mask_iou 0.0635）
@@ -50,8 +50,13 @@ def _m(n=30, precision=0.0690, recall=0.8000, mean_iou=0.5347, mask_iou=0.2975,
     → ⚠ **阶段 183 重锚**：阶段 106 的全部数值**标定于伪造真值期**（阶段 149 判定
     原 60 条 corner_logo GT 系模板复制；172 收编 10 张真实豆包图 + 逐图实测真值后，
     177 全面重算）。故本节锚点更新为**真实真值实测**（177 基线，杠杆 OFF，已由
-    183 单预设门禁复现逐位一致）：**0.0291 / 2.80 / 0.2975**、
+    183 单预设门禁复现逐位一致）：    **0.0291 / 2.80 / 0.2975**、
     precision **0.0690**、recall **0.8000**、mean_iou **0.5347**。
+    → ⚠ **阶段 240（Option A）再锚**：2026-10-05 导入 q 系列 11 张（数据集 10→29 图，
+    豆包角标更小更靠角）使过检天然更低；当前 29 图实测 precision 0.0761 /
+    mask_coverage 0.0107 / coverage_ratio 1.92 / mask_iou 0.2714（与基线文件逐位一致），
+    故本节锚点同步到该值。红线随之从 0.045 / 4.35× 下移到 0.020 / 3.50×
+    （mask_iou 0.15 不变，三者均满足「红线夹逼实测」不变式）。
     本函数是「红线夹逼」断言的实测锚点，**每阶段必须同步更新**，
     否则断言会比对旧世界（经验 37：新增阶段同步更新标定表）。
     """
@@ -139,15 +144,15 @@ def test_coverage_direction_is_upward():
 
 
 def test_drift_detects_coverage_rise():
-    """掩码从 0.0291 涨到 0.044（+51%）必须报漂移，且措辞是「上升」而非「下滑」。
+    """掩码从 0.0107 涨到 0.016（+49%）必须报漂移，且措辞是「上升」而非「下滑」。
 
-    取值刻意落在 **(漂移线 0.0291×1.15=0.0335, 红线 0.045)** 之间：
-    阶段 106 把红线从 0.11 压到 0.045（阶段 93 的 ≤5% 目标达成后），漂移容差仍 15%，
-    隔离窗口相应收窄到 [1.15×, 红线)——旧用例的 0.10 现在**会同时越红线**，
-    从而失去「只测漂移方向语义」的隔离性。阶段 183 按 177 的真实真值实测
-    （0.0291）重锚，0.044 仍在窗口内（漂移 ✓、红线 ✗）。
+    取值刻意落在 **(漂移线 0.0107×1.15=0.0123, 红线 0.020)** 之间：
+    阶段 106 把红线从 0.11 压到 0.045；阶段 240（Option A）因 q 系列扩图使过检天然更低，
+    实测 0.0107、红线再下移到 0.020，漂移容差仍 15%，隔离窗口相应收窄到 [1.15×, 红线)。
+    本用例取 0.016（> 漂移线 0.0123、< 红线 0.020），只触发漂移、不越红线，
+    从而保持「只测漂移方向语义」的隔离性。
     """
-    now = _summary({"general": _m(mask_coverage=0.044)})
+    now = _summary({"general": _m(mask_coverage=0.016)})
     base = _baseline()
     ok, problems = rg.evaluate_real(now, base)
     assert not ok
@@ -169,9 +174,10 @@ def test_drift_detects_mask_iou_drop():
 def test_drift_improvement_in_either_direction_never_fails():
     """两个方向都变好（覆盖率降、IoU 升）绝不能报错。
 
-    阶段 183 按真实真值实测（0.0291 / 2.80 / 0.2975）重锚取值，确保三项**都是改进方向**。
+    阶段 240（Option A）按 29 图真实实测（0.0107 / 1.92 / 0.2714）重锚取值，
+    确保三项**都是改进方向**且在各自 15% 漂移容差内（0.0100 / 1.85 / 0.28）。
     """
-    now = _summary({"general": _m(mask_coverage=0.028, coverage_ratio=2.70, mask_iou=0.31)})
+    now = _summary({"general": _m(mask_coverage=0.0100, coverage_ratio=1.85, mask_iou=0.28)})
     ok, problems = rg.evaluate_real(now, _baseline())
     assert ok, problems
 
@@ -195,14 +201,14 @@ def test_area_metrics_are_declared_crash_guards():
 
 
 @pytest.mark.parametrize("key,measured", [
-    ("mask_coverage", 0.0291),
-    ("coverage_ratio", 2.80),
+    ("mask_coverage", 0.0107),
+    ("coverage_ratio", 1.92),
 ])
 def test_max_red_lines_are_tight_but_not_born_red(key, measured):
     """`max` 型红线必须 **严格宽于实测、且不超过实测的 2 倍**。
 
     窄侧防「一上线就红灯」，宽侧防「放宽到变哑巴」——两侧都要守。
-    阶段 183 按真实真值实测（0.0291 / 2.80）重锚。
+    阶段 240（Option A）按 29 图真实实测（0.0107 / 1.92）重锚。
     """
     _dir, thr = rg.REAL_PRESET_CONTRACT["general"][key]
     assert measured < thr, f"{key} 红线 {thr} 比实测 {measured} 还紧，会一上线就红灯"
@@ -218,9 +224,11 @@ def test_mask_iou_red_line_brackets_measured():
     而红线仍停在被伪造真值期实测 0.1705 校准的 0.10 ⇒ **松于实测的一半**，
     违反本断言的不变式（也即 `real_gate.py` 注释里那条「红线不得松于实测的一半」）。
     按同一规则把红线抬到 **0.15**（= 实测 × 0.504），既守住防哑巴，又不至于一上线就红。
+    ⚠ **阶段 240（Option A）**：q 系列扩图后 29 图实测抬到 **0.2714**（实测/2 = 0.1357），
+    红线 0.15 仍满足 0.1357 ≤ 0.15 < 0.2714，夹逼不变式保持不变。
     """
     _dir, thr = rg.REAL_PRESET_CONTRACT["general"]["mask_iou"]
-    measured = 0.2975
+    measured = 0.2714
     assert measured / 2.0 <= thr < measured, f"mask_iou 红线 {thr} 未夹在合理区间"
 
 
@@ -488,13 +496,15 @@ def test_real_dataset_coverage_matches_declaration():
 
     阶段 150（Option A）曾把 30 张图作为无痕自然参考集（0 条真值）。
     **阶段 172**：收编 10 张豆包真实图并逐图标注 `corner_logo`（`manual:measured`）
-    ⇒ `ai_logo` = **10** 条，其余 4 类仍为 0。这条断言把当前覆盖钉住；日后若补齐
-    其他类型，它会失败并提示同步更新 README 与 config 的说明。
+    ⇒ `ai_logo` = **10** 条；**阶段（q 系列导入）** 再由 `D:\照片存储` 收编 19 张
+    （含 q1–q6 + q1;.png–q5;.png 及 a1–a4/1–4 等）⇒ 当前 `ai_logo` = **29** 条，
+    其余 4 类仍为 0。这条断言把当前覆盖钉住；日后若补齐其他类型，它会失败并提示
+    同步更新 README 与 config 的说明。
     """
     counts = {name: _real_label_count(entry)
               for name, entry in config.WATERMARK_TYPE_SCOPE.items()}
-    assert counts["ai_logo"] == 10, (
-        f"ai_logo 真实标注数应为 10（阶段 172 收编）：{counts['ai_logo']}")
+    assert counts["ai_logo"] == 29, (
+        f"ai_logo 真实标注数应为 29（阶段 172 收编 10 + q 系列收编 19）：{counts['ai_logo']}")
     missing = [n for n, c in counts.items() if c == 0]
     assert len(missing) == 4, (
         f"真实基准的类别覆盖已变化（0 标注的类型变为 {missing}）——"

@@ -124,3 +124,102 @@ def test_documented_ignore_patterns_are_effective():
         + "\n  ".join(unmet)
         + "\n处置：补 .gitignore 规则（文档与实现必须一致，见 LESSONS 218）。"
     )
+
+
+# ---------------------------------------------------------------------------
+# 阶段 261 · 根目录散落文件守卫（新增维度）
+# ---------------------------------------------------------------------------
+# 背景（docs/261）：阶段 188 出了仓库卫生清单并完成了 E1 归档，但**清单开出后
+#   又在根目录留下了新垃圾**，且此前没有任何守卫能发现——实测抓到 7 个散落文件：
+#     · covdata_parallel_quarantine.bin（188 §E2 已登记「孤儿，删除」，但一直没收尾）
+#     · _b1.txt / _b1416.txt / _cfgdiff.json（探针临时残留）
+#     · 3 个 0KB 畸形文件名，其中一个含 Word 私有区字符 U+F02A、把一句中文
+#       当成了文件名（典型的「shell 重定向写错」事故）
+#   它们全部**未被 git 跟踪**（git ls-files 为空）⇒ 磁盘清理零风险，但**一旦有人
+#   `git add .` 就会污染仓库**——而没有任何自动判定会失败。
+# 本节把「根目录只允许出现白名单文件」变成机器可判定的不变式。
+
+#: 根目录**允许**出现的文件（源码 / 打包元数据 / 配置 / 入口 / 说明文档）。
+#: 逐项显式登记而非「白名单 + 通配」，避免新增源码时误报（新增须显式登记＝
+#: 让「根目录多了个文件」成为一个需要解释的决定，而非默默发生）。
+_ALLOWED_ROOT_FILES = {
+    # 入口与源码
+    "api.py", "cli.py", "config.py", "conftest.py", "download_model.py",
+    "job_manager.py", "main.py", "server.py",
+    # 打包元数据
+    "pyproject.toml", "build.spec",
+    # 依赖清单
+    "requirements.txt", "requirements-dev.txt", "requirements-gpu.txt",
+    "requirements-min.txt",
+    # 测试入口
+    "pytest.ini", "test.bat", "test.sh",
+    # 合规与说明
+    "LICENSE", "README.md", "CHANGELOG.md", "TODO.md",
+    # 容器交付物（阶段 210 硬化；已 git 追踪，见 docs/250 静态审计）
+    "Dockerfile", "Dockerfile.gpu",
+    # 本地用户配置覆盖（gitignored，属正常产物）
+    "config.user_overrides.json",
+}
+
+#: 根目录**点文件**白名单（版本控制与覆盖率配置；体积守卫另行负责）。
+_ALLOWED_ROOT_DOTFILES = {
+    ".gitignore", ".dockerignore", ".gitattributes", ".coveragerc",
+    # 覆盖率数据（可再生、gitignored；docs/188 §E1 判定为合法保留）
+    ".coverage",
+}
+
+
+def _is_tracked(rel: str) -> bool:
+    """git 是否追踪该路径（唯一真值来源 = git 自身）。"""
+    r = subprocess.run(["git", "-C", _ROOT, "ls-files", "--error-unmatch", "--", rel],
+                       capture_output=True, text=True, timeout=30)
+    return r.returncode == 0
+
+
+def test_root_dir_has_no_unexpected_files():
+    """根目录不得出现白名单外的散落文件（探针残留 / 临时产物 / 畸形文件名）。
+
+    实测背景（docs/261）：7 个垃圾文件曾静默躺在根目录，其中一个是含 U+F02A
+    私有区字符的 0KB「把中文句子当文件名」的产物——**没有任何守卫会失败**，
+    而任何人 `git add .` 都会把它们带进仓库。
+    """
+    allowed = _ALLOWED_ROOT_FILES | _ALLOWED_ROOT_DOTFILES
+    unexpected = []
+    for name in sorted(os.listdir(_ROOT)):
+        abs_p = os.path.join(_ROOT, name)
+        if not os.path.isfile(abs_p):
+            continue                      # 目录不算（assets/ docs/ tests/ …）
+        if name in allowed:
+            continue
+        unexpected.append(name)
+
+    assert not unexpected, (
+        "根目录出现白名单外的散落文件（会污染仓库，`git add .` 即入库）：\n  "
+        + "\n  ".join(f"{n!r} ({os.path.getsize(os.path.join(_ROOT, n))} B)"
+                     for n in unexpected)
+        + "\n处置：① 若是临时产物/探针残留 → 归档到 .scratch/（已 gitignored）"
+          "或删除；② 若是合法源码/配置 → 登记进 _ALLOWED_ROOT_FILES 并说明理由；"
+          "③ 若是误操作产生的畸形文件名 → 直接删除（git 未跟踪，无风险）。"
+          "详见 docs/188 §3 卫生清单与 docs/261。"
+    )
+
+
+def test_root_junk_is_not_git_tracked():
+    """根目录若存在白名单外的散落文件，它们**必须未被 git 跟踪**。
+
+    这条是上一条的**安全网**：即使守卫被绕过（白名单被放宽/垃圾被重新生成），
+    也保证垃圾不会悄悄进版本库。判定用 `git ls-files`（唯一真值来源）。
+    """
+    allowed = _ALLOWED_ROOT_FILES | _ALLOWED_ROOT_DOTFILES
+    tracked_junk = []
+    for name in sorted(os.listdir(_ROOT)):
+        abs_p = os.path.join(_ROOT, name)
+        if not os.path.isfile(abs_p) or name in allowed:
+            continue
+        if _is_tracked(name):
+            tracked_junk.append(name)
+    assert not tracked_junk, (
+        "以下白名单外的文件已被 git 追踪（必须 `git rm --cached` 并加 .gitignore）：\n  "
+        + "\n  ".join(tracked_junk)
+        + "\n处置：`git rm --cached <文件>` 停止追踪（保留磁盘文件）+ 补 .gitignore 规则。"
+    )
