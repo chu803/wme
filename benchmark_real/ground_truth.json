@@ -170,7 +170,330 @@
       ],
       "labeled_at": "2026-09-30T08:07:46Z",
       "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "1",
+      "watermarks": [
+        {
+          "bbox": [
+            1702,
+            1893,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角豆包AI角标板（标准 340x128 板位，用户确认右下角；实际板尺寸不同请微调）"
+        }
+      ],
+      "labeled_at": "2026-10-03T17:50:00Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "2",
+      "watermarks": [
+        {
+          "bbox": [
+            1382,
+            2261,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角豆包AI角标板（用户确认右下角）；检测器在竖图漏检该板(IoU~0)→已登记为检测器短板待修"
+        }
+      ],
+      "labeled_at": "2026-10-03T18:10:00Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "3",
+      "watermarks": [
+        {
+          "bbox": [
+            1385,
+            2258,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角豆包AI角标板（用户确认右下角）；检测器在竖图漏检该板(IoU~0)→已登记为检测器短板待修"
+        }
+      ],
+      "labeled_at": "2026-10-03T18:10:00Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "4",
+      "watermarks": [
+        {
+          "bbox": [
+            1379,
+            2264,
+            340,
+            128
+          ],
+          "style": "corner_logo",
+          "note": "右下角豆包AI角标板（用户确认右下角）；检测器在竖图漏检该板(IoU~0)→已登记为检测器短板待修"
+        }
+      ],
+      "labeled_at": "2026-10-03T18:10:00Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "a1",
+      "watermarks": [
+        {
+          "bbox": [
+            2380,
+            1050,
+            340,
+            420
+          ],
+          "style": "corner_logo",
+          "note": "豆包 AI 生成角标（右下角金色多面体三角宝石角标）。**订正 2026-10-04**：原标 gradient_watermark+近全图 bbox 有误——经 clean 对 + 网格人工精读确认，图上水印并非全图渐变，而是角落一枚半透明多面体三角角标（画面占比 <1%）。bbox 为坐标网格辅助的人工精读近似值（x340/H2720 坐标系内）。同图 clean 版无此角标。"
+        }
+      ],
+      "labeled_at": "2026-10-04T07:54:22Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "a2",
+      "watermarks": [
+        {
+          "bbox": [
+            0,
+            1010,
+            620,
+            510
+          ],
+          "style": "corner_logo",
+          "note": "豆包 AI 生成角标（左下角蓝色多面体三角宝石角标）。**订正 2026-10-04**：原标 gradient_watermark+近全图 bbox 有误——经 clean 对 + 网格人工精读确认，图上水印并非全图渐变，而是角落一枚半透明多面体三角角标（画面占比 <1%）。bbox 为坐标网格辅助的人工精读近似值（x620/H2720 坐标系内）。同图 clean 版无此角标。"
+        }
+      ],
+      "labeled_at": "2026-10-04T07:54:22Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "a3",
+      "watermarks": [
+        {
+          "bbox": [
+            2400,
+            0,
+            320,
+            500
+          ],
+          "style": "corner_logo",
+          "note": "豆包 AI 生成角标（右上角淡红半透明三角角标）。**订正 2026-10-04**：原标 gradient_watermark+近全图 bbox 有误——经 clean 对 + 网格人工精读确认，图上水印并非全图渐变，而是角落一枚半透明多面体三角角标（画面占比 <1%）。bbox 为坐标网格辅助的人工精读近似值（x320/H2720 坐标系内）。同图 clean 版无此角标。"
+        }
+      ],
+      "labeled_at": "2026-10-04T07:54:22Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "a4",
+      "watermarks": [
+        {
+          "bbox": [
+            30,
+            10,
+            580,
+            390
+          ],
+          "style": "corner_logo",
+          "note": "豆包 AI 生成角标（左上角淡色三角角标）。**订正 2026-10-04**：原标 gradient_watermark+近全图 bbox 有误——经 clean 对 + 网格人工精读确认，图上水印并非全图渐变，而是角落一枚半透明多面体三角角标（画面占比 <1%）。bbox 为坐标网格辅助的人工精读近似值（x580/H2720 坐标系内）。同图 clean 版无此角标。"
+        }
+      ],
+      "labeled_at": "2026-10-04T07:54:22Z",
+      "labeled_by": "manual:measured"
+    },
+    {
+      "image_id": "q1",
+      "watermarks": [
+        {
+          "bbox": [
+            2446,
+            1433,
+            244,
+            62
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q1_2",
+      "watermarks": [
+        {
+          "bbox": [
+            2311,
+            162,
+            121,
+            84
+          ],
+          "style": "corner_logo",
+          "note": "右上角「豆包 AI 生成」文字水印（程序化测得；neon 图水印角不确定，已标右上，与同批 a3=TR 一致；建议人工核对角位）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q2",
+      "watermarks": [
+        {
+          "bbox": [
+            2444,
+            1432,
+            248,
+            65
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q2_2",
+      "watermarks": [
+        {
+          "bbox": [
+            2481,
+            1433,
+            190,
+            61
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q3",
+      "watermarks": [
+        {
+          "bbox": [
+            2444,
+            1431,
+            248,
+            66
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q3_2",
+      "watermarks": [
+        {
+          "bbox": [
+            2440,
+            1315,
+            166,
+            56
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q4",
+      "watermarks": [
+        {
+          "bbox": [
+            2446,
+            1433,
+            244,
+            62
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q4_2",
+      "watermarks": [
+        {
+          "bbox": [
+            2417,
+            1431,
+            275,
+            80
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q5",
+      "watermarks": [
+        {
+          "bbox": [
+            2446,
+            1433,
+            244,
+            62
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q5_2",
+      "watermarks": [
+        {
+          "bbox": [
+            2535,
+            1382,
+            78,
+            67
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "q6",
+      "watermarks": [
+        {
+          "bbox": [
+            2446,
+            1433,
+            244,
+            61
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印（高通路程序化测得 bbox；本环境无法视觉精读图像，bbox 为自动测量近似值，含 ~6px 安全边距；如需精确覆盖请人工网格复核）"
+        }
+      ],
+      "labeled_at": "2026-10-05T06:44:27Z",
+      "labeled_by": "measured:highpass"
     }
   ],
-  "_note": "阶段 172-A：真值精修。角标板为固定尺寸平台叠加层，足迹经白底图亮度剖面客观实测为 340x128；逐图左上角为本人剖面/目视量取（非检测器输出），故 10 条 bbox 互不相同（通过反伪造守卫）。labeled_by=manual:measured。"
+  "_note": "阶段 172-A + A4'（2026-10-04 订正）：角标板为真值精修。a1–a4 经 clean 对 + 人工精读确认为「豆包 AI 生成角标」（角落半透明多面体三角，corner_logo），**不是全图渐变**——原 gradient_watermark + 近全图 bbox 系 diff 被重渲染颗粒淹没所致，已订正为角标真实位置。副作用：ai_gradient（全图渐变）目前仍无真实图真值，保留为已知缺口（committed=False）。\n2026-10-04 补充：新增 q1–q6 / q1;.png–q5;.png 共 11 张（豆包生成，corner_logo 文字水印），bbox 由高通路程序化测得（非人工网格精读，本环境不可视觉读图）。q1_2 为 neon 图、水印角位不确定（标右上）。"
 }

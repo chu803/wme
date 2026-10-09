@@ -560,6 +560,272 @@
       "sha256": "c76928c9c23fcd01c993fa5dc73478433cedbf35857f9dc697fc42761f7c7ca4",
       "added_at": "2026-09-30T08:06:56Z",
       "source": "local"
+    },
+    {
+      "id": "1",
+      "filename": "1.png",
+      "path": "images/1.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2048,
+        2048
+      ],
+      "sha256": "51bf8fd9da916aa1d550bcf6395a284453017a90a203899b2d87b697808d574c",
+      "added_at": "2026-10-04T06:19:41Z",
+      "source": "local"
+    },
+    {
+      "id": "2",
+      "filename": "2.png",
+      "path": "images/2.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        1728,
+        2416
+      ],
+      "sha256": "9c6b69e8379c0a158baa292d0197f7a26de6d1f3a879fc7c362cba08b90db158",
+      "added_at": "2026-10-04T06:19:42Z",
+      "source": "local"
+    },
+    {
+      "id": "3",
+      "filename": "3.png",
+      "path": "images/3.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        1728,
+        2416
+      ],
+      "sha256": "a7b402ef07a637f8b823ef3943375a78c011002a1f64e5b231295f96632d564e",
+      "added_at": "2026-10-04T06:19:43Z",
+      "source": "local"
+    },
+    {
+      "id": "4",
+      "filename": "4.png",
+      "path": "images/4.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        1728,
+        2416
+      ],
+      "sha256": "90c931f8be20d1d16d3f409de45db0439aefa53ce6ad48e465ee35efb8f1a2a3",
+      "added_at": "2026-10-04T06:19:43Z",
+      "source": "local"
+    },
+    {
+      "id": "a1",
+      "filename": "a1.png",
+      "path": "images/a1.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "716a534618990c05cb505f948fa4b5845ef7c3a2c9a67136120f54a529be9fb9",
+      "added_at": "2026-10-04T06:49:37Z",
+      "source": "local"
+    },
+    {
+      "id": "a2",
+      "filename": "a2.png",
+      "path": "images/a2.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "84e3f719c164fb17cf082487064bc7142b7c91a8fb165edb7a4bb44f68014305",
+      "added_at": "2026-10-04T06:49:38Z",
+      "source": "local"
+    },
+    {
+      "id": "a3",
+      "filename": "a3.png",
+      "path": "images/a3.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "ba9e78d4b87cd6493adce15427b59023ea4471f0eddcc2aa41d89fc7d492b62f",
+      "added_at": "2026-10-04T06:49:39Z",
+      "source": "local"
+    },
+    {
+      "id": "a4",
+      "filename": "a4.png",
+      "path": "images/a4.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "2e6715ea7de2d856c2a27ab7c277816b47ff5cac2973b5b16f53506efa0e5c4a",
+      "added_at": "2026-10-04T06:49:39Z",
+      "source": "local"
+    },
+    {
+      "id": "q1",
+      "filename": "q1.png",
+      "path": "images/q1.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "a1ff7481a487a8e7c8c27aeecf2e7711cc0409206ea8325762ee25dd18d4a4b4",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q1_2",
+      "filename": "q1;.png",
+      "path": "images/q1;.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "a895f14bc0bdc8473ae9154c8851ffec7fa2f4922d75629b8ea708cc355cb480",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q2",
+      "filename": "q2.png",
+      "path": "images/q2.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "430fca0de76cf7b682411a1369fb9d93a471952ffcf829c1900e84bd155ebf6a",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q2_2",
+      "filename": "q2;.png",
+      "path": "images/q2;.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "9fc03fb91b8e58645dd10d7f0a82fc817d4dbb6adc804646b4b47e2aa5aacb2a",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q3",
+      "filename": "q3.png",
+      "path": "images/q3.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "a1062f3e0611b5621157aa9d9e941325909fb4ca1c06aa6179699945244e78f1",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q3_2",
+      "filename": "q3;.png",
+      "path": "images/q3;.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "3ebf8976ae5493f4f1d5901afd6698e9939c2c37b085733d1ad0492f7139dbc7",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q4",
+      "filename": "q4.png",
+      "path": "images/q4.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "3181f6969374ced558622721a7a5536b44b6e16a669cf0f7de81e1b8a0f12dfb",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q4_2",
+      "filename": "q4;.png",
+      "path": "images/q4;.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "0d7fbfe59d1ee8cd579b920f8c33cf54edeb0169a18d39153cbe11d394d0a097",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q5",
+      "filename": "q5.png",
+      "path": "images/q5.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "ea42e5a861fcc3098bcdbf6c708bc80f3ccba1fb96402f063491eac94f212d80",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q5_2",
+      "filename": "q5;.png",
+      "path": "images/q5;.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "e791b8ad75ef94d77c79bab0ddf1ec18781ca639579ec4cb00878d456c1fe8ad",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
+    },
+    {
+      "id": "q6",
+      "filename": "q6.png",
+      "path": "images/q6.png",
+      "ai_source": "other",
+      "watermark_style_hint": "corner_logo",
+      "original_size": [
+        2720,
+        1520
+      ],
+      "sha256": "1cf9f5540369bf6cdc7308537993afc172c317b6a2ccca0090d37782f818a9af",
+      "added_at": "2026-10-05T06:43:17Z",
+      "source": "local"
     }
   ]
 }

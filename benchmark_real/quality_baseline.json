@@ -9,51 +9,51 @@
       "ai_grid",
       "ai_gradient"
     ],
-    "n_images": 10,
-    "n_expected": 10,
+    "n_images": 25,
+    "n_expected": 25,
     "dataset_dir": "benchmark_real",
-    "generated_at": "2026-09-30T19:20:48"
+    "generated_at": "2026-10-07T15:18:11"
   },
   "aggregate": {
     "per_preset": {
       "general": {
-        "n": 10,
-        "mask_recall": 0.5619,
-        "precision": 0.069,
-        "recall": 0.8,
-        "mean_iou": 0.5347,
-        "mask_iou": 0.2975,
-        "mask_coverage": 0.0291,
-        "coverage_ratio": 2.8
+        "n": 25,
+        "mask_recall": 0.5111,
+        "precision": 0.0789,
+        "recall": 0.84,
+        "mean_iou": 0.5876,
+        "mask_iou": 0.313,
+        "mask_coverage": 0.012,
+        "coverage_ratio": 2.21
       }
     },
     "area_only": {
       "ai_faint_tiled": {
-        "n": 10,
-        "mask_coverage_mean": 0.0482,
-        "mask_coverage_p90": 0.1117,
-        "mask_coverage_max": 0.1158,
-        "n_with_mask": 10,
-        "pred_count_mean": 31.2
+        "n": 29,
+        "mask_coverage_mean": 0.0238,
+        "mask_coverage_p90": 0.0469,
+        "mask_coverage_max": 0.102,
+        "n_with_mask": 29,
+        "pred_count_mean": 30.1
       },
       "ai_text_heavy": {
-        "n": 10,
-        "mask_coverage_mean": 0.0298,
-        "mask_coverage_p90": 0.0557,
-        "mask_coverage_max": 0.0884,
-        "n_with_mask": 10,
-        "pred_count_mean": 11.4
+        "n": 29,
+        "mask_coverage_mean": 0.0109,
+        "mask_coverage_p90": 0.0288,
+        "mask_coverage_max": 0.0456,
+        "n_with_mask": 29,
+        "pred_count_mean": 9.3
       },
       "ai_grid": {
-        "n": 10,
-        "mask_coverage_mean": 0.1058,
-        "mask_coverage_p90": 0.1488,
-        "mask_coverage_max": 0.1495,
-        "n_with_mask": 10,
-        "pred_count_mean": 846.2
+        "n": 29,
+        "mask_coverage_mean": 0.0758,
+        "mask_coverage_p90": 0.1473,
+        "mask_coverage_max": 0.1496,
+        "n_with_mask": 29,
+        "pred_count_mean": 634.1
       },
       "ai_gradient": {
-        "n": 10,
+        "n": 29,
         "mask_coverage_mean": 0.0,
         "mask_coverage_p90": 0.0,
         "mask_coverage_max": 0.0,
@@ -61,7 +61,7 @@
         "pred_count_mean": 0.0
       }
     },
-    "n_images": 10
+    "n_images": 25
   },
   "scope": {
     "labeled": [
@@ -88,7 +88,7 @@
       "ai_grid",
       "ai_text_heavy"
     ],
-    "declared_images": 10,
+    "declared_images": 29,
     "unspecified_images": 30,
     "contradictory": [],
     "unknown_styles": [],

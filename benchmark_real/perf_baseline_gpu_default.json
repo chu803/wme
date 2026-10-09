@@ -20,13 +20,18 @@
     "ai_logo_10_lavender_hot_air_balloon.jpg",
     "ai_logo_test_01_orange_cat.jpg"
   ],
-  "spread_mean": 1.2062,
+  "anchor_name": "ai_logo_02_snow_mountain_lake.jpg",
+  "anchor_head": 14.8596,
+  "anchor_tail": 9.3009,
+  "anchor_ratio": 0.6259,
+  "spread_mean": 0.2726,
   "n": 10,
-  "min": 5.7571,
-  "p50": 12.2637,
-  "p95": 19.0678,
-  "max": 19.0678,
-  "mean": 12.2683,
-  "version": 1,
-  "measured_at": "2026-10-03T11:52:52Z"
+  "min": 8.5661,
+  "p50": 9.1011,
+  "p95": 9.8457,
+  "max": 9.8457,
+  "mean": 9.1527,
+  "version": 3,
+  "noise_ratio": 0.0277,
+  "measured_at": "2026-10-06T07:26:46Z"
 }

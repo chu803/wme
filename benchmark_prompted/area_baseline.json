@@ -1,6 +1,6 @@
 {
   "version": 1,
-  "assessed_at": "2026-09-25T06:48:06Z",
+  "assessed_at": "2026-10-07T06:35:05Z",
   "config": {
     "n_images": 20,
     "by_style": {
@@ -20,27 +20,27 @@
   "per_preset": {
     "ai_text_heavy": {
       "n": 20,
-      "mask_coverage_mean": 0.0069,
-      "mask_coverage_p90": 0.0201,
-      "mask_coverage_max": 0.0324,
-      "n_with_mask": 17,
-      "pred_count_mean": 5.3
+      "mask_coverage_mean": 0.016,
+      "mask_coverage_p90": 0.0459,
+      "mask_coverage_max": 0.0549,
+      "n_with_mask": 19,
+      "pred_count_mean": 9.7
     },
     "ai_grid": {
       "n": 20,
-      "mask_coverage_mean": 0.0359,
+      "mask_coverage_mean": 0.0437,
       "mask_coverage_p90": 0.0986,
-      "mask_coverage_max": 0.147,
+      "mask_coverage_max": 0.1394,
       "n_with_mask": 20,
-      "pred_count_mean": 234.7
+      "pred_count_mean": 238.2
     },
     "ai_faint_tiled": {
       "n": 20,
-      "mask_coverage_mean": 0.0182,
-      "mask_coverage_p90": 0.0408,
-      "mask_coverage_max": 0.0746,
+      "mask_coverage_mean": 0.0283,
+      "mask_coverage_p90": 0.0592,
+      "mask_coverage_max": 0.0987,
       "n_with_mask": 20,
-      "pred_count_mean": 24.9
+      "pred_count_mean": 29.1
     },
     "ai_gradient": {
       "n": 20,
