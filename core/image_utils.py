@@ -762,10 +762,22 @@ def tensor_to_mask(tensor: "object") -> np.ndarray:
 
     返回值：
         H×W uint8 数组，255 表示需要修复。
+
+    阶段 285：补齐与 `tensor_to_rgb` 同款的 **NaN/±inf 净化**（阶段 207 加固）。
+    原实现只做 `np.clip(t, 0, 1)`，而 `clip` **拦不住 NaN**（`np.clip(nan,0,1)` 仍是 nan）
+    ⇒ `(nan*255).astype(np.uint8)` 触发 `RuntimeWarning: invalid value encountered in cast`
+    并把 NaN **静默变成 0**。掩码侧的语义后果与图像侧同样严重：NaN 像素被判为
+    「无需修复」⇒ 该区域**静默跳过修复**而调用方仍以为成功。
+    探针实测（`.scratch/probe_image_utils_reaudit.py`）修复前确实发出该警告。
+    修法与 `tensor_to_rgb` 完全一致：NaN→0、+inf→1（白/满掩码）、-inf→0。
+    ⚠ 本函数当前**无生产调用方**（全仓仅定义处命中），属预防性加固——防止它日后
+    被接进推理链时重蹈阶段 207 的覆辙。
     """
     import torch
 
     t = tensor.detach().cpu()
+    # NaN/±inf 净化必须在 clip 之前（clip 对 NaN 无效），与 tensor_to_rgb 同口径。
+    t = torch.nan_to_num(t, nan=0.0, posinf=1.0, neginf=0.0)
     t = t.squeeze().numpy()
     return (np.clip(t, 0, 1) * 255).astype(np.uint8)
 
@@ -843,7 +855,15 @@ def pad_to_multiple(arr: np.ndarray, multiple: int = config.MODEL_SIZE_ALIGN) ->
 
     返回值：
         (padded, (top, bottom, left, right))，补边量用于事后裁回原尺寸。
+
+    阶段 285：与阶段 161（queue_worker `retry`）/ 166（`records_per_page`）同族——
+    数量类参数缺下界会静默走到「取模除零」的 `ZeroDivisionError`，堆栈不指向真实
+    成因（调用方只传了 `MODEL_SIZE_ALIGN`，看不出问题出在 multiple）。
+    `multiple <= 0` 的语义本身无意义（无法对齐到 0 的倍数），故显式拒绝。
     """
+    multiple = int(multiple)
+    if multiple < 1:
+        raise ValueError(f"multiple 必须 ≥ 1，得到 {multiple}")
     h, w = arr.shape[:2]
     pad_h = (multiple - h % multiple) % multiple
     pad_w = (multiple - w % multiple) % multiple
@@ -897,7 +917,23 @@ def split_into_tiles(
     返回值：
         块列表，每块为 dict：{ "img": 子图, "mask": 子掩码,
         "y": 起始行, "x": 起始列, "skip": 该块是否无需修复 }。
+
+    阶段 285：`overlap >= tile_size` 时步长 `max(1, tile_size - overlap)` 被钳到 1，
+    分块**静默退化**成「逐像素切块」——探针实测 600×600 / tile=256 / overlap=300
+    从应有的 ~9 块变成 **119025 块**（内存与耗时的静默爆炸，且无任何报错）。
+    与阶段 161/166 同族：步长钳到 1 掩盖了「overlap 相对 tile_size 过大」这一
+    真正成因。重叠必须**严格小于**块边长（否则相邻块完全重合，退化无意义），故显式拒绝。
     """
+    tile_size = int(tile_size)
+    overlap = int(overlap)
+    if tile_size < 1:
+        raise ValueError(f"tile_size 必须 ≥ 1，得到 {tile_size}")
+    if overlap < 0:
+        raise ValueError(f"overlap 不得为负，得到 {overlap}")
+    if overlap >= tile_size:
+        raise ValueError(
+            f"overlap 必须严格小于 tile_size（否则步长退化为 1、逐像素切块），"
+            f"得到 overlap={overlap}, tile_size={tile_size}")
     h, w = image.shape[:2]
     tiles: list[dict] = []
     stride = max(1, tile_size - overlap)
