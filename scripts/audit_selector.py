@@ -135,7 +135,7 @@ META_TEST_EXCLUDES: frozenset = frozenset({"test_audit_selector.py"})
 #:   98 utils 层续审（审计 recommend_view）→ recommend_view（280 续审：钉死首轮遗漏的边界不变量——_char_bar 钳制两端·bars_html 宽度封顶 100% 防溢出·未知键忽略·仅正分值按序渲染·reason_line/markdown 空态文案·to_dict 抛错防御·三渲染器无效输入返回差异，16 例守卫，0 真缺陷）
 #:   100 core-detector 独立审计（角标 MSER）→ detector（**仅角标通路**，见下注）
 #:   109 core 层续审（审计 preset_recommender）→ preset_recommender
-#:   110 ui 层续审（审计 tab_single：控件与形参错位 + 参数摘要 i18n）→ tab_single
+#:   110 ui 层续审（审计 tab_single：控件与形参错位 + 参数摘要 i18n）→ tab_single（283 续审：钉死首轮遗漏的九条返回分支返回值不变量——_extract_image 形态矩阵·失败分支保留原图不返回结果·save_fail 成功分支仍回传结果图·UI_COMPARE_VIEW 开关·record 开关与缓存容错·超分放大提示；另修声明漂移(docstring 引用已合并掉的测试文件)，39 例守卫，0 真缺陷）
 #:   111 core 层续审（审计 mask_editor：掩码代数正确性 + 未测不变量钉死）→ mask_editor（282 续审：钉死首轮遗漏边界——非 2D 输入 ValueError·浮点半径银行家舍入·apply_rect 浮点坐标截断/负坐标夹取·target_shape 非正维度忽略·mode 缺省与空白回退·逐维取 max 尺寸·画笔圆心贴边·_as_binary 通道分支(1/2 亮度 vs 4 alpha)·布尔/负值掩码，37 例守卫，0 真缺陷）
 #:   112 ui 层续审（审计 tab_media：接线契约全绿仅修文档元组误写）→ tab_media
 #:   113 services 层续审（审计 video_service：extract_sampled_frames return_indices=False 空操作→剥离 idx）→ video_service

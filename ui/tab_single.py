@@ -85,7 +85,11 @@ def _extract_image(editor_value):
 #:     ⇒ **「双跑择优」在界面上完全无效**（两个功能被整体错位）。
 #:
 #: 契约（本模块的铁律）：**内部开关形参必须排在全部 UI 控件形参之后**。
-#: 该契约由 `tests/test_tab_single_audit110.py` 用「AST 提取 inputs 列表 + 前缀断言」钉住。
+#: 该契约由 `tests/test_ui_wiring_contract110.py`（组 A「全 ui 层接线契约」+
+#: 组 D「契约声明与实现一致」）钉住——本条 docstring 曾引用已被合并掉的
+#: `test_tab_single_audit110.py`，属声明漂移，阶段 283 更正为现行文件名。
+#: 另见组 D 的 `test_widget_params_constant_matches_signature_prefix`：
+#: `_SINGLE_WIDGET_PARAMS` 必须与形参表前缀逐项一致。
 _SINGLE_WIDGET_PARAMS: tuple = (
     "editor_value", "engine", "strength", "dilate", "feather", "threshold", "denoise",
     "enable_postprocess", "sharpen",
