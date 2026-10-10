@@ -130,7 +130,7 @@ META_TEST_EXCLUDES: frozenset = frozenset({"test_audit_selector.py"})
 #:   90 utils 日志系统真值审计             → logger
 #:   91 ui 层首批真值审计                  → theme / app
 #:   94 审计选点指标固化与 tab_models 审计 → tab_models
-#:   96 ui 层续审（审计 tab_auto）         → tab_auto
+#:   96 ui 层续审（审计 tab_auto）         → tab_auto   （276 续审：钉死首轮遗漏的回调错误路由/工具按钮/历史登记/真超分对比拼接，22 例守卫，0 真缺陷）
 #:   97 ui 层续审（审计 tab_batch）        → tab_batch
 #:   98 utils 层续审（审计 recommend_view）→ recommend_view
 #:   100 core-detector 独立审计（角标 MSER）→ detector（**仅角标通路**，见下注）
