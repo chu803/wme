@@ -125,7 +125,7 @@ META_TEST_EXCLUDES: frozenset = frozenset({"test_audit_selector.py"})
 #: （`--unaudited`），否则它迟早又变成"手工维持的结论"（经验 5/52）。
 #:
 #: 每条的来源（docs/ 里对应的阶段文档，**逐条可查**）：
-#:   88 services 层续审（报告汇总口径分裂）→ queue_worker / report_service（278 续审：钉死首轮遗漏的成功/边界分支字段不变量，14 例守卫，0 真缺陷）
+#:   88 services 层续审（报告汇总口径分裂）→ queue_worker（278 续审：钉死首轮遗漏的成功/边界分支字段不变量，14 例守卫，0 真缺陷）/ report_service（279 续审：钉死首轮遗漏的成功/边界分支不变量——build_entries 字段默认值·status 过滤边界·ts 格式·generate_html 空/质量/推荐分支·export_report fmt 归一与 .pdf→.html 改写，18 例守卫，0 真缺陷）
 #:   89 core 设备与模型管理真值审计        → device_manager / model_manager / image_utils
 #:   90 utils 日志系统真值审计             → logger
 #:   91 ui 层首批真值审计                  → theme / app
