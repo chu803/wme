@@ -136,7 +136,7 @@ META_TEST_EXCLUDES: frozenset = frozenset({"test_audit_selector.py"})
 #:   100 core-detector 独立审计（角标 MSER）→ detector（**仅角标通路**，见下注）
 #:   109 core 层续审（审计 preset_recommender）→ preset_recommender
 #:   110 ui 层续审（审计 tab_single：控件与形参错位 + 参数摘要 i18n）→ tab_single
-#:   111 core 层续审（审计 mask_editor：掩码代数正确性 + 未测不变量钉死）→ mask_editor
+#:   111 core 层续审（审计 mask_editor：掩码代数正确性 + 未测不变量钉死）→ mask_editor（282 续审：钉死首轮遗漏边界——非 2D 输入 ValueError·浮点半径银行家舍入·apply_rect 浮点坐标截断/负坐标夹取·target_shape 非正维度忽略·mode 缺省与空白回退·逐维取 max 尺寸·画笔圆心贴边·_as_binary 通道分支(1/2 亮度 vs 4 alpha)·布尔/负值掩码，37 例守卫，0 真缺陷）
 #:   112 ui 层续审（审计 tab_media：接线契约全绿仅修文档元组误写）→ tab_media
 #:   113 services 层续审（审计 video_service：extract_sampled_frames return_indices=False 空操作→剥离 idx）→ video_service
 #:   114 入口层续审（审计 cli：--superres 对 PDF 静默失效 + _run_one 展示键自保证）→ cli
