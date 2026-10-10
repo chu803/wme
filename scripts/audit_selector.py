@@ -131,7 +131,7 @@ META_TEST_EXCLUDES: frozenset = frozenset({"test_audit_selector.py"})
 #:   91 ui 层首批真值审计                  → theme / app
 #:   94 审计选点指标固化与 tab_models 审计（277 续审：钉死首轮遗漏的成功/边界分支路由，33 例守卫，0 真缺陷）→ tab_models
 #:   96 ui 层续审（审计 tab_auto）         → tab_auto   （276 续审：钉死首轮遗漏的回调错误路由/工具按钮/历史登记/真超分对比拼接，22 例守卫，0 真缺陷）
-#:   97 ui 层续审（审计 tab_batch）        → tab_batch
+#:   97 ui 层续审（审计 tab_batch）        → tab_batch（281 续审：**修复 1 真缺陷**——画廊点选空序列索引 `()`/`[]` 未规整致 `int(())` 抛 TypeError，同根因 3 处一并修；另钉 export_report_from_batch 四分支 + run_batch `_on_update` DONE/FAILED/CANCELLED 子分支，24 例守卫）
 #:   98 utils 层续审（审计 recommend_view）→ recommend_view（280 续审：钉死首轮遗漏的边界不变量——_char_bar 钳制两端·bars_html 宽度封顶 100% 防溢出·未知键忽略·仅正分值按序渲染·reason_line/markdown 空态文案·to_dict 抛错防御·三渲染器无效输入返回差异，16 例守卫，0 真缺陷）
 #:   100 core-detector 独立审计（角标 MSER）→ detector（**仅角标通路**，见下注）
 #:   109 core 层续审（审计 preset_recommender）→ preset_recommender

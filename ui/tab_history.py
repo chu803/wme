@@ -260,8 +260,10 @@ def on_select(evt: gr.SelectData, mode: "str | None" = None):
     global _LAST_SELECTED_ID
     m = mode or config.UI_COMPARE_DEFAULT_MODE
     idx = getattr(evt, "index", None)
-    if isinstance(idx, (tuple, list)) and idx:
-        idx = idx[0]
+    # 空序列（() / []）同样规整为 None——否则 `and idx` 判空放行后，
+    # `int(())` 会抛 TypeError 而非按契约降级为「未选中」提示。
+    if isinstance(idx, (tuple, list)):
+        idx = idx[0] if idx else None
     if idx is None or not (0 <= int(idx) < len(_HISTORY_ID_MAP)):
         return t("history.msg.no_select"), None, None, None, "", t("compare.viewer.no_select")
     rec_id = _HISTORY_ID_MAP[int(idx)][0]

@@ -640,8 +640,10 @@ def on_gallery_select(evt: gr.SelectData):
     """
     idx = getattr(evt, "index", None)
     # 部分 Gradio 版本对 Gallery 会给出 (row, col) 形式的索引，这里做一次规整。
-    if isinstance(idx, (tuple, list)) and idx:
-        idx = idx[0]
+    # 空序列（() / []）同样规整为 None——否则 `and idx` 判空放行后，
+    # `int(())` 会抛 TypeError 而非按契约降级为「未选中」提示。
+    if isinstance(idx, (tuple, list)):
+        idx = idx[0] if idx else None
     if idx is None or not (0 <= int(idx) < len(_batch_pairs)):
         return None, "", t("compare.viewer.no_select")
     pair = _batch_pairs[int(idx)]
@@ -661,8 +663,9 @@ def on_gallery_select_with_mode(evt: gr.SelectData, mode: str):
         三元组 (pair_state 新值, 对比 HTML, 摘要 Markdown)。
     """
     idx = getattr(evt, "index", None)
-    if isinstance(idx, (tuple, list)) and idx:
-        idx = idx[0]
+    # 与 on_gallery_select 同一规整（含空序列 → None，避免 int(()) 崩溃）。
+    if isinstance(idx, (tuple, list)):
+        idx = idx[0] if idx else None
     if idx is None or not (0 <= int(idx) < len(_batch_pairs)):
         return None, "", t("compare.viewer.no_select")
     pair = _batch_pairs[int(idx)]
