@@ -1,8 +1,8 @@
 # 项目长期记忆 · AI 智能水印擦除工作台
-> SSOT：STAGES.md / LESSONS.md（至 270 条）/ 每日日志 `YYYY-MM-DD.md`。本文件只留索引、铁律、决策级边界、进度指针；细节查上述来源。
+> SSOT：STAGES.md / LESSONS.md / 每日日志 `YYYY-MM-DD.md`。本文件只留索引、铁律、决策级边界、进度指针。
 
 ## 定位与合规
-只处理用户自有权处理的 AI 生成图片上的可见水印；统一「去除本人生成的 AI 图片水印」表述（《著作权法》53 条）。
+只处理用户自有权处理的 AI 生成图片可见水印；统一「去除本人生成的 AI 图片水印」表述（《著作权法》53 条）。
 
 ## 项目铁律（持久）
 - 阶段完成主动告知「【XX阶段开发完成…】」；禁止「此处省略代码」；收到「终止项目」前持续推进。
@@ -12,32 +12,17 @@
 - 网络：PyTorch/GitHub/HF/清华镜像不可达；PyPI 清华镜像可达；大文件走 `download_model.py`。
 
 ## 关键边界 · 真值审计
-- 真实基准重建（243 后为 29 图口径，2026-10-05 q 系列 10→29 图）：承诺面 `general` 实测 mask_recall **0.5111** / precision 0.0789 / recall 0.8400 / mean_iou 0.5876 / mask_iou 0.3130 / mask_coverage 0.0107 / coverage_ratio 2.21。红线 recall≥0.64 / precision≥0.050 / mean_iou≥0.35 / **mask_recall≥0.45** + 崩溃护栏 mask_iou≥**0.20** / mask_coverage≤0.020 / coverage_ratio≤3.50。`real_gate --strict-scope` EXIT=0。
-- 图像级已知检测缺口（243）：`config.WATERMARK_KNOWN_GAP_IMAGES={a1,a2,a3,a4}`（大颗多面体宝石角标），像素域不可分 ⇒ 收窄承诺（排除于红线聚合，报告原样列），面积监控仍覆盖 29 张。守卫 `tests/test_known_gap_images243.py` 4 例全绿。
-- 检测器修复链：173/179/182/183（车牌长宽比/牌体补全先验 OFF/足迹重叠锚定 0.50/锚点一致性）。能力声明 `WATERMARK_TYPE_COMMITTED={ai_logo}` + `KNOWN_SYNTHETIC_GAP={ai_gradient}`。
+- 真实基准重建（29 图口径）：`general` 实测 mask_recall **0.5111** / precision 0.0789 / recall 0.8400 / mean_iou 0.5876 / mask_iou 0.3130 / mask_coverage 0.0107 / coverage_ratio 2.21。红线 recall≥0.64 / precision≥0.050 / mean_iou≥0.35 / **mask_recall≥0.45** + 崩溃护栏 mask_iou≥**0.20** / mask_coverage≤0.020 / coverage_ratio≤3.50。`real_gate --strict-scope` EXIT=0。
+- 图像级已知检测缺口（243）：`config.WATERMARK_KNOWN_GAP_IMAGES={a1,a2,a3,a4}`（大颗多面体宝石角标），像素域不可分 ⇒ 收窄承诺。守卫 `tests/test_known_gap_images243.py` 4 例全绿。
+- 检测器修复链：173/179/182/183。能力声明 `WATERMARK_TYPE_COMMITTED={ai_logo}` + `KNOWN_SYNTHETIC_GAP={ai_gradient}`。
 
 ## 门禁家族（持久契约）
-成员：quality_gate + real_gate(30图) + e2e_real_probe(10图×4类) + mask_param_audit + clean_bench_probe + prompted_area_gate + perf_probe。退出码 0/1/2。每个 `--update/--refresh` 须接 `baseline_guard`。脚本 print 非 GBK 字符须 `force_utf8_stdio()`。长跑后台测试期间不得并发跑其它 pytest（244）。
+成员：quality_gate + real_gate(30图) + e2e_real_probe(10图×4类) + mask_param_audit + clean_bench_probe + prompted_area_gate + perf_probe。退出码 0/1/2。每个 `--update/--refresh` 须接 `baseline_guard`。脚本 print 非 GBK 字符须 `force_utf8_stdio()`。
 
-## 经验铁律（高频，全文见 LESSONS.md）
-183 有守卫≠有覆盖 / 200 性能须用真实素材 / 206 编辑回执≠落盘 / 211 性能基线须校验硬件指纹 / 221 环境假设可能是错的 / 224 装依赖 torch 的包会静默降级 GPU torch / 225 超时护栏优先线程 join(timeout) / 226 固定像素真值按坐标系定范围 / 227 已审≠已登记 / 228 COPY . . 必配 .dockerignore / 229 性能归因到语句级 / 230 加可比性维度须递增结构版本号·恒返 2 的门禁即失效 / 231 min-of-k 只滤 run 内噪声 / 232 min-of-k 对同向负载免疫 / 238 动手优化前先复现数字到语句级 / 245 flaky 定性必须给机制 / 246 泄漏根因常在夹具 / 247 守卫须指真实调用点·级别泄漏同等排查·bash 反引号坑 / 248 静态扫描判不了「是否所有路径还原」须运行期检测 / 249 先核对过程量再信结果量 / 250 Dockerfile 匹配前先剥离注释 / 252 先拿 traceback 再谈 flaky / 253 阈值护栏下按副作用密度编排+撞阈值即停 / 262 隔离复跑全绿只证无自依赖 / 263 守卫不得依赖顺序·不得测复刻品·须注入反向验证 / 264 守卫须指真实调用点 / 265 同一根因往往不止一处 / 266 良性豁免逐条带理由 / 267 声明须机器判定 / 268 注入式反例须真命中执行路径 / 269 先拿 traceback / 270 周期性失败可能是编排原因 / 273 契约门后须体检既有自检 / 274 fitz 关闭句柄后才能 os.remove / 275 并发标定按最相关指标选甜点。
-
-## 过检现象定性（232）
-全自动过检是产品预期不符（非检测缺陷）：15 误检 100% 来自 translucent 通路。建议 API 层静默全擦需 opt-in / 文档明示风险 / 降误检须先谈召回取舍。
-
-## 全自动擦除确认门（233）
-`config.API_REQUIRE_AUTO_ERASE_CONFIRM=True`（可覆盖）；`api.AutoEraseNotConfirmed` + `_guard_auto_erase()` 纯函数；`remove_watermark(_bytes)` 增 `allow_auto_erase=False`、`batch_remove` 转发；`server.py` 映射。守卫 `tests/test_auto_erase_confirm_gate.py` 17 例全绿。
-
-## 性能归因链（211→230）
-detect P95 **0.681s**（<1.5s 达成，OCR GPU 220 贡献 5.14×）；full P95 **9.846s**。当前 full 构成（⚠ 263 更正：detect 0.681s 已被复测推翻为 ~1.545s、属未归因机器环境漂移；9.846s 只是一性历史探针值、**非入库基线**，`perf_baseline.json` 仅含 detect 阶段，full 基线从未建立——二者均不可作承诺值）（2048²）：inpaint 4.16s / detect 1.54s / postprocess 1.28s / recommend 0.63s / OCR 0.62s（220 前 13.99s）/ 其余 ~2.2s。结构性地板 ≈4.4s（LaMa+denoise+detect）⇒ 1.5s 对 full 不可达。已否方向：超分/auto_preset/降噪ROI/FFT降采样/分块（均证据化否决）。torch 2.9.1+cu128 + big-lama.pt。
-
-## 全量测试与全局状态审计（234→253）
-审计驱动主线（209 选点环闭合后转「全局状态污染排查」）：
-- 234-244 全量补齐 + 零连带损伤验证（失败隔离复跑全绿）。
-- 245-247 logger 全局注册表/handler/级别泄漏三连修 + 守卫迭代（注入反例须指真实调用点）。
-- 248 config 隐式写全局泄漏 + autouse 夹具治本 + 运行期检测。
-- 249 i18n 两缺陷 + 14 模块单例检测（id+repr 指纹；良性缓存逐条登记）。
-- **核心结论（252/253 反转）**：234/244/248 多轮「失败=批次争用/flaky」属**归因不足**——真因是**沙箱删除护栏**（>50 删/turn → SystemExit）。分轮增量跑（`.scratch/stage253_runner.py`，按副作用密度编排 + 撞阈值即停 + 进度落盘）验证：15/34 批完成仅 2 失败且均护栏所致；rotation 单批隔离后待复验。
+## 性能归因链（211→230→263）
+- detect 真实 P95=**0.776s**（较 v3 基线 0.679 高 +14%，30% 护栏内，基线维持 0.679）。
+- full 基线已建立：`benchmark_real/perf_baseline_full.json`，P95=**8.585s**，superres=off 干净口径。
+- 结构性地板 ≈4.4s（LaMa+denoise+detect）⇒ 1.5s 对 full 不可达。torch 2.9.1+cu128 + big-lama.pt。
 
 ## 项目健康度
 源码 ~33.2k + 测试 ~22.5k（111 文件）；实测 **2504 用例**（174 文件）；torch 2.9.1+cu128（RTX 5060 Laptop 8151 MiB）+ big-lama.pt。
@@ -55,32 +40,44 @@ detect P95 **0.681s**（<1.5s 达成，OCR GPU 220 贡献 5.14×）；full P95 *
 - Docker（C5，210 硬化）：`.dockerignore` 排除后上下文 4.4MB；⚠ 本机无 docker CLI，镜像从未真 `docker build`。250 静态审计：Dockerfile.gpu P0（python3.11 映射）+ 依赖统一 torch 2.9.1（删 torchvision）。
 
 ## API 侧（250/251/255/257）
-只读端点补齐：`/api/capabilities`、`/api/models`、`/api/models/active`、`/api/models/verify?name=`（251，15 例守卫全绿 + 注入 3/3）；`/api/health` 保持兼容。推理端点绝不豁免（199 fail-closed）。**255 异步作业模型收口**：新增 `job_manager.py` + `POST /api/jobs` / `GET /api/jobs/{id}` / `GET /api/jobs/{id}/file`（PDF/视频/模型下载长任务异步化，worker 线程在闸门之外，轮询端点只读豁免）；守卫 `tests/test_api_async_jobs255.py` 11 例全绿。**257 D1 worker 池并发标定**：异步作业 `max_workers` 由硬编码默认 2 改为可配置 `config.API_ASYNC_MAX_WORKERS`（默认 2，范围 [1,8]）；RTX 5060 实测甜点为 k=2（单请求延迟最优 8.62s、仅 ~10% VRAM），k≥3 延迟回升、吞吐收益递减；守卫 `tests/test_api_async_concurrency_d1.py` 5 例全绿。仅剩 `POST /api/models/active`（写操作需确认+鉴权）按既有决策仍不开放。
+只读端点补齐：`/api/capabilities`、`/api/models`、`/api/models/active`、`/api/models/verify?name=`（251）；`/api/health` 保持兼容。推理端点绝不豁免（199 fail-closed）。**255 异步作业模型收口**：`job_manager.py` + `POST /api/jobs` / `GET /api/jobs/{id}` / `GET /api/jobs/{id}/file`；守卫 `tests/test_api_async_jobs255.py` 11 例全绿。**257 D1 worker 池并发标定**：`config.API_ASYNC_MAX_WORKERS`（默认 2，范围 [1,8]）；RTX 5060 甜点 k=2。仅剩 `POST /api/models/active` 按既有决策仍不开放。
 
-## 当前进度指针
-✅ C1-C5 / A2 / A5 / B2 / D1 / E1-E3 / 189-263 全收口（含 211/213-248 性能与全局状态审计、249 i18n、250 Docker、251 API 只读端点、252/253/254 全量回归与删除护栏最终定性、255 API 异步作业模型收口 251 遗留、256 异步作业端点真实长素材端到端验收、257 D1 异步作业 worker 池并发标定、258 承诺面红线余量风险图与开放项决策板、259 mask_recall 余量健康监控落地守卫 258 决策 A、260 大图分块阈值 INFER_MAX_SIDE 边界语义判定 收口待决项②、261 仓库根目录卫生收尾 188 清单执行到底 + 根目录散落文件守卫、262 真·超分 REAL_SUPERRES_ENABLED 决策就绪包 收口待决项①、263 full 基线标定法口径修复 收口待决项③）。
-✅ **262 真·超分决策包（待决项①）**：`config.user_overrides.json`（**已 git 追踪**）把超分设为 `ENABLED=true/SCALE=2/BACKEND=esrgan`，与代码默认（False/4/auto）相反，且对本机所有运行生效（含此前 257/260/256 探针日志均见「退化为纯双三次放大 2×」）。探针实测（300×400 合成图）：开 scale=2 → 输出 2× 放大、耗时 0.028s→2.633s（约 94×，含后端首启开销）、**掩码区 PSNR 7.71→7.68→7.65 不升反微降**；据115 无权重esrgan 退化双三次（`used_real=False`）⇒ **当前开启无学习式质量增益、净负收益**。决策 A 关闭(建议)/B 维持/C 配权重。**已于 2026-10-08 由用户拍板 A 关闭并落地**：`config.user_overrides.json` → `ENABLED=false/SCALE=4/BACKEND=auto`（与代码默认一致，移除静默携带的无权重 esrgan 配置，消除「误开即净负收益」的脚枪）。验证：262 守卫 `tests/test_superres_decision262.py` 3 例全绿 + 全新进程探针确认 `REAL_SUPERRES_ENABLED=False`、输出尺寸不变、耗时 0.022s（无 2.6s 后端开销）。见 `docs/262-*.md`。
-✅ **263 full 基线标定法（待决项③ 口径修复）**：定位 ③ 真问题——`perf_baseline.json` 仅 `detect` 阶段（v3，p95 0.679s），**`full` 阶段基线从未建立**（MEMORY 旧记 full P95 9.846s 只是一性历史探针数字，非入库基线）；且 full 标定口径遗漏「真实超分」状态（262 实测开启 +2.6s），会致超分开/关被误判同口径。修复：在 `baseline_comparable` 加 **full 阶段专属**超分可比性检查（`real_superres_enabled/scale/backend`），**不进全局 COMPARABILITY_KEYS** 以免让 v3 detect 基线失效。守卫 `tests/test_perf_full_caliber263.py` 7 例 + 既有 20 例共 **27 例全绿**。派生独立发现：detect P95 自 10-06 基线 0.679s 升至 263 复测 ~1.545s（同图/同码/同尺寸/测量干净）→ 当时判为机器环境漂移，已据向下刷新护栏拒绝植入、列为开放项待空闲机复测（不 `--force-update` 掩盖）。**2026-10-08 空闲机复测已澄清**：干净测值回落至 P95=**0.776s**（噪声 0.052/锚点 0.888，可信），证实 1.545s 为会话中途瞬态污染、非持久漂移；基线维持 0.679，开放项关闭。建立 full 基线命令见 263 文档（待你拍板 ① 后跑 `--stage full --update`）。**full 基线已于 2026-10-08 落地**：独立文件 `benchmark_real/perf_baseline_full.json`，P95=**8.585s**，superres=off 干净口径（噪声 0.047/锚点 0.638 均干净），detect 基线 `perf_baseline.json` 未受影响。见 `docs/263-*.md`。
-✅ **261 仓库根目录卫生（188 清单执行到底）**：盘点抓到根目录 7 个散落垃圾（`covdata_parallel_quarantine.bin` 孤儿 / `_b*.txt`·`_cfgdiff.json` 探针残留 / 3 个 0KB 畸形文件名，其中一个含 Word 私有区字符 U+F02A、把中文句子当成文件名）。全部未被git 跟踪、代码零引用。用 `os.rename` 归档到 `.scratch/junk_261/`（LESSONS 202：归档优于删除，删除是「两段式」受限且被拒后 turn 闩锁）⇒ 根目录归零到 29 个全合法文件。新增守卫（扩展既有 `test_repo_hygiene.py`，非另造）：根目录白名单外散落文件 + 垃圾必须未被 git 追踪，共 4 例全绿 + 注入反向验证真命中。Windows 修正：`os.rename` 跨目录源文件仍在（非移动），改用 `os.remove` 清根残留。见 `docs/261-*.md`。
-✅ **258 红线余量风险图（242 决策就绪包）**：承诺面 25 图实测 vs 红线逐条算余量——**`mask_recall` 最脆弱（红线 0.45 vs 实测 0.5111，余量仅 ~12%，= 实测的 88%；且漂移告警线 0.460 与硬线 0.45 仅差 0.010）**，其余红线余量 24%–67%。根因：红线 0.45 锚在阶段 183 的 **10 图**实测 0.5619×0.8，数据集后换 25 图未重锚。决策选项 A维持/B重锚/ C治本已列出，**未执行任何红线变更（待用户拍板）**。见 `docs/258-*.md`。
-✅ **259 决策 A 落地（mask_recall 余量健康监控）**：红线**未改**，在 `scripts/real_gate.py` 加 advisory 层——`REDLINE_MARGIN_FLOOR`（mask_recall 0.10 / recall·precision·mean_iou·mask_iou 0.15 / mask_coverage·coverage_ratio 0.20）+ `redline_relative_margin()` + `check_redline_margin_health()`（两条判定：余量过薄 / 漂移容差≥余量即双层防御压扁），`main` 真实调用但**只打印、永不影响 ok/退出码**（避免长期红灯丧失拦回退作用，经验 47）。守卫 `tests/test_redline_margin_health259.py` 14 例 + 注入反向验证 3/3 真实命中。见 `docs/259-*.md`。
-✅ **254 全量回归闭环**：195 文件 / 34 批分轮跑完，除 `test_utils_audit90.py` 的 2 条 rotation 用例外**零失败**；2 条已证为沙箱删除护栏阻塞（每进程 50 删阈值 `SystemExit` 掐断，断言未执行）而非产品缺陷——减容复现 2/2 断言全绿印证 245 修复有效。`.scratch/verify_rotation_guard.py` 为复现证据。
-✅ **276 `ui/tab_auto` 续审（5j 深度复审）**：模块级审计链闭合后按「契约输入类别枚举」对 `ui/tab_auto`（ratio 14.4，阶段 96 首审 / 163 补掩码矩阵）做更深一轮。枚举 23 类契约输入（detect/repair/recommend/工具按钮），注入式探针 22 项**零真缺陷**，确认首轮遗漏的是「未钉边界」而非代码缺陷。新增 `tests/test_tab_auto_branches_audit.py` 22 例守卫（错误路由 / 历史登记 `record=True` / 真超分放大+`UI_COMPARE_VIEW` 对比拼接 / 工具按钮全分支），全绿；`audit_selector.py` AUDITED_SINCE 注释登记本轮。见 `docs/276-tab_auto续审-钉死首轮遗漏分支.md`。
-✅ **277 `ui/tab_models` 续审（5j 深度复审）**：276 续审直接延续，对 `ui/tab_models`（ratio 14.05，94 首审 / 162 补 i18n 分隔符）做更深一轮。首轮（94/162）只审「出错时别崩」三类缺陷（D1 注册表半初始化 / D2 构建期崩溃 / D3 异常转文案）+ 全角分隔符，漏钉「正常/边界输入的返回值不变量」。枚举契约输入类别 → 桩 `tm._mm`(可控 FakeMM，`boom_*` 抛 `OSError("INJECTED")`) + 桩 `tm.gr.update`(`Recorder` 捕获实参，因 `gr.update()` 返回对象**无 `.value` 属性**) → 注入式验证分支路由。新增 `tests/test_tab_models_branches_audit.py` **33 例守卫全绿**（_render_models_md / _render_status_md / on_set_active / on_download / on_verify / on_rollback / on_reload / on_detail / _safe_active_model / on_refresh 的成功与边界分支），与既有 94/162 套件联跑 **53 例全绿**、无夹具泄漏。**零真缺陷**，首轮遗漏的是「未钉边界」而非代码缺陷。见 `docs/277-tab_models续审-钉死首轮遗漏分支.md`。
-✅ **278 `services/queue_worker` 续审（5j 深度复审）**：277 续审直接延续，对 `services/queue_worker`（ratio 10.04，88 首审 / 161 契约深挖）做更深一轮。88/161 已覆盖「取消 yield / TaskCancelledError 不重试」+ 参数契约 + 终态不变量 + 满空队列 + 重置 + 重试耗尽 + summary + to_dict，漏钉**成功路径与字段级不变量**。枚举契约分支 → 可控 processor（成功/抛错/取消）驱动，断言 Task 字段与生成器行为。新增 `tests/test_queue_worker_branches_audit.py` **14 例守卫全绿**（进度夹紧 / DONE 文案映射 / DONE·FAILED·CANCELLED 三态字段不变量 / on_update 调用 / 惰性生成器 / tasks() 拷贝 / submit 字段 / cancel 置位 / 显式合法值 / 混合计数），与 161/88 套件联跑 **47 例全绿**、无夹具泄漏。**零真缺陷**（与 276/277 同构）。见 `docs/278-queue_worker续审-钉死首轮遗漏分支.md`。
-✅ **279 `services/report_service` 续审（5j 深度复审）**：278 续审直接延续，对 `services/report_service`（609 行，17 核心服务 / 166 契约 / 169 i18n 三轮首审）做更深一轮。首轮聚焦「出错时别崩」+「口径一致」，漏钉**成功路径与边界输入的返回值不变量**。枚举契约输入类别 → 桩 `rs.evaluate_quality`/`rs.reason_line`/`rs.bars_html` 只验分支路由与字段不变量。新增 `tests/test_report_service_branches_audit.py` **18 例守卫全绿**（build_entries 字段默认值·status 过滤边界·ts 格式·成功路径质量赋值 / generate_html 空·质量 None·质量有值·推荐 四分支 / export_report fmt 归一与 `.pdf`→`.html` 改写非 fallback 分支），与 17/166/169 套件联跑 **约 53 例全绿**、无夹具泄漏。**零真缺陷**（与 276/277/278 同构）。见 `docs/279-report_service续审-钉死首轮遗漏分支.md`。
-✅ **280 `utils/recommend_view` 续审（5j 深度复审）**：279 续审直接延续，对 `utils/recommend_view`（268 行，28 共享渲染器 / 98 i18n 双语化）做更深一轮。首轮聚焦「主路径 + 双语一致」，漏钉**边界钳制与空态分支不变量**。枚举契约输入类别 → 直接构造 dict / `Recommendation` 对象 / `to_dict` 抛错对象，断言返回值不变量（统一 `t(...)` 取译文，不钉死字面量）。新增 `tests/test_recommend_view_branches_audit.py` **16 例守卫全绿**（`_char_bar` 钳制两端·`bars_html` 宽度封顶 `width:100%` 绝不 `width:150%`（**阶段 98 修复点防回归核心**）·未知键忽略只渲染 `_FEATURE_KEYS` 内·仅正分值按序渲染·全零返回空串·`reason_line`/`markdown` 空态文案·`markdown` 分值 >1 经 `_char_bar` 钳满条·`get_recommendation_dict` 的 `to_dict` 抛错防御·偏量 dict 透传·`preset_label("")`→`""`·三渲染器无效输入返回差异），与 28/98 套件联跑 **24 例全绿**、无夹具泄漏。**零真缺陷**（与 276–279 同构）。见 `docs/280-recommend_view续审-钉死首轮遗漏分支.md`。
-✅ **281 `ui/tab_batch` 续审（5j 深度复审）——本链首个真缺陷修复**：280 续审直接延续，对 `ui/tab_batch`（897 行，阶段 5 核心界面）做更深一轮。首轮六层审计（26/97/110/164/191/193）把纯助手钉得很密，但**遗漏了 `run_batch` 闭包 `_on_update` 成功子分支、`export_report_from_batch` 全部四分支，以及一个会崩的边界**。**【真缺陷·已修】**画廊点选空序列索引崩溃——`on_gallery_select`/`on_gallery_select_with_mode`/`tab_history.on_select` 三处归整 `(row,col)` 时写作 `if isinstance(idx,(tuple,list)) and idx:`，空序列 `()`/`[]` 过不了 `and idx`（falsy）⇒ 未规整就落 `int(idx)` ⇒ `TypeError` 穿透 Gradio 回调、违反函数文档「索引越界…置 None」承诺。修复：三处统一 `if isinstance(idx,(tuple,list)): idx = idx[0] if idx else None`（LESSON 265 同一根因 3 处一并修）。**注入式反向验证**（独立进程 `.scratch/inject281_verify.py`）：退回旧写法 → `INJECTED_RC=1`、3 守卫真抛 `TypeError`、`RESTORED=True`。新增 `tests/test_tab_batch_branches_audit.py` **24 例守卫全绿**（真缺陷回归 batch×2+history×1 / `export_report_from_batch` 四分支含 `fmt=None`→html 归一 / `_on_update` DONE·FAILED·CANCELLED 子分支：compare 数组 vs 路径缩略图、画廊·配对表·报告源三者同序同长、质量图标未识别 level→空图标、推荐理由行含置信度、预设分布 `×N` 行）。**全回归 165 例全绿**、修复零连带损伤。与 276–280（零缺陷）不同，**本站首轮确实遗漏了一个会崩溃的边界**。见 `docs/281-tab_batch续审-修复空序列索引崩溃.md`。
-✅ **282 `core/mask_editor` 续审（5j 深度复审）——本链首次进入 core 层**：281 续审直接延续，转向本链尚未复审的 core 层。`core/mask_editor`（306 行，阶段 24 掩码代数层，纯 numpy 零 gradio）。首轮（24 基础单测 + 111 真值审计）已把代数正确性钉得很密，但漏钉若干成功/边界不变量。探针 10 组约 30 个边界取值实跑：**全部行为正确，零真缺陷**。新增 `tests/test_mask_editor_branches_audit.py` **37 例守卫全绿**（`apply_brush`/`apply_rect` 非 2D 输入(3D/1D/4D)→`ValueError`·浮点半径**银行家舍入**(0.4/0.5→0、0.6→1、1.5→2、负值无操作)·`apply_rect` 浮点坐标 `int()` 截断+半开区间·负坐标夹取到 0·越界整幅覆盖·退化区间无操作·`target_shape` 含 0/负维度→忽略回退·mode falsy→merge 与带空白回退一致·无 target_shape 时**逐维取 max**(det(10,50)×user(50,10)→(50,50))·画笔圆心贴边均绘制·`_as_binary` 通道分支((H,W,1)/(H,W,2) 走亮度、(H,W,4) 取 **alpha**：RGB=255 但 alpha=0 判空)·布尔→uint8/负值→视作空）。全回归（mask_editor×3 + mask_generator + tab_auto 掩码模式 + 掩码膨胀标定）**104 例全绿**、EXIT=0。**零真缺陷**（与 276–280 同构）。特别钉死「逐维取 max 可能大于任一输入」与 111 已记录的「上采样面积不守恒」同族——均为有意语义，防被误当 bug「修掉」。见 `docs/282-mask_editor续审-钉死首轮遗漏分支.md`。
-✅ **283 `ui/tab_single` 续审（5j 深度复审）——零真缺陷 + 修声明漂移**：282 续审直接延续，对 `ui/tab_single`（613 行，阶段 5 单图主标签页，覆盖度荒漠榜首位）做更深一轮。首轮（110 接线契约 + 190 耗时口径）把接线与耗时钉得很密（含 110 的 P0「内部开关排控件前 ⇒ 双跑择优失效 + 默认路径丢历史」），但**完全遗漏了 `process_single` 九条返回分支的返回值不变量**与 `_extract_image` 输入形态矩阵。**探针教训**：首版桩错误——掩码返回全零 ⇒ 所有「成功」用例误触 `no_mask` 早退、输出假 False；修正为非空掩码后重跑才得可信结果（LESSON 252/269：先拿 traceback/过程量）。新增 `tests/test_tab_single_branches_audit.py` **39 例守卫全绿**（`_extract_image` 形态矩阵含**空 tuple/空 list**⇒None·九条返回分支恒五元组且失败分支保留原图/不返回结果/download=None/status 逐条对账·`no_image` 唯一全 None·**save_fail 成功分支仍回传结果图**·`UI_COMPARE_VIEW` 开关决定第三元组·`record` False 不登记 True 恰好一次·缓存 `add_success` 返回 None 或抛错**主流程不受影响**·超分放大追加 upscaled 提示 factor 正确且形状未变不误报·`on_enhance` 四模式非空 + None 输入回退）。**附带修复·声明漂移**：`_SINGLE_WIDGET_PARAMS` docstring 引用已被合并掉的 `test_tab_single_audit110.py` ⇒ 指向不存在文件；已更正为现行 `test_ui_wiring_contract110.py` 并加守卫防复发（延伸「组 D 契约声明与实现一致」：声明里指向的守卫必须真的存在）。全回归 **107 例全绿**、EXIT=0。**零真缺陷**（与 276–282 同构）。见 `docs/283-tab_single续审-钉死返回分支不变量.md`。
-✅ **284 `core/preset_recommender` 续审（5j 深度复审）——与 280 recommend_view 上下游闭环**：283 续审直接延续，对 `core/preset_recommender`（626 行，阶段 25 推荐决策核心，覆盖度荒漠榜长驻高位）做更深一轮。它决定用哪个检测预设，错了会「把检得出的变成检不出」。首轮（25 基础 + 109 真值审计含 AND→OR P0 + 精度套件）把语义主线钉得很密，但**遗漏各特征提取器的退化输入边界与决策不变量**。探针 10 组实跑：**全部正确，零真缺陷**。新增 `tests/test_preset_recommender_branches_audit.py` **31 例守卫全绿**（`_ensure_rgb` 输入矩阵：None/2D 灰度堆叠/RGBA 剥 alpha/(H,W,2)·1D·4D 抛错/float32→uint8·`_dominant_period` 五种退化输入恒 (-1,0)+正常条纹对照组·`_marks_at` **兼容路径 residual=None**/全 NaN/常量 score(MAD=0)⇒全零·`_spectral_regularity` 零掩码⇒0·`_gradient_features` 均匀图⇒(0,0,0) 防 NaN·极小图 (1,1)~(32,32) 不崩落 general·**决策不变量 confidence==max(scores)**·scores 恒 8 键 [0,1]·triggered ⊆ scores 键·`to_dict` **深拷贝**·兜底 trans_act≥0.3 ⇒ triggered=["translucent"]）。全回归（`-m 'not slow'`）**91 例全绿**、EXIT=0；两条 slow 需真实数据集/检测器由既有门禁覆盖。**零真缺陷**。特别指出 `confidence == max(scores)` 是 UI/报告多处显示置信度的依据，此前无任何测试断言它。见 `docs/284-preset_recommender续审-钉死首轮遗漏分支.md`。
-✅ **285 `core/image_utils` 续审（5j 深度复审）——修复 3 处真缺陷（含 119025 块静默爆炸）**：284 续审直接延续。`core/image_utils`（1055 行 / 32 函数，阶段 89 审计）是全项目图像地基（`load_image` 被 detector/批量/报告/推荐器到处调用，`split_into_tiles`+`merge_tiles` 是大图分块核心）。**该模块无专属测试文件**（全仓仅 17 处零散引用）⇒ 覆盖率荒漠典型样本；探针 16 组实跑发现 3 处真缺陷。**【A·已修】**`pad_to_multiple(multiple<=0)` 取模除零 `ZeroDivisionError`（堆栈指向取模而非真正成因；与阶段 161 queue_worker retry<0 / 166 records_per_page<1 同族）⇒ `multiple<1` 显式 ValueError。**【B·已修·最严重】**`split_into_tiles(overlap>=tile_size)` 分块静默爆炸——步长 `max(1, tile_size-overlap)` 钳到 1 ⇒ 逐像素切块，探针实测 600×600/tile=256 **overlap=64 → 9 块 vs overlap=300 → 119025 块**（≈1.3 万倍爆炸且**无任何报错**）；步长钳到 1 反而掩盖真正成因；注入实验额外发现负 overlap 会穿到 OpenCV `copyMakeBorder` 炸成 `cv2.error: top>=0 && bottom>=0` ⇒ 三项显式 ValueError。**【C·已修】**`tensor_to_mask` 缺阶段 207 的 NaN 净化（`tensor_to_rgb` 已加固 `nan_to_num` 先于 clamp 因 clamp 拦不住 NaN，同族仍旧写法探针实测发出 `RuntimeWarning: invalid value encountered in cast`；掩码侧 NaN 像素被判「无需修复」⇒ 区域静默跳过修复而调用方仍以为成功）⇒ 按同口径补 `nan_to_num(nan=0,posinf=1,neginf=0)`；**该函数当前无生产调用方 ⇒ 预防性加固**（已写入 docstring 避免夸大）。**注入式反向验证**（`.scratch/inject285_verify.py` 独立进程）：3 处退回旧写法 → `INJECTED_RC=1`、三条守卫全真命中、`RESTORED=True`。新增 `tests/test_image_utils_branches_audit.py` **48 例守卫全绿**（另钉死 `threshold_mask` 反直觉点：OpenCV `THRESH_BINARY` 取**严格大于**、`thresh==255` 把 255 块整块丢弃；`feather_mask` 偶数 ksize 自动 +1；`pad/crop` 往返全真；`split_into_tiles` 覆盖无空洞/首末块标记；`merge_tiles` 往返无接缝误差；`_edge_window` 边界恒 1）。全回归（`-m 'not slow'`）**193 例全绿**、EXIT=0，三处修复零连带损伤。见 `docs/285-image_utils续审-修复3处真缺陷.md`。
-✅ **286 `core/model_manager` 续审（5j 深度复审）——荒漠冠军站，零真缺陷**：285 续审直接延续。`core/model_manager`（838 行，阶段 89 审计，荒漠比 38.1 为本轮候选最高）是模型注册表核心（槽注册/active 切换/校验/下载/回滚）。首轮（89 真值审计 + 165 下载路径守卫）已修全部 P0（url 无源回退→静默装错权重 / 下载回滚缓存不对称 / 惰性初始化置位顺序 / verify 键一致），本轮补**首轮未机控的分支不变量**。探针 14 组 27 项实跑：**全部正确，零真缺陷**。新增 `tests/test_model_manager_branches_audit.py` **18 例守卫全绿**（`verify_model` sha256 **不匹配→sha_ok=False+reason「篡改」、SHA 算不出(不可读)→sha_ok=False+sha_error 非空+reason「无法读取文件」**（两条 reason 方向不同，错误归因会误导用户）·体积 `0.9×expected` 边界（恰好达标 True / 差 1 字节 False，`verify` 与 `is_model_available` 同口径）·`set_active_model` 不存在槽→False+active 不变 / 成功清空缓存副作用 / `persist=True` 写状态文件 `{active:key}` / **`persist` 写失败仍返回 True(切换已生效,写盘非致命,防被误改成「写失败即 False」掩盖切换已发生)** ·`get_model_slot(None)`→active·`register` 无 filename→`key.pt`+path 落 MODEL_DIR / 重复注册后者覆盖·`_sha256_of_file` 缺路径→抛异常(不静默返回)·`rollback_model` copy2 抛→False·`blank_verify_result` 键集==_VERIFY_KEYS·`slot_detail` 带/不带 sha 的 sha_computed 与 sha_ok 计算）。全回归（`-m 'not slow'`）**109 例全绿**、EXIT=0。**零真缺陷**（与 276–284 同构）。见 `docs/286-model_manager续审-钉死首轮遗漏分支.md`。
-✅ **287 `core/device_manager` 续审（5j 深度复审）——零真缺陷**：286 续审直接延续。`core/device_manager`（396 行，阶段 89 审计，荒漠比 24.8）是设备探测与选择核心（auto/cuda/cpu 三模式 + 显存安全水位 + 缓存复用 + fp16 门控）。首轮（89 真值审计 + D1 `test_device_manager_gpu.py` 把 CUDA 分支钉成契约）已覆盖三模式主路径，但**遗漏缓存复用/探测退化/节流分支**。探针 14 组 27 项实跑：**全部正确，零真缺陷**。新增 `tests/test_device_manager_branches_audit.py` **16 例守卫全绿**（`select_device` 缓存复用语义：**auto 复用旧决策不重探** / 模式变化 cpu↔cuda 才重探 / 同模式返回同一 `_DeviceHandle` 对象 · `select_device(None)` 走 `config.DEVICE_MODE` 默认 · `_detect_cuda` 的 `import torch` 缺失→None + `get_device_properties` 异常→None（且 auto 退回 cpu）· `_query_free_vram_mb` 的 NVML try/finally（成功/mem 失败/init 失败三条路径均 None 且 `nvmlShutdown` 必调用，无资源泄漏）· `apply_cpu_threads` 默认 `CPU_THREADS=0`→no-op（守卫 `n and n>0`）与显式 n=2→写 torch 线程+`OMP/MKL_NUM_THREADS` env · `empty_cache` 节流（二次立即调用跳过 / `force` 绕过 / 配置关闭完全不调用）· `use_fp16` 在 `config.DEVICE_USE_FP16=False` 时（即便 GPU）返回 False · `_DeviceHandle.torch_device` 的 cpu→`torch.device("cpu")`、cuda→`torch.device("cuda:0")` 身份 + `is_gpu` 委托）。全回归（`-m 'not slow'`）**72 例全绿**、EXIT=0。**零真缺陷**。见 `docs/287-device_manager续审-钉死首轮遗漏分支.md`。
-⏳ 待用户侧：B1/B3/A1 真实水印图、B4 真实 FP 率、Docker 真构建验收（本机无 docker）。
-
-## 决策级边界（原待决项已全部收口；264-287 为已审模块深度续审链）
-- A4 已订正（2026-10-04）：a1-a4 归 corner_logo，非全图渐变；`ai_gradient` 仍为真·无真实图缺口。
-- 待用户决策/待归因：③ full 基线**口径修复已落地且已建立**（263：独立文件 `perf_baseline_full.json`，P95=8.585s，superres=off 干净口径）；**① 已于 2026-10-08 拍板 A 关闭并落地**（见上条），full 基线即按该口径建立。④ `test_real_asset_preflight` 数据漂移**已确认收口**（239 占图比口径 + 测试用 `>=10` 下限与 29 图少数共享 bbox 容忍，漂移感知；258 决策板已标「已修」），自 258 起即从待决移除。（② 分块阈值已于260 收口；① 超分已于 262 收口、2026-10-08 落地关闭；③ full 基线 2026-10-08 落地。**全部待决项均已收口**）。**detect 漂移开放项已澄清并关闭（2026-10-08 空闲机复测）**：263 的 1.545s 为会话中途**瞬态污染**，真实当前 detect P95=**0.776s**（噪声 0.052/锚点 0.888，干净可信），较 v3 基线 0.679 高 +14% 但**仍在 30% 护栏内**；基线维持 0.679（向下刷新护栏正确拒绝植入更慢值），无持久代码/工作量回归。
-- **242 红线决策已拍板（2026-10-08）：A 维持**——mask_recall 硬线 0.45 不动，依靠 259 余量健康监控（advisory 层，只报不失败）持续盯防；余量最薄（~12%）与「漂移告警线 0.460 距硬线 0.45 仅 0.010」的脆弱性由监控暴露而非放松红线。零契约变更、零回归风险。B 重锚/C 治本未采纳（见 `docs/258-*.md`）。
+## 决策级边界（全部待决项已收口）
+- A4（2026-10-04）：a1-a4 归 corner_logo，非全图渐变；`ai_gradient` 仍为真·无真实图缺口。
+- ① 超分 2026-10-08 拍板 A 关闭并落地（`config.user_overrides.json` → `ENABLED=false/SCALE=4/BACKEND=auto`）。
+- ② 分块阈值 260 收口（INFER_MAX_SIDE 边界语义）。
+- ③ full 基线口径修复已落地且已建立（263：P95=8.585s，superres=off）。
+- ④ `test_real_asset_preflight` 数据漂移已确认收口（239 占图比口径 + `>=10` 下限容忍）。
+- **242 红线决策（2026-10-08）：A 维持**——mask_recall 硬线 0.45 不动，靠 259 余量健康监控（advisory 层，只报不失败）盯防；余量最薄（~12%）由监控暴露而非放松红线。零契约变更。
 - 环境事故收口（2026-10-04）：easyocr 降级已还原（cu128 wheel 2862MB）。
+
+## 5j 深度续审链（276-290，**已收官**；荒漠比值驱动；已审模块首轮遗漏分支钉死）
+| 阶段 | 模块 | 真缺陷 | 守卫 | 备注 |
+|---|---|---:|---:|---|
+| 276 | ui/tab_auto | 0 | 22 | 边界不变量 |
+| 277 | ui/tab_models | 0 | 33 | 成功/边界返回值不变量 |
+| 278 | services/queue_worker | 0 | 14 | 成功路径+字段级不变量 |
+| 279 | services/report_service | 0 | 18 | 成功路径+边界分支 |
+| 280 | utils/recommend_view | 0 | 16 | 边界钳制+空态分支 |
+| 281 | ui/tab_batch | **1** | 24 | 空序列索引 TypeError（3 处同根因，已修） |
+| 282 | core/mask_editor | 0 | 37 | 边界+形态分支 |
+| 283 | ui/tab_single | 0 | 39 | 九条返回分支+声明漂移修复 |
+| 284 | core/preset_recommender | 0 | 31 | 退化输入+决策不变量 |
+| 285 | core/image_utils | **3** | 48 | pad 除零/分块爆炸/NaN 净化（均修） |
+| 286 | core/model_manager | 0 | 18 | sha/体积/active/persist 分支 |
+| 287 | core/device_manager | 0 | 16 | 缓存复用/探测退化/节流分支 |
+| 288 | ui/theme | 0 | 9 | build_app_theme 双层兜底·builtin_theme_names 返回()·resolve 边界回退·CSS 占位符 |
+| 289 | utils/logger | 0 | 7 | _ColorFormatter 不着色两分支·print_banner·_ensure 幂等/复用·get_logger 默认名·_resolve_level 非字符串 |
+| 290 | ui/app | 0 | 36 | **收官站**：_find_free_port 五语义·launch_app 全返回码·288「soft」兜底跨模块契约·**超分注册表不累积（U3 同源兄弟，此前零守卫）**·overlay CSS 不破坏 JS 字面量·config 开关翻转 |
+
+> C1-C5 / A2 / A5 / B2 / D1 / E1-E3 / 189-263 全收口。
+> ⏳ 待用户侧：B1/B3/A1 真实水印图、B4 真实 FP 率、Docker 真构建验收（本机无 docker）。
+> ✅ **续审链已收官**：`audit_selector.py --unaudited` 返回空表（45 模块全部已审）。再启动续审必须先重跑该脚本取候选，不得凭记忆。
+
+## 本链沉淀的可复用经验
+- **⚠ 语言是「跨进程持久化」的共享全局状态**（290 实测踩到）：`ui.i18n_rt.apply_language()` 内部调 `set_language()` **并 `save_language()`**，同时改进程全局 `_LANG` 与**磁盘** `cache/i18n_state.json`；而 `load_language()` 优先级为 环境变量 > 持久化文件 > config > 默认 ⇒ 持久化文件里的 `en-US` 会在**之后每个全新 pytest 进程**生效并压过 `config.UI_LANGUAGE=zh-CN`（实测 14 例「期望中文」全红，改回 zh-CN 后 144 例全绿）。**任何调用 `_on_lang()` / `apply_language()` 的测试必须用 autouse 夹具还原 `_LANG` 与状态文件**。守卫见 `tests/test_app_branches_audit.py::_isolate_language_state`。
+- **断言「本轮无连带损伤」必须先跑排除本轮文件的对照**：290 宽回归首跑 14 例红，先 `--ignore` 新守卫（仍 14 红）+ 完全隔离那 5 个文件（仍 14 红）才证明与本轮无关，再查根因才发现是跨进程污染。省略前两步会把泄漏源误判成 flaky。
+- **gradio 6.22 的 `gr.update()` 返回普通 dict** `{'value':…,'__type__':'update'}`，**不是 `Update` 对象**——`isinstance(x, gr.update)` 会直接 TypeError。断言更新产物须兼容两种形态。
+- **from-import 的真实调用点在导入方命名空间**：`from ui.theme import build_app_theme` 后，monkeypatch `theme_mod.build_app_theme` **不生效**，须打 `app_mod.build_app_theme`（经验 264 的又一实例）。
+- **断言「补丁确实生效」与「结果合法」要同时写**：只断言结果合法时，补丁打错位置会假绿（290 的 G5 双条件）。
+- **源码子串匹配会误命中注释**：「launch_app 不含 config.SERVER_THEME」曾因注释里写着该串而假失败 → 须按 AST 属性访问判定（经验 250）。
