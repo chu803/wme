@@ -126,7 +126,7 @@ META_TEST_EXCLUDES: frozenset = frozenset({"test_audit_selector.py"})
 #:
 #: 每条的来源（docs/ 里对应的阶段文档，**逐条可查**）：
 #:   88 services 层续审（报告汇总口径分裂）→ queue_worker（278 续审：钉死首轮遗漏的成功/边界分支字段不变量，14 例守卫，0 真缺陷）/ report_service（279 续审：钉死首轮遗漏的成功/边界分支不变量——build_entries 字段默认值·status 过滤边界·ts 格式·generate_html 空/质量/推荐分支·export_report fmt 归一与 .pdf→.html 改写，18 例守卫，0 真缺陷）
-#:   89 core 设备与模型管理真值审计        → device_manager / model_manager / image_utils（285 续审：**修复 3 处真缺陷**——pad_to_multiple 取模除零 ZeroDivisionError·split_into_tiles 的 overlap>=tile_size 静默退化为逐像素切块(600×600 从 9 块爆到 119025 块)·tensor_to_mask 缺阶段 207 的 NaN 净化；另钉 48 例守卫覆盖掩码后处理/补边往返/分块几何/拼接往返/权重窗/张量转换）
+#:   89 core 设备与模型管理真值审计        → device_manager / model_manager / image_utils（285 续审：**修复 3 处真缺陷**——pad_to_multiple 取模除零 ZeroDivisionError·split_into_tiles 的 overlap>=tile_size 静默退化为逐像素切块(600×600 从 9 块爆到 119025 块)·tensor_to_mask 缺阶段 207 的 NaN 净化；另钉 48 例守卫覆盖掩码后处理/补边往返/分块几何/拼接往返/权重窗/张量转换）（286 续审 model_manager：**0 真缺陷**——钉死首轮遗漏的 sha256 不匹配/不可读两条分支 reason 文案·体积 0.9× 边界·set_active_model 不存在槽→False/清空缓存副作用/persist 写状态文件/persist 写失败仍返回 True·register 默认名与覆盖·_sha256_of_file 缺路径抛异常·rollback copy2 抛→False·blank_verify_result 键集一致·slot_detail sha 计算，18 例守卫）
 #:   90 utils 日志系统真值审计             → logger
 #:   91 ui 层首批真值审计                  → theme / app
 #:   94 审计选点指标固化与 tab_models 审计（277 续审：钉死首轮遗漏的成功/边界分支路由，33 例守卫，0 真缺陷）→ tab_models
