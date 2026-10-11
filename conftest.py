@@ -31,6 +31,63 @@ if ROOT not in sys.path:
 PY = sys.executable
 
 
+# --------------------------------------------------------------------------- #
+# 会话级：把语言持久化文件重定向出真实目录（阶段 290 新增）
+# --------------------------------------------------------------------------- #
+def pytest_configure(config):
+    """**在测试收集（collection）之前**把 i18n 状态文件重定向到临时目录。
+
+    事故链（阶段 290 回归中实测，非推测）：
+
+      `utils.i18n.apply_language()` 会同时 `set_language()`（进程全局）与
+      `save_language()`（**落盘** `cache/i18n_state.json`）。而 `load_language()`
+      的优先级是 `环境变量 > 持久化文件 > config > 默认`——于是持久化文件里的
+      值会在**之后每一个全新 pytest 进程**生效，压过 `config.UI_LANGUAGE`。
+
+      实测：该文件一旦是 `en-US`，宽回归即 **14 例「期望中文」全红**；改回
+      zh-CN 后同批 144 例全绿。因果链由「投毒 → 跑 → 14 红 → 还原 → 全绿」
+      双向闭合验证。
+
+    为什么已有夹具挡不住（本轮定位的关键）：
+
+      ① `_isolate_i18n_language`（阶段 78）只快照/还原**进程内** `_LANG`，
+         完全不碰落盘文件；
+      ② `_isolate_runtime_dirs`（阶段 148）确实重定向了 `CACHE_DIR`，但它**函数级**——
+         而**模块级夹具与「收集期的模块级代码」都早于函数级夹具建立**。任何在
+         收集期就调用 `t()` / `load_language()` 的测试模块，会在隔离生效**之前**
+         读进真实文件，把 `_LANG` 污染成持久化值；此后第① 条夹具快照到的
+         已是**被污染的值**，还原也还原不回`zh-CN`。
+
+    修法：用 `i18n._STATE_FILE` 这个**阶段 249 就已备好的显式覆盖钩子**
+    （`_state_path()` 里`_STATE_FILE is not None` 时直接返回），
+    在 `pytest_configure`（早于 collection）把状态文件指到会话专属临时目录——
+    于是**任何时刻、任何作用域**的用例都读不到真实持久化文件。
+    """
+    import tempfile
+
+    try:
+        from utils import i18n
+    except Exception:  # noqa: BLE001 —— 依赖缺失时不影响用例
+        return
+    try:
+        d = tempfile.mkdtemp(prefix="wme_i18n_state_")
+        i18n._STATE_FILE = os.path.join(d, "i18n_state.json")
+        config._wme_i18n_state_patched = True
+    except Exception:  # noqa: BLE001
+        config._wme_i18n_state_patched = False
+
+
+def pytest_unconfigure(config):
+    """还原 `i18n._STATE_FILE`，避免影响同一进程内的后续非测试行为。"""
+    if not getattr(config, "_wme_i18n_state_patched", False):
+        return
+    try:
+        from utils import i18n
+        i18n._STATE_FILE = None
+    except Exception:  # noqa: BLE001
+        pass
+
+
 @pytest.fixture
 def synthetic_image_mask():
     """

@@ -40,6 +40,7 @@
 import io
 import json
 import os
+import textwrap
 
 import pytest
 
@@ -175,12 +176,28 @@ def free_port_probe(monkeypatch):
 
 
 @pytest.fixture(scope="module")
-def double_build():
+def double_build(tmp_path_factory):
     """连续构建两次 app，返回关键注册表计数（供 D 组断言不变量）。
 
     只构建一次（module 级）——build_app() 会连带加载插件/探测设备，代价高，
     而 D 组要的只是「两次构建的注册表规模相等」这一个量。
+
+    ⚠ **module 级夹具会绕过 conftest 的函数级隔离**（本轮实测踩到）：
+    pytest 按「作用域由大到小」建立夹具，`tmp_path` / `_isolate_runtime_dirs`
+    都是**函数级**，因此 module 级 `double_build` 建立时 `config.CACHE_DIR`
+    **还是真实目录**。而 `build_app()` 内部会 `load_language()` →
+    读真实的 `cache/i18n_state.json` → 把 `_LANG` 设成持久化文件里的值
+    （实测：该文件为 en-US 时，随后 14 例「期望中文」全红；改回 zh-CN 即全绿）。
+
+    ⇒ 本夹具**自带**语言隔离：①把 `CACHE_DIR` 重定向到本模块专属临时目录，
+    ②前后快照/还原 `_LANG`。否则它就是一颗跨文件的污染源。
     """
+    from utils import i18n as _i18n
+
+    prev_cache_dir = getattr(config, "CACHE_DIR", None)
+    prev_lang = _i18n._LANG
+    sandbox = tmp_path_factory.mktemp("i18n_cache")
+    config.CACHE_DIR = str(sandbox)
     i18n_rt.clear_registry()
     comp.clear_superres_widgets()
     try:
@@ -197,6 +214,9 @@ def double_build():
         }
         yield {"first": first, "second": second}
     finally:
+        _i18n._LANG = prev_lang
+        if prev_cache_dir is not None:
+            config.CACHE_DIR = prev_cache_dir
         i18n_rt.clear_registry()
         comp.clear_superres_widgets()
 
@@ -564,3 +584,69 @@ def test_lang_js_renames_via_button_id():
     js = app_mod._build_lang_js()
     assert "getElementById(id + '-button')" in js
     assert "btn.textContent" in js
+
+
+# =========================================================================== #
+# I. 测试隔离自身的守卫（阶段 290 回归中撞出的真问题）
+# =========================================================================== #
+
+def test_redirecting_cache_dir_neutralizes_real_persisted_language(tmp_path, monkeypatch):
+    """**重定向 `CACHE_DIR` 能让真实持久化语言文件失效**——修复点的机制守卫。
+
+    事故链（290 实测）：`_isolate_runtime_dirs` 把 `config.CACHE_DIR` 重定向到
+    `tmp_path`，但 `tmp_path` 是**函数级**；pytest 按作用域由大到小建立夹具，
+    module 级夹具（本文件的 `double_build`）建立时 `CACHE_DIR` **仍是真实目录**。
+    它一调`build_app()` → `load_language()` 就读真实的 `cache/i18n_state.json`
+    并把 `_LANG` 设成持久化值——**在隔离之外污染全局**。
+
+    实测后果：该文件为 `en-US` 时，随后 14 例「期望中文」全红；改回 zh-CN 全绿。
+
+    本守卫**用真实状态文件**（不 mock）验证：重定向生效时，
+    `load_language()` 必须读不到真实文件，从而回落到 `config.UI_LANGUAGE`。
+    """
+    from utils import i18n as _i18n
+
+    real_path = _i18n._state_path()
+    real_exists_before = os.path.exists(real_path)
+
+    # 前置事实：真实文件此刻确实是 en-US（否则本守卫无意义，skip 而非假绿）。
+    if real_exists_before:
+        with io.open(real_path, "r", encoding="utf-8", newline="") as fh:
+            assert json.loads(fh.read()).get("lang") == "en-US", (
+                "真实语言状态文件当前不是 en-US——本守卫的前提不成立，"
+                "请重设该文件为 en-US 后再验证隔离机制"
+            )
+
+    sandbox = tmp_path / "iso_sandbox"
+    sandbox.mkdir(parents=True, exist_ok=True)
+    prev_lang = _i18n._LANG
+    try:
+        # 复刻 double_build 的自带隔离：先重定向 CACHE_DIR，再让语言重新加载。
+        monkeypatch.setattr(config, "CACHE_DIR", str(sandbox))
+        _i18n._LANG = None
+        resolved = _i18n.load_language()
+        assert resolved == config.UI_LANGUAGE, (
+            f"重定向 CACHE_DIR 后仍读到真实持久化文件（得到 {resolved!r}，"
+            f"期望回落到 config.UI_LANGUAGE={config.UI_LANGUAGE!r}）"
+        )
+        assert not os.path.exists(os.path.join(str(sandbox), "i18n_state.json")), \
+            "重定向后不应在沙箱里凭空产生状态文件（说明读了真实目录）"
+    finally:
+        _i18n._LANG = prev_lang
+
+
+def test_double_build_fixture_carries_its_own_isolation():
+    """结构性守卫：`double_build` 必须**自带**隔离，不得依赖函数级 conftest 夹具。
+
+    若有人把自带隔离（`CACHE_DIR` 重定向 + `_LANG` 快照还原）删掉、退回依赖
+    conftest 的函数级夹具，本守卫立刻红——它直接盯住修复点本身。
+    """
+    import inspect
+
+    src = textwrap.dedent(inspect.getsource(double_build.__pytest_wrapped__
+                                            if hasattr(double_build, "__pytest_wrapped__")
+                                            else double_build))
+    assert "CACHE_DIR" in src, \
+        "double_build 未重定向 CACHE_DIR——module 级夹具会绕过函数级隔离（290 事故）"
+    assert "_LANG" in src, \
+        "double_build 未快照/还原 i18n._LANG——会在隔离之外污染全局语言状态（290 事故）"

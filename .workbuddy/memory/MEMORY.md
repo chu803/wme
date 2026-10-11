@@ -75,8 +75,11 @@
 > ✅ **续审链已收官**：`audit_selector.py --unaudited` 返回空表（45 模块全部已审）。再启动续审必须先重跑该脚本取候选，不得凭记忆。
 
 ## 本链沉淀的可复用经验
-- **⚠ 语言是「跨进程持久化」的共享全局状态**（290 实测踩到）：`ui.i18n_rt.apply_language()` 内部调 `set_language()` **并 `save_language()`**，同时改进程全局 `_LANG` 与**磁盘** `cache/i18n_state.json`；而 `load_language()` 优先级为 环境变量 > 持久化文件 > config > 默认 ⇒ 持久化文件里的 `en-US` 会在**之后每个全新 pytest 进程**生效并压过 `config.UI_LANGUAGE=zh-CN`（实测 14 例「期望中文」全红，改回 zh-CN 后 144 例全绿）。**任何调用 `_on_lang()` / `apply_language()` 的测试必须用 autouse 夹具还原 `_LANG` 与状态文件**。守卫见 `tests/test_app_branches_audit.py::_isolate_language_state`。
-- **断言「本轮无连带损伤」必须先跑排除本轮文件的对照**：290 宽回归首跑 14 例红，先 `--ignore` 新守卫（仍 14 红）+ 完全隔离那 5 个文件（仍 14 红）才证明与本轮无关，再查根因才发现是跨进程污染。省略前两步会把泄漏源误判成 flaky。
+- **⚠ 语言是「跨进程持久化」的共享全局状态**（290 实测踩到，**已治本**）：`ui.i18n_rt.apply_language()` 内部调 `set_language()` **并 `save_language()`**，同时改进程全局 `_LANG` 与**磁盘** `cache/i18n_state.json`；而 `load_language()` 优先级为 环境变量 > 持久化文件 > config > 默认 ⇒ 持久化文件里的 `en-US` 会在**之后每个全新 pytest 进程**生效并压过 `config.UI_LANGUAGE=zh-CN`（实测投毒 en-US 后宽回归 **14 例「期望中文」全红**，还原即全绿）。
+  - **两道既有隔离都挡不住**：① `_isolate_i18n_language`(阶段78) 只还原 `_LANG`，**不碰落盘文件**；② `_isolate_runtime_dirs`(阶段148) 的 `tmp_path` 是**函数级**，而**模块级夹具与「收集期模块级代码」都早于函数级夹具**——收集期调 `t()`/`load_language()` 的模块会在隔离生效前读进真实文件并把 `_LANG` 污染掉，此后第①道夹具快照到的已是脏值。
+  - **✅ 治本修法**：`conftest.py` 新增 `pytest_configure`/`pytest_unconfigure`，用 `i18n._STATE_FILE`（阶段 249 就备好的显式覆盖钩子）把状态文件指向会话临时目录——**早于 collection**，任何作用域都读不到真实文件。注入复验：移除修复 → 14 F；保留修复 → 0 F（同一投毒态）。
+- **「修好了」≠「修对了」**：第一版修复（只在自己测试文件加夹具）让单文件跑绿了，但宽回归仍 14 红——真漏源在全项目共用的 `conftest`。**必须用「投毒态」重跑来证伪自己的修复**，否则只是把症状按在自己那一格。
+- **注入实验本身也要控变量**：第一次注入复验被我先前的状态还原动作污染（得 0 F，不可采信），重做才得有效的 14 F。
 - **gradio 6.22 的 `gr.update()` 返回普通 dict** `{'value':…,'__type__':'update'}`，**不是 `Update` 对象**——`isinstance(x, gr.update)` 会直接 TypeError。断言更新产物须兼容两种形态。
 - **from-import 的真实调用点在导入方命名空间**：`from ui.theme import build_app_theme` 后，monkeypatch `theme_mod.build_app_theme` **不生效**，须打 `app_mod.build_app_theme`（经验 264 的又一实例）。
 - **断言「补丁确实生效」与「结果合法」要同时写**：只断言结果合法时，补丁打错位置会假绿（290 的 G5 双条件）。

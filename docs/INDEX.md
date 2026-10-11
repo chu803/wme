@@ -300,6 +300,26 @@
    - `262-真超分REAL_SUPERRES_ENABLED决策就绪包.md`
    - `263-full基线标定法-超分口径纳入与标定就绪.md`
 
+### 276–290 · 5j 深度续审链（已收官，15 站）
+
+按「荒漠比值 = 代码行 ÷ 引用用例数」逐站消费已审模块，专钉首轮遗漏的分支不变量。
+
+- `276-tab_auto续审-钉死首轮遗漏分支.md`
+- `277-tab_models续审-钉死首轮遗漏分支.md`
+- `278-queue_worker续审-钉死首轮遗漏分支.md`
+- `279-report_service续审-钉死首轮遗漏分支.md`
+- `280-recommend_view续审-钉死首轮遗漏分支.md`
+- `281-tab_batch续审-修复空序列索引崩溃.md`
+- `282-mask_editor续审-钉死首轮遗漏分支.md`
+- `283-tab_single续审-钉死返回分支不变量.md`
+- `284-preset_recommender续审-钉死首轮遗漏分支.md`
+- `285-image_utils续审-修复3处真缺陷.md`
+- `286-model_manager续审-钉死首轮遗漏分支.md`
+- `287-device_manager续审-钉死首轮遗漏分支.md`
+- `288-theme续审-钉死首轮遗漏兜底分支.md`
+- `289-logger续审-钉死首轮遗漏分支.md`
+- `290-app续审-收官站.md`（链收官 + i18n 跨进程持久化污染治本）
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`
