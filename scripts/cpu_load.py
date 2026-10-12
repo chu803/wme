@@ -184,6 +184,11 @@ def process_busy_pct(seconds: float = 3.0) -> float:
 
     k32.CreateToolhelp32Snapshot.restype = ctypes.c_void_p
     k32.OpenProcess.restype = ctypes.c_void_p
+    # GetProcessTimes 需 4 个 LPFILETIME 出参（creation/exit/kernel/user）。显式 argtypes
+    # 让「参数个数/类型错了」在调用时大声报错，而非静默写坏栈——阶段 295 修的正是
+    # 少传第 4 个出参 ⇒ 第 4 次写入落到未控地址 ⇒ 偶发栈损坏崩溃（0xC0000409）。
+    k32.GetProcessTimes.restype = ctypes.c_int
+    k32.GetProcessTimes.argtypes = [ctypes.c_void_p] + [ctypes.POINTER(_FILETIME)] * 4
 
     def _procs() -> dict[int, str]:
         snap = k32.CreateToolhelp32Snapshot(2, 0)
@@ -208,11 +213,13 @@ def process_busy_pct(seconds: float = 3.0) -> float:
             h = k32.OpenProcess(0x1000, False, pid)
             if not h:
                 continue
-            u, k, e = _FILETIME(), _FILETIME(), _FILETIME()
+            creation, exit_t, kernel, user = (_FILETIME(), _FILETIME(),
+                                              _FILETIME(), _FILETIME())
             try:
-                if k32.GetProcessTimes(ctypes.c_void_p(h), ctypes.byref(u),
-                                       ctypes.byref(k), ctypes.byref(e)):
-                    res[pid] = u.ticks + k.ticks + e.ticks
+                if k32.GetProcessTimes(ctypes.c_void_p(h), ctypes.byref(creation),
+                                       ctypes.byref(exit_t), ctypes.byref(kernel),
+                                       ctypes.byref(user)):
+                    res[pid] = kernel.ticks + user.ticks
             finally:
                 k32.CloseHandle(ctypes.c_void_p(h))
         return res

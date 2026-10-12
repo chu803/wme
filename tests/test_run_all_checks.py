@@ -50,9 +50,14 @@ def _runner(rc_map):
 # ① 编排层
 # ---------------------------------------------------------------------------
 
-def test_default_steps_are_pytest_and_undef_scan():
+def test_default_steps_are_pytest_undef_scan_docker_static():
+    """默认步骤 = pytest + undef_scan + docker_static。
+
+    阶段 C5：容器静态一致性（docker_consistency_check）**不依赖 torch、秒级**，
+    故放默认步骤（随 CI 子集一起跑），而非 --gates（需 torch 的重门禁）。
+    """
     names = [s.name for s in rac.build_steps()]
-    assert names == ["pytest", "undef_scan"]
+    assert names == ["pytest", "undef_scan", "docker_static"]
 
 
 def test_fast_mode_uses_ci_equivalent_marker_selection():
@@ -72,7 +77,7 @@ def test_full_mode_has_no_marker_filter():
 
 def test_gates_flag_appends_gate_steps():
     names = [s.name for s in rac.build_steps(gates=True)]
-    assert names == ["pytest", "undef_scan",
+    assert names == ["pytest", "undef_scan", "docker_static",
                      "clean_bench_probe", "quality_gate", "real_gate", "perf_probe"]
 
 
@@ -179,8 +184,9 @@ def test_run_steps_aggregates_and_reports():
 
 def test_run_steps_all_skipped_returns_two():
     steps = rac.build_steps()
+    # 用「一律返回 2」的 runner：对默认步骤集合的未来增减免疫（不再逐个点名步骤）。
     code, _lines, _rep = rac.run_steps(
-        steps, runner=_runner({"pytest": 2, "undef_scan": 2}), echo=lambda *a, **k: None)
+        steps, runner=lambda *a, **k: _Proc(2), echo=lambda *a, **k: None)
     assert code == 2
 
 

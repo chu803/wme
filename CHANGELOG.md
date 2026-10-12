@@ -5,6 +5,10 @@
 
 ## [Unreleased]
 
+### 修复（阶段 295 · 全量回归验证：修复 5 处真实缺陷）
+- 自 290-b 后首次全量回归（218 文件 / 5 批），覆盖 291–294。**修复 5 处真实缺陷**：① docs/292/293/294 未登记 `docs/INDEX.md`；②③④ `tests/test_run_all_checks.py` 3 处断言未同步 C5 的 `docker_static` 默认步骤；⑤ **`scripts/cpu_load.py` 的 `process_busy_pct` 调 `GetProcessTimes` 少传第 4 个 `FILETIME` 出参 ⇒ 偶发栈损坏崩溃（0xC0000409）拖垮整个测试批**（阶段 224 潜伏 ctypes 缺陷）——修：传齐 4 出参 + 求和改 kernel+user + 加 argtypes 防复发。
+- 16 个 full-batch 失败经**逐个单跑 RC=0 全证为沙箱删除护栏 artifact**（全是 delete/cleanup/rotation 测试、零触及删除逻辑、同轮累积删除即 SIGTERM；不影响 CI）。见 `docs/295`。
+
 ### 修复（阶段 294 · README 规模刷新 + 根文件白名单回归修复）
 - **README §4 项目规模据实刷新**：曾 stale（测试 1346→**2500+ 用例 / 219 文件**、设计文档 103→**249+ 篇**、质量门禁 2→**门禁家族 8 成员**、代码 32k→36k）；「services/ui 未完成审计」声明更新为「45 模块全审、5j 续审链收官」。
 - 新增 `tests/test_readme_scale.py`：docs/测试文件数**下限守卫**（增长量用 ≥ 下限，抗回归删除、对增长免疫）。
