@@ -39,6 +39,7 @@
 - 验证入口：`scripts/run_all_checks.py`（CI 子集 / `--full` / `--gates`）。E2 删除：`scripts/clean_artifacts.py`（archive 优先）。
 - Docker（C5，静态硬化已收口）：`.dockerignore` 排除后上下文 4.4MB；⚠ 本机无 docker CLI，镜像从未真 `docker build`（仅静态契约 + 一致性脚本门禁，诚实披露）。阶段 250 已落地 Dockerfile.gpu P0（python3.11 解释器错配修复 + torch 2.9.1+cu128 统一、删 torchvision）；`tests/test_dockerfile_gpu_contract.py`（12 例）已覆盖 GPU 结构契约。C5 收尾（`f11e0f5`）：新增 `docker-compose.yml`（cpu/gpu profile 一键部署）+ `run_all_checks.py` 默认步骤接入 `docker_static`（跑 `scripts/docker_consistency_check.py`），使容器静态门禁真正 gate CI。真 build 验收仍待用户侧有 Docker 机器。
 - 商品外壳记分卡：`docs/quality/product_scorecard.json`（291 刷新，overall B-/eng A/core B-/prod C+/eco D；116 旧值在 previous_assessment 块）+ `docs/291-商品外壳体检刷新与205回归修复.md`。**205 历史重写（purge big-lama.pt）曾致 `.gitignore` 回归 + `config.user_overrides.json`（运行期可写）被 5edb575 误入库**；291 已 `git rm --cached` + 加固修复。竞品矩阵（未受控横评）：IOPaint 开源领头但 2025-08 归档停更；护城河=免手涂自动+图/PDF/视频全源+本地离线+合规。已补 CONTRIBUTING/SECURITY。
+- 评测盲区审计（292）：八探针全部确认已覆盖、无「无红线覆盖的变坏类型」结构性盲区（活守卫 50 例全绿为证）；残余缺口（full 管线 8.585s、真实覆盖/精度）为**已披露+blocked**（infra/user），按探针 6「不可执行→只能告警」处理，非隐藏盲区。见 `docs/292-评测盲区审计-八探针覆盖确认.md`。
 
 ## API 侧（250/251/255/257）
 只读端点补齐：`/api/capabilities`、`/api/models`、`/api/models/active`、`/api/models/verify?name=`（251）；`/api/health` 保持兼容。推理端点绝不豁免（199 fail-closed）。**255 异步作业模型收口**：`job_manager.py` + `POST /api/jobs` / `GET /api/jobs/{id}` / `GET /api/jobs/{id}/file`；守卫 `tests/test_api_async_jobs255.py` 11 例全绿。**257 D1 worker 池并发标定**：`config.API_ASYNC_MAX_WORKERS`（默认 2，范围 [1,8]）；RTX 5060 甜点 k=2。仅剩 `POST /api/models/active` 按既有决策仍不开放。
