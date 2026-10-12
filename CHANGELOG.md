@@ -5,6 +5,12 @@
 
 ## [Unreleased]
 
+### 新增（阶段 297 · 发布 v1.0 基建：[project.scripts] 控制台入口三件套）
+- `pyproject.toml` 新增 `[project.scripts]`：`wme`（网页 UI）= `main:main` / `wme-cli`（批量命令行）= `cli:main` / `wme-api`（REST 服务）= `server:start_server`；命名属发布范围决策，改名改表即可。三入口函数均经 AST 核验无必需参数，`pip install` 后可直接无参调用。
+- `tests/test_packaging_meta.py` 新增 `test_console_scripts_declared_and_resolvable`：双向锁定「三命令都声明 + module:func 指向磁盘真实顶层可调用」。
+- README §3.3 启动节补充 `wme`/`wme-cli`/`wme-api` 命令（源码直启仍保留）。
+- **实跑验证**：`pip wheel` 成功产出 wheel，解包 `entry_points.txt` 已真实写入三条 console_scripts；装入临时 venv 后 pip 生成的三条 `.exe` 启动器内容正确（`from cli import main; sys.exit(main())` 等），`wme-cli --help` 仅在缺 numpy 等运行期依赖时报错（环境限制，非 wheel 缺陷）。
+
 ### 修复（阶段 295 · 全量回归验证：修复 5 处真实缺陷）
 - 自 290-b 后首次全量回归（218 文件 / 5 批），覆盖 291–294。**修复 5 处真实缺陷**：① docs/292/293/294 未登记 `docs/INDEX.md`；②③④ `tests/test_run_all_checks.py` 3 处断言未同步 C5 的 `docker_static` 默认步骤；⑤ **`scripts/cpu_load.py` 的 `process_busy_pct` 调 `GetProcessTimes` 少传第 4 个 `FILETIME` 出参 ⇒ 偶发栈损坏崩溃（0xC0000409）拖垮整个测试批**（阶段 224 潜伏 ctypes 缺陷）——修：传齐 4 出参 + 求和改 kernel+user + 加 argtypes 防复发。
 - 16 个 full-batch 失败经**逐个单跑 RC=0 全证为沙箱删除护栏 artifact**（全是 delete/cleanup/rotation 测试、零触及删除逻辑、同轮累积删除即 SIGTERM；不影响 CI）。见 `docs/295`。
