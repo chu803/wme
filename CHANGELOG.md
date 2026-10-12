@@ -15,6 +15,10 @@
 - 新增 `.github/workflows/publish.yml`：打 tag `v*` 或手动触发 → 跑与 CI 同一套门禁（`run_all_checks.py`）→ `python -m build` 构建 wheel+sdist → `pypa/gh-action-pypi-publish` 发 PyPI（凭据走 Secret `PYPI_API_TOKEN`，并注明可改 OIDC Trusted Publisher）。
 - 新增 `docs/297-发布v1.0-runbook.md`：固化 4 项发布范围决策处置（命令名已定 / **发 PyPI** / 文字水印暂缓 / API 鉴权留待发布后）、发布步骤、诚实边界（本机未真跑全量 `pip install .`、权重不入包、PyPI 项目名沿用 `wme-watermark-eraser`）。
 
+### 新增（阶段 298 · 项目当前水平评估快照）
+- 新增 `docs/298-项目当前水平评估.md`：把记分卡（291 刷新 / 296 续修）落成人读战略快照——六维指标级水平、真实检测硬指标、优先级缺口、三阶段路线图、未受控竞品横评、诚实边界。
+- 补登记：297-c 建 `docs/297-发布v1.0-runbook.md` 时漏登 `docs/INDEX.md`（会让 `tests/test_docs_index.py` 变红，正是 295 修过的坑）；本阶段在 INDEX 同时补登 297 与 298，`test_docs_index` 5 例全绿 ⇒ 回归已修。
+
 ### 修复（阶段 295 · 全量回归验证：修复 5 处真实缺陷）
 - 自 290-b 后首次全量回归（218 文件 / 5 批），覆盖 291–294。**修复 5 处真实缺陷**：① docs/292/293/294 未登记 `docs/INDEX.md`；②③④ `tests/test_run_all_checks.py` 3 处断言未同步 C5 的 `docker_static` 默认步骤；⑤ **`scripts/cpu_load.py` 的 `process_busy_pct` 调 `GetProcessTimes` 少传第 4 个 `FILETIME` 出参 ⇒ 偶发栈损坏崩溃（0xC0000409）拖垮整个测试批**（阶段 224 潜伏 ctypes 缺陷）——修：传齐 4 出参 + 求和改 kernel+user + 加 argtypes 防复发。
 - 16 个 full-batch 失败经**逐个单跑 RC=0 全证为沙箱删除护栏 artifact**（全是 delete/cleanup/rotation 测试、零触及删除逻辑、同轮累积删除即 SIGTERM；不影响 CI）。见 `docs/295`。
