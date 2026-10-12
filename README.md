@@ -2246,10 +2246,10 @@ docker compose --profile gpu up -d
 
 | 维度 | 数据 |
 |------|------|
-| 代码 | 约 32,000 行（不含测试与脚本；口径见下） |
-| 测试 | **1346 例**（1339 pass；7 例为环境前提 skip：torch/模型就绪时跳过「缺失行为」验证），约 18,000 行 / 92 文件 |
-| 设计文档 | **103 份**，见 `docs/`（100 阶段 + A1/A2/A3） |
-| 质量门禁 | **两条**：合成线 `scripts/quality_gate.py` + 真实线 `scripts/real_gate.py` |
+| 代码 | 约 36,000 行（不含测试与脚本；口径见下） |
+| 测试 | **2500+ 用例 / 219 文件**（精确用例数随套件增长，以 `python -m pytest --co -q` 为准；下限由 `tests/test_readme_scale.py` 守护） |
+| 设计文档 | **249+ 篇**，见 `docs/`（逐阶段设计 + 质量记分卡 `docs/quality/` 等） |
+| 质量门禁 | **门禁家族**：合成 `quality_gate` · 真实 `real_gate --strict-scope` · `e2e_real_probe` · `mask_param_audit` · `clean_bench_probe` · `prompted_area_gate` · `perf_probe` · `docker_consistency_check`（退出码 0/1/2，统一入口 `scripts/run_all_checks.py`） |
 | 模块分层 | `ui → services → core → utils → config`，无反向依赖 |
 | 语言 | 中英双语 |
 
@@ -2282,10 +2282,10 @@ config.py          所有可调常量的唯一入口
   （同尺寸、同位置、同字形）。白底圆角板块判据的阈值按**结构推理**取（实心度 0.07 余量、
   尺寸 2 倍余量），非逐图调参；但若出现**竖排文字角标 / 纯字形无底板 / 彩色底板角标**仍可能漏检。
   另：牌内饱和度实测恒 ≤68，阈值 80 的余量只有 12 —— 强彩色底图 + 高透明底板会掉出（形态边界）。
-- **services / ui 两层仍未完成审计（阶段 88）**：`services/` 13 个模块只审了 **4** 个
-  （queue_worker、quality_service、report_service、video_export）。**`ui/` 层（6,796 行）完全未审计**，
-  仍是项目最大盲区；`services/` 中 postprocess_service（655 行 / 8 次）、auto_pipeline（575 行 / 10 次）
-  亦未审。选点指标 = **模块行数 ÷ 测试引用次数**。
+- **模块审计已全部完成（阶段 88–290）**：`services/` 与 `ui/` 两层早年曾是最大盲区（阶段 88 时
+  `services/` 13 个模块只审了 4 个、`ui/` 层完全未审）；现已经 `audit_selector.py` 驱动逐模块审完
+  **45 个模块**，并以 5j 深度续审链（276–290）对已审模块复审收官（`--unaudited` 返回空表）。
+  选点指标 = **模块行数 ÷ 测试引用次数**。
 - **视频对比帧的帧号不同源（阶段 88 登记）**：`video_export._extract_one` 会把越界帧号夹到
   `[0, total-1]`。若结果视频被 `max_frames` 截断（远短于源视频），而调用方拿**源视频**帧号
   去抽结果帧，得到的是结果视频的最后一帧——两者并非同一时刻。UI 路径的帧号来自结果视频

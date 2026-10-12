@@ -5,6 +5,11 @@
 
 ## [Unreleased]
 
+### 修复（阶段 294 · README 规模刷新 + 根文件白名单回归修复）
+- **README §4 项目规模据实刷新**：曾 stale（测试 1346→**2500+ 用例 / 219 文件**、设计文档 103→**249+ 篇**、质量门禁 2→**门禁家族 8 成员**、代码 32k→36k）；「services/ui 未完成审计」声明更新为「45 模块全审、5j 续审链收官」。
+- 新增 `tests/test_readme_scale.py`：docs/测试文件数**下限守卫**（增长量用 ≥ 下限，抗回归删除、对增长免疫）。
+- **修复 291/C5 引入的回归**：新增 `CONTRIBUTING.md`/`SECURITY.md`/`docker-compose.yml` 未登记 `test_repo_hygiene._ALLOWED_ROOT_FILES` ⇒ 该守卫报红；已补登白名单（合法文件 + 理由）。
+
 ### 新增/修复（阶段 292–293 · 评测盲区审计 + 打包构建验证）
 - **评测盲区审计**（`docs/292`）：对门禁/基准自身跑 eval-blindspot-audit 八探针，确认无「无红线覆盖的变坏类型」结构性盲区（活守卫 50 例全绿为证）；残余缺口（full 管线耗时、真实覆盖/精度）为已披露+blocked，按「不可执行→只能告警」处理。
 - **打包构建验证 + PEP 639 许可迁移**（`docs/293`）：`pyproject.toml` 可构建干净完整纯 Python wheel + sdist（装包 smoke import OK）。修复 `project.license` 弃用——旧 TOML table 形式自 setuptools 77 起弃用、2027-02-18 后构建失效，迁到 `license-files`，build-system setuptools 下限 68→77；`tests/test_packaging_meta.py` 新增禁回退弃用 table 的前向兼容守卫。

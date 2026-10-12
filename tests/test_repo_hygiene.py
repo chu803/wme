@@ -155,8 +155,9 @@ _ALLOWED_ROOT_FILES = {
     "pytest.ini", "test.bat", "test.sh",
     # 合规与说明
     "LICENSE", "README.md", "CHANGELOG.md", "TODO.md",
+    "CONTRIBUTING.md", "SECURITY.md",  # 阶段 291 商品外壳体检补齐
     # 容器交付物（阶段 210 硬化；已 git 追踪，见 docs/250 静态审计）
-    "Dockerfile", "Dockerfile.gpu",
+    "Dockerfile", "Dockerfile.gpu", "docker-compose.yml",  # compose 见阶段 210/C5
     # 本地用户配置覆盖（gitignored，属正常产物）
     "config.user_overrides.json",
 }
