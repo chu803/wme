@@ -53,7 +53,7 @@
         "synthetic_iou": 0.602,
         "synthetic_fp_rate": 0.0036
       },
-      "note": "重建基线（116 时为 30 图口径，现 25/29 图）：全部红线+崩溃护栏均达标，real_gate --strict-scope EXIT=0。过检显著改善（coverage_ratio 3.75→2.21、mask_iou 0.17→0.31）；但 precision 低（0.079，仅高于红线 0.05）且 mask_recall 余量 ~12% 为最薄一条（259 advisory 监控盯防）。precision 口径因数据集换代不可与 116 的 0.155 直接对比。"
+      "note": "重建基线（116 时为 30 图口径，现 25/29 图）：全部红线+崩溃护栏均达标，real_gate --strict-scope EXIT=0。过检显著改善（coverage_ratio 3.75→2.21、mask_iou 0.17→0.31）；但 precision 低（0.079，仅高于红线 0.05）且 mask_recall 余量 ~12% 为最薄一条（259 advisory 监控盯防）。precision 口径因数据集换代不可与 116 的 0.155 直接对比。【296 决定性发现】precision 与 mask_recall 经半透明通路结构性耦合：25 门禁图候选 translucent 190 / ocr_text 73 / corner_logo 5 / edge_text 9，那 190 个 FP 盒的像素覆盖真值水印区、贡献 ~0.076 mask_recall。关掉半透明通路 precision 0.079→0.26 但 mask_recall 0.511→0.4355 破 0.45 红线 ⇒ 提盒精度必丢掩码召回，无免费午餐；当前基线是校准平衡。见 docs/296 / memory 2026-10-12。"
     },
     {
       "id": "repair",
@@ -145,7 +145,7 @@
   ],
   "gaps_by_priority": [
     {"p": "P0", "id": "real_data", "desc": "真实水印类型覆盖窄（对外仅 ai_logo；a1-a4 像素域不可分；4 类真实召回未知）", "blocked_on": "user"},
-    {"p": "P0", "id": "precision_and_margin", "desc": "真实 precision 0.079 低 + mask_recall 余量 ~12% 最薄", "blocked_on": "real_data"},
+    {"p": "P0", "id": "precision_and_margin", "desc": "真实 precision 0.079 低 + mask_recall 余量 ~12% 最薄；296 证实二者经半透明通路结构性耦合（190 FP 盒像素贡献 mask_recall，提盒精度必丢掩码召回）⇒ 非补数据可解，需半透明通路精确化（深层改进）", "blocked_on": "research"},
     {"p": "P1", "id": "performance", "desc": "full 管线 P95 8.585s vs 1.5s；GPU(Blackwell cu128) 未在本机实测", "blocked_on": "infra"},
     {"p": "P1", "id": "repo_shell_regression", "desc": "阶段 205 历史重写致 .gitignore 丢失 116 加固项，config.user_overrides.json 被 5edb575 重新入库（291 已修）", "blocked_on": "none"},
     {"p": "P1", "id": "productization", "desc": "真 docker build 未验收；CONTRIBUTING/SECURITY 曾缺（291 补）；API 无鉴权/限流", "blocked_on": "infra"},
@@ -153,7 +153,7 @@
     {"p": "P2", "id": "ecosystem", "desc": "无分发(PyPI/商店)/账号/计费/社区", "blocked_on": "product"}
   ],
   "roadmap": [
-    {"phase": 1, "window": "0-3 月", "theme": "数据·质量·外壳", "actions": "扩充标注真实水印图（覆盖多类型）；据实重锚 mask_recall 红线或提升实测；真 docker build 验收；API 鉴权+限流；补 PyPI 打包", "acceptance": "真实 precision ≥0.15 且 mask_recall 余量 ≥20%；关闭 a1-a4 缺口或显式收窄；detect P95 <1.5s 保持；docker build/run 三关通过", "scorecard": "core_quality B-→B；productization C+→B"},
+    {"phase": 1, "window": "0-3 月", "theme": "数据·质量·外壳", "actions": "从正确来源补数据（MJ/SD 角标 + 非水印 AI 干净图；注意豆包对其所有输出自动加文字水印、给不出干净图）；mask_recall 余量优先提升；真 docker build 验收；API 鉴权+限流；补 PyPI 打包", "acceptance": "mask_recall 余量 ≥20%（护最薄约束，优先）；关闭 a1-a4 缺口或显式收窄；precision 提升须以不蚀 mask_recall 余量为前提（296 结构性耦合，非简单目标）；detect P95 <1.5s 保持；docker build/run 三关通过", "scorecard": "core_quality B-→B；productization C+→B"},
     {"phase": 2, "window": "3-6 月", "theme": "性能·GPU·发布", "actions": "GPU(Blackwell cu128)实测 full 管线；LaMa/denoise 结构优化或分块并行；发布 v1.0（PyPI/桌面）", "acceptance": "full P95 向 ≤4.4s 结构地板收敛并记录；GPU 推理 is_available 实测通过", "scorecard": "performance C-→B；productization B"},
     {"phase": 3, "window": "6-12 月", "theme": "生态·商业化", "actions": "分发（PyPI/Homebrew/应用商店）；账号+配额+计费；插件/模型市场；可选扩散细化后端（对齐 IOPaint 能力格）", "acceptance": "可安装分发 + 计费闭环 + 至少 1 个第三方插件接入", "scorecard": "ecosystem D→C；overall B-→B"}
   ]
