@@ -21,7 +21,7 @@
 #    足以支撑**本地可安装**（`pip install .`）与元数据读取。
 # ==============================================================================
 [build-system]
-requires = ["setuptools>=68", "wheel"]
+requires = ["setuptools>=77", "wheel"]
 build-backend = "setuptools.build_meta"
 
 [project]
@@ -30,7 +30,11 @@ version = "1.0.0"
 description = "AI 智能水印擦除工作台：本地离线、免手涂的 AI 图片/PDF/视频可见水印检测与修复工具"
 readme = "README.md"
 requires-python = ">=3.11"
-license = { file = "LICENSE" }
+# 许可文件（阶段 293 迁移）：旧的 license table 形式（license = { file = "LICENSE" }）
+#   自 setuptools 77 起弃用，2027-02-18 后构建不再被支持。本作为专有许可（无 SPDX
+#   标识），故按 PEP 639 用 license-files 随包附带 LICENSE 文本，不写 SPDX 表达式；
+#   配套 build-system 的 setuptools 下限已提到 >=77。守卫见 tests/test_packaging_meta.py。
+license-files = ["LICENSE"]
 authors = [{ name = "AI Watermark Eraser Workbench" }]
 keywords = ["watermark", "inpainting", "lama", "opencv", "gradio", "offline"]
 classifiers = [

@@ -7,6 +7,8 @@
       而它在导入期会读环境变量并解析目录，属构建副作用）；
   ③ 声明的 `py-modules` / `packages` **与磁盘现状一致**：漏一个 ⇒ 装出来的包缺模块；
      多一个（写了不存在的）⇒ 构建期报错。两边都要拦。
+  ④ （阶段 293）许可用 PEP 639 的 `license-files`，禁回退弃用的 `license` table
+     （setuptools 2027-02-18 后构建不再支持）。
 """
 from __future__ import annotations
 
@@ -32,7 +34,7 @@ def _pyproject() -> dict:
 def test_pyproject_parses_and_has_required_metadata():
     data = _pyproject()
     proj = data.get("project") or {}
-    for key in ("name", "version", "description", "requires-python", "license"):
+    for key in ("name", "version", "description", "requires-python", "license-files"):
         assert proj.get(key), f"pyproject.toml 缺字段 project.{key}"
     assert data.get("build-system", {}).get("build-backend") == "setuptools.build_meta"
 
@@ -98,3 +100,21 @@ def test_requirements_pin_gradio_major_upper_bound():
     spec = line[0].strip()
     assert "<" in spec, f"gradio 约束缺少大版本上限：{spec}"
     assert "6.x" in text or "6.0" in spec
+
+
+def test_license_uses_modern_pep639_form():
+    """阶段 293：project.license 的 table 形式自 setuptools 77 起弃用、
+    2027-02-18 后构建不再被支持（阶段 293 实跑 build 时暴露该弃用警告）。
+
+    本作是专有许可（无 SPDX 标识），故按 PEP 639 用 license-files 随包附带
+    LICENSE 文本。本守卫双向锁定：
+      · 必须有 license-files（否则许可文本不入包）；
+      · 不得回退到弃用的 license table（防 2027 构建中断回归）。
+    """
+    proj = _pyproject()["project"]
+    assert proj.get("license-files"), "pyproject 缺 license-files（PEP 639 随包附带许可文本）"
+    lic = proj.get("license")
+    assert not isinstance(lic, dict), (
+        f"project.license 又变回弃用的 table 形式 {lic} ⇒ setuptools 2027-02-18 后构建失败；"
+        f"请改用 license-files = [\"LICENSE\"]"
+    )
