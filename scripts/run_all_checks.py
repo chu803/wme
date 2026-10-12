@@ -20,6 +20,10 @@
 #                        标记，与 pytest.ini 的约定一致）；`--full` 跑全量。
 #                        `--cov` 时追加覆盖率统计与**地板判定**（口径见 `.coveragerc`）。
 #   ② undef_scan     —— 静态「引用了但从未定义」名扫描（零依赖、秒级，见该脚本说明）。
+#   ②-b docker_static —— 容器静态一致性（`scripts/docker_consistency_check.py`，
+#                        只读 Dockerfile* / .dockerignore / requirements*.txt，零依赖、
+#                        秒级；守解释器错配 / CUDA 版本不匹配 / 依赖单一真值来源等
+#                        「确定性构建失败」。本机无 docker CLI，故只做静态门禁）。
 #   ③ 门禁步骤       —— 仅 `--gates` 时追加（需 torch / 耗时）：
 #                        clean_bench_probe（干净图误报）· quality_gate（合成红线）
 #                        · real_gate --strict-scope（真实图红线 + 漂移）
@@ -123,6 +127,9 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
                   + (f" + 覆盖率（地板 {COVERAGE_FLOOR}%）" if cov else "")),
         Step("undef_scan", [sys.executable, os.path.join(root, "scripts", "undef_scan.py")],
              note="静态未定义名扫描（零依赖）"),
+        Step("docker_static",
+             [sys.executable, os.path.join(root, "scripts", "docker_consistency_check.py")],
+             note="容器静态一致性（解释器/CUDA/依赖单一真值来源；零依赖、秒级）"),
     ]
     if gates:
         steps += [

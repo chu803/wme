@@ -1,0 +1,75 @@
+# ==============================================================================
+#  AI 智能水印擦除工作台 —— Docker Compose 编排（可选）
+#  阶段 C5 · 一键部署（CPU / GPU 双 profile）
+#
+#  前置：宿主机装好 Docker + Docker Compose v2；GPU 服务还需 NVIDIA 驱动 +
+#        nvidia-container-toolkit（详见 Dockerfile.gpu 顶部说明）。
+#
+#  用法：
+#    · CPU 版（默认 profile）：
+#        docker compose up -d
+#        访问 http://localhost:7860 （网页）；REST 服务在 :7861
+#    · GPU 版（启用 nvidia profile，需显卡机器）：
+#        docker compose --profile gpu up -d
+#        镜像内 torch 为 CUDA 版，DEVICE_MODE=auto 检测到 CUDA 即启用显卡。
+#
+#  ⚠ 两个 service 同时把宿主 7860/7861 映射到容器，故**同一时刻只跑一个**
+#    （用 profile 隔离：默认只起 cpu，加 --profile gpu 才起 gpu）。
+#  ⚠ 权重文件（models/big-lama.pt ~326MB）通过卷挂载，不写进镜像；
+#    首次运行前请先把权重放到宿主机 ./models 目录。
+# ==============================================================================
+
+services:
+  watermark-eraser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: watermark-eraser:latest
+    container_name: wme
+    ports:
+      - "7860:7860"
+      - "7861:7861"
+    environment:
+      WME_SERVER_HOST: "0.0.0.0"
+      WME_SERVER_PORT: "7860"
+      WME_SERVER_OPEN_BROWSER: "False"
+      WME_DEVICE_MODE: "cpu"
+    volumes:
+      - ./outputs:/app/outputs
+      - ./cache:/app/cache
+      - ./models:/app/models
+      - ./exports:/app/exports
+      - ./logs:/app/logs
+      - ./temp:/app/temp
+    restart: unless-stopped
+
+  watermark-eraser-gpu:
+    build:
+      context: .
+      dockerfile: Dockerfile.gpu
+    image: watermark-eraser-gpu:latest
+    container_name: wme-gpu
+    profiles: ["gpu"]
+    ports:
+      - "7860:7860"
+      - "7861:7861"
+    environment:
+      WME_SERVER_HOST: "0.0.0.0"
+      WME_SERVER_PORT: "7860"
+      WME_SERVER_OPEN_BROWSER: "False"
+      WME_DEVICE_MODE: "auto"
+    volumes:
+      - ./outputs:/app/outputs
+      - ./cache:/app/cache
+      - ./models:/app/models
+      - ./exports:/app/exports
+      - ./logs:/app/logs
+      - ./temp:/app/temp
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: ["gpu"]
+    restart: unless-stopped

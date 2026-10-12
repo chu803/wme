@@ -2224,6 +2224,22 @@ docker run --gpus all -p 7860:7860 -p 7861:7861 \
 - 环境变量必须带 `WME_` 前缀（`config.ENV_PREFIX`）才生效；裸 `SERVER_HOST` 会被静默忽略。
 - 构建上下文已由 `.dockerignore` 瘦身（开发/评测资产不入镜像，~3.6GB → ~4MB）。
 
+**Docker Compose（一键部署）**
+
+项目根已提供 `docker-compose.yml`，用 profile 隔离 CPU / GPU 两种服务：
+
+```bash
+# CPU 版（默认 profile）
+docker compose up -d
+
+# GPU 版（需 nvidia-container-toolkit；启用 gpu profile）
+docker compose --profile gpu up -d
+```
+
+- 两服务分别映射宿主 `7860`（网页）/ `7861`（REST）；同一时刻只跑一个（用 profile 隔离，避免端口冲突）。
+- 权重与用户数据通过卷挂载（`./models`、`./outputs`、`./cache`、`./exports`、`./logs`、`./temp`），不入镜像；运行前请把 `big-lama.pt` 放到 `./models`。
+- 静态门禁：CI 默认步骤会跑 `scripts/docker_consistency_check.py` 与 `tests/test_dockerfile_contract.py` / `test_dockerfile_gpu_contract.py`，守住解释器错配 / CUDA 版本不匹配等「确定性构建失败」。
+
 > ⚠️ **构建状态（诚实披露 · 阶段 210）**：镜像在开发机上**从未真正 `docker build` 过**（该机无 docker CLI）。已验证的是静态契约（`tests/test_dockerfile_contract.py` / `test_dockerfile_gpu_contract.py` 全绿）与构建上下文瘦身。首次构建请跑通：① `docker build` 成功；② `docker run` 后 `curl localhost:7860` 出页面、`curl localhost:7861/api/health` 返回 200；③ 挂载权重后用一张真实图端到端去水印。
 
 ## 4. 项目规模
