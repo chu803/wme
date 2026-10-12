@@ -43,6 +43,17 @@ models/*.safetensors
 # 运行时状态（记录当前激活模型，随本机而变，非源码）
 models/.active_model.json
 
+# 运行期用户覆盖配置（阶段 291 修 205 回归）：config.save_user_overrides 会在用户
+# 改设置时合并写入该文件 ⇒ 运行期可变、随本机而变，严禁入库。116 曾加此规则，205
+# 历史重写（purge big-lama.pt）重建 .gitignore 时丢失，5edb575 超分决策落地又误
+# 提交。291 已 git rm --cached 解除追踪，本地文件保留（默认值与决策一致，行为不变）。
+config.user_overrides.json
+
+# 预防性忽略（116 曾声明、205 回归丢失）：根目录命令重定向/日志/临时残留
+*.out
+*.log
+*.tmp
+
 # 阶段探针与临时脚本（E1 已归档根目录点文件；新探针一律放这里）
 .scratch/
 

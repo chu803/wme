@@ -5,6 +5,12 @@
 
 ## [Unreleased]
 
+### 刷新（阶段 291 · 商品外壳体检 + 205 回归修复）
+- 刷新自我质检记分卡 `docs/quality/product_scorecard.json`（116 旧值归档于 previous_assessment 块）：overall **B-**（engineering A / core_quality B- / productization C+ / ecosystem D）；新增竞品能力矩阵（显式标注**未受控横评**）与三阶段可验收路线图。文档 `docs/291-商品外壳体检刷新与205回归修复.md`。
+- **修复 205 历史重写导致的外壳回归**：`.gitignore` 重建时丢失 116 的加固项；`5edb575`（超分决策落地）又把运行期配置 `config.user_overrides.json` 误提交。已 `git rm --cached` 解除追踪（本地文件保留；config 默认值与决策一致 ⇒ 行为不变）+ `.gitignore` 重新加固（`config.user_overrides.json` / `*.out` / `*.log` / `*.tmp`）。
+- 新增 `CONTRIBUTING.md`（内部开发规约：唯一验证入口 / 分层铁律 / 门禁家族 / 改动纪律）与 `SECURITY.md`（本地离线 posture / 依赖单一真值 / 合规边界 / 报告途径）。
+- 诚实披露：CHANGELOG [Unreleased] 此前冻结在 116，117–290 未逐条回填；本版据实刷新记分卡，逐阶段细节仍见 `docs/`。
+
 ### 新增（阶段 116 · 产品化基座）
 - 新增 GitHub Actions CI（`.github/workflows/ci.yml`）：落地 `pytest.ini` 早已声明的
   `torch_required` / `network` 离线 CI 约定（此前项目**无任何 CI**）。

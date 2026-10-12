@@ -1,41 +1,59 @@
 {
   "project": "AI 智能水印擦除工作台 (AI Watermark Eraser Workbench)",
   "version": "1.0.0",
-  "assessed_at": "2026-09-25",
-  "assessment_stage": 116,
-  "purpose": "自我质检记分卡（机器可读）。供每个阶段后刷新，量化「向龙头迈进」的进度。",
+  "assessed_at": "2026-10-12",
+  "assessment_stage": 291,
+  "purpose": "自我质检记分卡（机器可读）。供每个阶段后刷新，量化「向龙头迈进」的进度。本版为对 116 版（2026-09-25）的刷新，并修复阶段 205 历史重写导致的 .gitignore 外壳回归。",
+  "honesty": {
+    "competitor_data": "未受控横评：竞品能力取自厂商官网/第三方评测/开源仓库公开信息，非同条件受控测量；仅作能力矩阵定位，绝不当作实测质量分。",
+    "self_metrics_source": "自家指标全部取自仓库自建门禁/测试，路径见各 dimension.metrics；真实图为豆包外部生成、本地 benchmark_real/ 在位（images/60, clean/images/9）。",
+    "conclusion": "当前真实位置 = overall B-：工程 A 与产品化 C+ 已显著上行，但生态 D 与 core_quality 薄余量（mask_recall ~12%）是锚定短板。"
+  },
+  "previous_assessment": {
+    "assessed_at": "2026-09-25",
+    "assessment_stage": 116,
+    "grades": {"overall": "B", "engineering": "A", "core_quality": "B-", "productization": "D", "ecosystem": "F"},
+    "note": "116 版原文已归档于此块，供进步曲线追溯；116 之后的阶段 117-290 未逐条回填 CHANGELOG（CHANGELOG [Unreleased] 冻结在 116），本版据实刷新。"
+  },
   "grades": {
-    "overall": "B",
+    "overall": "B-",
     "engineering": "A",
     "core_quality": "B-",
-    "productization": "D",
-    "ecosystem": "F"
+    "productization": "C+",
+    "ecosystem": "D"
   },
   "scale": {
     "src_loc": 33200,
-    "test_loc": 22500,
-    "test_files": 107,
-    "test_cases_approx": 1516,
-    "docs": 118,
-    "runtime": "torch 2.9.1+cpu (installed) / requirements pins 2.3.1 (stale)"
+    "test_loc_approx": 26000,
+    "test_cases": 2504,
+    "test_files": 219,
+    "docs": 246,
+    "scripts": 32,
+    "audited_modules": 45,
+    "runtime": "torch 2.9.1+cu128 (RTX 5060 Laptop 8151MiB)；本机 Python 另装 CPU 版；requirements 已统一 2.9.1+cu128（116 时记为 stale 2.3.1，已消除漂移）"
   },
   "dimensions": [
     {
       "id": "detection",
-      "name": "水印检测质量",
+      "name": "水印检测质量（真实图，重建基线）",
       "grade": "B-",
       "metrics": {
-        "synthetic_fp_rate": 0.0036,
+        "real_mask_recall": 0.5111,
+        "real_precision": 0.0789,
+        "real_recall": 0.84,
+        "real_mean_iou": 0.5876,
+        "real_mask_iou": 0.313,
+        "real_mask_coverage": 0.0107,
+        "real_coverage_ratio": 2.21,
+        "red_lines": {"mask_recall_min": 0.45, "precision_min": 0.05, "recall_min": 0.64, "mean_iou_min": 0.35},
+        "crash_guards": {"mask_iou_min": 0.2, "mask_coverage_max": 0.02, "coverage_ratio_max": 3.5},
+        "mask_recall_margin_pct": 12,
         "synthetic_precision": 0.661,
         "synthetic_recall": 0.798,
         "synthetic_iou": 0.602,
-        "real_precision": 0.1552,
-        "real_mask_iou": 0.1705,
-        "real_mask_coverage": 0.0365,
-        "real_coverage_ratio": 3.75,
-        "real_recall_committed_only": 1.0
+        "synthetic_fp_rate": 0.0036
       },
-      "note": "真实精确率 0.155 / 掩码 IoU 0.170 ⇒ 过检约 3.75×（框太多而非框偏）。残余为半透明通路固有误报，受连通域守卫保护，不宜再砍。"
+      "note": "重建基线（116 时为 30 图口径，现 25/29 图）：全部红线+崩溃护栏均达标，real_gate --strict-scope EXIT=0。过检显著改善（coverage_ratio 3.75→2.21、mask_iou 0.17→0.31）；但 precision 低（0.079，仅高于红线 0.05）且 mask_recall 余量 ~12% 为最薄一条（259 advisory 监控盯防）。precision 口径因数据集换代不可与 116 的 0.155 直接对比。"
     },
     {
       "id": "repair",
@@ -45,84 +63,98 @@
         "synthetic_delta_psnr_db": 13.21,
         "delivery_chain_delta_psnr_db": 11.37,
         "e2e_corner_logo_removal": 0.3555,
-        "e2e_corner_logo_spill": 0.007,
-        "e2e_faint_tiled_delta": 0.0041
+        "e2e_corner_logo_spill": 0.007
       },
-      "note": "LaMa/OpenCV 双引擎 + 相位一致的掩码预处理；外溢 ≤1.2%。faint_tiled 去痕率仍偏低。"
+      "note": "LaMa+OpenCV 双引擎 + 相位一致掩码预处理，外溢 ≤1.2%。faint_tiled 去痕率仍偏低；fp16 在 LaMa 上不可用已内置 float32 防护。"
     },
     {
       "id": "coverage",
       "name": "水印类型覆盖（真值）",
       "grade": "D",
       "metrics": {
-        "real_images": 30,
-        "real_ground_truth_watermarks": 60,
         "committed_types": ["ai_logo"],
-        "unknown_types": ["ai_text_heavy", "ai_grid", "ai_faint_tiled", "ai_gradient"],
-        "benchmark_types_total": 8
+        "known_gap_images": ["a1", "a2", "a3", "a4"],
+        "synthetic_gap": ["ai_gradient"],
+        "note_coverage": "真实基准以 corner_logo 为主；a1-a4 大颗多面体宝石角标像素域不可分（243 登记收窄承诺）；ai_gradient 仍为真·无真实图缺口"
       },
-      "note": "P0：真实基准 30 图全为 corner_logo；另 4 类真实召回【未知，不是 100%】。合成基准已覆盖 5 类。"
+      "note": "P0：对外只承诺 ai_logo；4 类真实召回【未知，不是 100%】。覆盖单独成维，未标注真值明写未知。"
     },
     {
       "id": "performance",
       "name": "性能与吞吐",
       "grade": "C-",
       "metrics": {
-        "device": "CPU-only default",
-        "lama_seconds_per_image": "3~4",
-        "video": "逐帧，极慢（30s@30fps ≈ 900 帧）",
-        "gpu_path": "Dockerfile 注释提供 CUDA recipe，未集成 CI/基准"
+        "detect_real_p95_s": 0.776,
+        "full_pipeline_p95_s": 8.585,
+        "full_target_s": 1.5,
+        "device": "本机 CPU 推理（GPU cu128 未在本机实测）",
+        "video": "逐帧，慢"
       },
-      "note": "竞品云端 GPU 2s/2K。本项目本地 CPU 保隐私但慢；缺 GPU 后端集成与批推理优化。"
+      "note": "detect P95 0.776s 已 <1.5s 目标；但 full 管线 8.585s 距 1.5s 差 5.7×（结构性地板 ≈4.4s：LaMa+denoise+detect）。GPU（Blackwell cu128）与 full 提速未在本机验证——受 infra 阻塞。竞品云端 GPU 宣称 ~2s/2K（未受控）。"
     },
     {
       "id": "engineering",
       "name": "工程与质量体系",
       "grade": "A",
       "metrics": {
-        "test_cases_approx": 1516,
-        "docs": 118,
-        "gates": ["scripts/quality_gate.py", "scripts/real_gate.py", "scripts/e2e_real_probe.py --gate", "scripts/mask_param_audit.py"],
+        "test_cases": 2504,
+        "test_files": 219,
+        "docs": 246,
+        "audited_modules": 45,
+        "gates": ["scripts/quality_gate.py", "scripts/real_gate.py", "scripts/clean_bench_probe.py", "scripts/perf_probe.py", "scripts/docker_consistency_check.py"],
+        "ci": ".github/workflows/ci.yml -> scripts/run_all_checks.py（默认步骤含 docker_static）",
+        "license": "LICENSE 专有（与源码头部 All Rights Reserved 一致）",
+        "packaging": "pyproject.toml + build.spec(PyInstaller) + Dockerfile/Dockerfile.gpu + docker-compose.yml 齐备",
         "injection_counterexamples": true,
-        "ci": "missing (added 116).github/workflows/ci.yml",
-        "license": "added 116 (proprietary)",
-        "packaging": "missing pyproject.toml"
+        "margin_monitor": "259 check_redline_margin_health advisory（14 守卫）"
       },
-      "note": "注入式反例 + 三条门禁 + AUDITED_SINCE 审计体系，工程标准远超同类开源项目。缺 CI/打包/许可（116 已补 CI 与 LICENSE）。"
+      "note": "注入式反例 + 门禁家族 + AUDITED_SINCE 审计体系 + 5j 深度续审链（276-290 收官，45 模块全审）+ 跨进程 i18n 污染 conftest 治本。工程标准远超同类开源（IOPaint 已归档停更）。"
     },
     {
       "id": "product_ecosystem",
       "name": "产品化与生态",
-      "grade": "F",
+      "grade": "D",
       "metrics": {
         "hosted_saas": false,
         "user_accounts": false,
         "billing": false,
         "api_auth": false,
-        "plugin_marketplace": "目录已存在 (plugins/)，无市场/分发",
-        "desktop_build": "PyInstaller build.spec 已备，未发布",
-        "i18n": "zh-CN + en-US"
+        "api_async_jobs": true,
+        "distribution": "未发布 PyPI/应用商店/插件市场",
+        "community": "无（对比 IOPaint ~23k star，但其 2025-08 已归档停更）",
+        "i18n": "zh-CN + en-US",
+        "desktop_build": "build.spec 已备，未发布",
+        "contributing_security_docs": "291 补 CONTRIBUTING/SECURITY（116 缺，本版补齐）"
       },
-      "note": "具备 Service/API/CLI/UI/插件 五入口的技术内核，但无账号/计费/鉴权/托管/分发。这是与商业竞品的最大差距。"
+      "note": "具备 Service/API(异步作业 255/257)/CLI/UI 四入口技术内核，但仍无账号/计费/鉴权/托管/分发/社区。这是与商业竞品的最大差距，也是『商品外壳缺』的核心。"
     }
   ],
+  "capability_matrix": {
+    "caveat": "未受控横评：下表为公开信息定位，非同条件测量；WME 列为仓库事实，竞品列为官网/第三方/开源仓库公开描述。",
+    "axes": ["本地离线/隐私", "免手涂自动检测", "图片", "PDF", "视频", "GPU/速度", "API", "合规定位", "分发/社区"],
+    "wme": {"本地离线/隐私": true, "免手涂自动检测": true, "图片": true, "PDF": true, "视频": true, "GPU/速度": "CPU 实测/GPU 未验", "API": "异步作业(无鉴权)", "合规定位": "仅去本人生成内容", "分发/社区": "无"},
+    "iopaint_open_source": {"本地离线/隐私": true, "免手涂自动检测": false, "图片": true, "PDF": false, "视频": false, "GPU/速度": "CPU/GPU", "API": "有", "合规定位": "通用", "分发/社区": "~23k star 但 2025-08 归档停更"},
+    "hitpaw_desktop": {"本地离线/隐私": true, "免手涂自动检测": "选区+多模式", "图片": true, "PDF": false, "视频": true, "GPU/速度": "桌面端", "API": false, "合规定位": "通用", "分发/社区": "商业买断 $12.99/月"},
+    "cloud_saas": {"本地离线/隐私": false, "免手涂自动检测": "选区/积分制", "图片": true, "PDF": "部分", "视频": "部分", "GPU/速度": "云端 GPU 宣称 ~2s", "API": "部分", "合规定位": "通用法务提示", "分发/社区": "托管便利"}
+  },
   "differentiators": [
-    "全本地离线推理（隐私，不上传云端）——竞品多为云端 SaaS",
-    "免手涂自动检测 + 8 类水印预设（竞品多为通用或需手涂）",
-    "PDF / 视频 / 图片 全输入源支持（多数竞品仅图片）",
-    "合规定位（仅去除本人生成内容）——差异化信任标签"
+    "免手涂自动检测 + 8 类水印预设（IOPaint/HitPaw/云端竞品多为手动涂抹或选区）",
+    "图片 + PDF(多页) + 视频(拆帧) 全输入源一体（多数竞品仅图片或图+视频；PDF 分层矢量水印被评测列为 Hard）",
+    "全本地离线推理 + 合规定位（仅去除本人生成 AI 内容，《著作权法》53）——隐私与信任双差异",
+    "可复跑工程质量：2504 用例 + 门禁家族 + 余量监控 + 45 模块审计（领头开源替代 IOPaint 已归档停更 ⇒ 维护性是空位机会）"
   ],
   "gaps_by_priority": [
-    {"p": "P0", "id": "real_data", "desc": "真实水印图覆盖（4 类未知）", "blocked_on": "user"},
-    {"p": "P0", "id": "precision", "desc": "真实精确率 0.155 / 掩码 IoU 0.170（过检 3.75×）", "blocked_on": "real_data"},
-    {"p": "P1", "id": "performance", "desc": "CPU-only、无 GPU 集成、视频慢", "blocked_on": "infra"},
-    {"p": "P1", "id": "productization", "desc": "无账号/计费/鉴权/托管部署", "blocked_on": "product"},
-    {"p": "P2", "id": "model_gap", "desc": "LaMa(2021) vs 扩散(2024)，复杂背景天花板", "blocked_on": "research"},
-    {"p": "P2", "id": "repo_shell", "desc": "缺 pyproject/CHANGELOG；根目录残留 NUL 等", "blocked_on": "none"}
+    {"p": "P0", "id": "real_data", "desc": "真实水印类型覆盖窄（对外仅 ai_logo；a1-a4 像素域不可分；4 类真实召回未知）", "blocked_on": "user"},
+    {"p": "P0", "id": "precision_and_margin", "desc": "真实 precision 0.079 低 + mask_recall 余量 ~12% 最薄", "blocked_on": "real_data"},
+    {"p": "P1", "id": "performance", "desc": "full 管线 P95 8.585s vs 1.5s；GPU(Blackwell cu128) 未在本机实测", "blocked_on": "infra"},
+    {"p": "P1", "id": "repo_shell_regression", "desc": "阶段 205 历史重写致 .gitignore 丢失 116 加固项，config.user_overrides.json 被 5edb575 重新入库（291 已修）", "blocked_on": "none"},
+    {"p": "P1", "id": "productization", "desc": "真 docker build 未验收；CONTRIBUTING/SECURITY 曾缺（291 补）；API 无鉴权/限流", "blocked_on": "infra"},
+    {"p": "P2", "id": "model_gap", "desc": "LaMa(2021) vs 扩散(2024)/PowerPaint，复杂背景天花板；IOPaint 有 SD 外扩与插件生态", "blocked_on": "research"},
+    {"p": "P2", "id": "ecosystem", "desc": "无分发(PyPI/商店)/账号/计费/社区", "blocked_on": "product"}
   ],
   "roadmap": [
-    {"phase": 1, "window": "0-3 月", "theme": "数据与质量", "goal": "真实 precision ≥0.35 / mask_iou ≥0.35；5 类真实 recall ≥0.85"},
-    {"phase": 2, "window": "3-6 月", "theme": "产品化与性能", "goal": "GPU 后端；单图 P95 <1.5s；API 鉴权+限流；Docker Compose 一键部署；发布 v1.0"},
-    {"phase": 3, "window": "6-12 月", "theme": "生态与商业化", "goal": "插件/模型市场；多语言站；账号+配额；可选扩散细化后端"}
+    {"phase": 1, "window": "0-3 月", "theme": "数据·质量·外壳", "actions": "扩充标注真实水印图（覆盖多类型）；据实重锚 mask_recall 红线或提升实测；真 docker build 验收；API 鉴权+限流；补 PyPI 打包", "acceptance": "真实 precision ≥0.15 且 mask_recall 余量 ≥20%；关闭 a1-a4 缺口或显式收窄；detect P95 <1.5s 保持；docker build/run 三关通过", "scorecard": "core_quality B-→B；productization C+→B"},
+    {"phase": 2, "window": "3-6 月", "theme": "性能·GPU·发布", "actions": "GPU(Blackwell cu128)实测 full 管线；LaMa/denoise 结构优化或分块并行；发布 v1.0（PyPI/桌面）", "acceptance": "full P95 向 ≤4.4s 结构地板收敛并记录；GPU 推理 is_available 实测通过", "scorecard": "performance C-→B；productization B"},
+    {"phase": 3, "window": "6-12 月", "theme": "生态·商业化", "actions": "分发（PyPI/Homebrew/应用商店）；账号+配额+计费；插件/模型市场；可选扩散细化后端（对齐 IOPaint 能力格）", "acceptance": "可安装分发 + 计费闭环 + 至少 1 个第三方插件接入", "scorecard": "ecosystem D→C；overall B-→B"}
   ]
 }

@@ -37,7 +37,8 @@
 - git：`init -b main`，身份 `WME Dev <dev@wme.local>`；CI `ci.yml`→`run_all_checks.py`。推远端前跑 `python scripts/ci_env_probe.py`。
 - 历史重写（205）：`models/big-lama.pt` 已从全部历史移除，`.git` 326.6→143.8MB。
 - 验证入口：`scripts/run_all_checks.py`（CI 子集 / `--full` / `--gates`）。E2 删除：`scripts/clean_artifacts.py`（archive 优先）。
-- Docker（C5，210 硬化）：`.dockerignore` 排除后上下文 4.4MB；⚠ 本机无 docker CLI，镜像从未真 `docker build`。250 静态审计：Dockerfile.gpu P0（python3.11 映射）+ 依赖统一 torch 2.9.1（删 torchvision）。
+- Docker（C5，静态硬化已收口）：`.dockerignore` 排除后上下文 4.4MB；⚠ 本机无 docker CLI，镜像从未真 `docker build`（仅静态契约 + 一致性脚本门禁，诚实披露）。阶段 250 已落地 Dockerfile.gpu P0（python3.11 解释器错配修复 + torch 2.9.1+cu128 统一、删 torchvision）；`tests/test_dockerfile_gpu_contract.py`（12 例）已覆盖 GPU 结构契约。C5 收尾（`f11e0f5`）：新增 `docker-compose.yml`（cpu/gpu profile 一键部署）+ `run_all_checks.py` 默认步骤接入 `docker_static`（跑 `scripts/docker_consistency_check.py`），使容器静态门禁真正 gate CI。真 build 验收仍待用户侧有 Docker 机器。
+- 商品外壳记分卡：`docs/quality/product_scorecard.json`（291 刷新，overall B-/eng A/core B-/prod C+/eco D；116 旧值在 previous_assessment 块）+ `docs/291-商品外壳体检刷新与205回归修复.md`。**205 历史重写（purge big-lama.pt）曾致 `.gitignore` 回归 + `config.user_overrides.json`（运行期可写）被 5edb575 误入库**；291 已 `git rm --cached` + 加固修复。竞品矩阵（未受控横评）：IOPaint 开源领头但 2025-08 归档停更；护城河=免手涂自动+图/PDF/视频全源+本地离线+合规。已补 CONTRIBUTING/SECURITY。
 
 ## API 侧（250/251/255/257）
 只读端点补齐：`/api/capabilities`、`/api/models`、`/api/models/active`、`/api/models/verify?name=`（251）；`/api/health` 保持兼容。推理端点绝不豁免（199 fail-closed）。**255 异步作业模型收口**：`job_manager.py` + `POST /api/jobs` / `GET /api/jobs/{id}` / `GET /api/jobs/{id}/file`；守卫 `tests/test_api_async_jobs255.py` 11 例全绿。**257 D1 worker 池并发标定**：`config.API_ASYNC_MAX_WORKERS`（默认 2，范围 [1,8]）；RTX 5060 甜点 k=2。仅剩 `POST /api/models/active` 按既有决策仍不开放。
