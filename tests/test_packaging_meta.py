@@ -118,3 +118,45 @@ def test_license_uses_modern_pep639_form():
         f"project.license 又变回弃用的 table 形式 {lic} ⇒ setuptools 2027-02-18 后构建失败；"
         f"请改用 license-files = [\"LICENSE\"]"
     )
+
+
+def test_console_scripts_declared_and_resolvable():
+    """阶段 296：补齐 `[project.scripts]` 控制台入口，服务「发布 v1.0」。
+
+    三件套 wme / wme-cli / wme-api 必须：
+      · 都声明在 `[project.scripts]` 里（缺一个 ⇒ 装出的 wheel 缺该命令）；
+      · 指向 `module:func` 形式，且 module 是磁盘真实存在的顶层模块；
+      · func 是该模块顶层定义的可调用（AST 校验，避免 import 重型依赖）。
+    这样 wheel 安装后 `wme` / `wme-cli` / `wme-api` 才是可用命令，
+    而非「元数据写了对、实际跑不了」的假绿。
+    """
+    import ast
+
+    scripts = _pyproject()["project"].get("scripts") or {}
+    expected = {
+        "wme": ("main", "main"),
+        "wme-cli": ("cli", "main"),
+        "wme-api": ("server", "start_server"),
+    }
+    # 1) 三个命令都声明
+    missing = [name for name in expected if name not in scripts]
+    assert not missing, f"pyproject 缺控制台入口：{missing}"
+    # 2) 指向的模块:函数 与约定一致
+    for name, (mod, fn) in expected.items():
+        spec = scripts[name]
+        assert spec == f"{mod}:{fn}", (
+            f"控制台入口 {name} 指向 {spec!r}，期望 {mod}:{fn}（命名属发布范围决策，改名请同步此处）"
+        )
+        # 3) 模块文件存在
+        mod_file = _ROOT / f"{mod}.py"
+        assert mod_file.is_file(), f"控制台入口 {name} 指向的模块 {mod}.py 不存在"
+        # 4) 顶层函数存在且是可调用（def / async def）
+        tree = ast.parse(mod_file.read_text(encoding="utf-8"))
+        top_funcs = {
+            n.name for n in tree.body
+            if isinstance(n, (ast.FunctionDef, ast.AsyncFunctionDef))
+        }
+        assert fn in top_funcs, (
+            f"控制台入口 {name} 指向的 {mod}:{fn} 不是 {mod}.py 顶层函数（top_funcs={sorted(top_funcs)}）"
+        )
+

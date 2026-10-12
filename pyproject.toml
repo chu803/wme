@@ -14,11 +14,13 @@
 #
 #  尚未启用（显式登记为待决策，不是遗漏）
 #  ------------------------------------
-#  · `[project.scripts]` 控制台入口：需要先定「命令名 / 入口模块」，
-#    当前启动方式为 `python main.py` 与 Docker（见 README / Dockerfile）。
 #  · 发布到 PyPI / 打 wheel 分发：需先定「哪些模块随包发布」的口径。
 #    本文件的 `py-modules` / `packages.find` 已按仓库现状显式声明，
 #    足以支撑**本地可安装**（`pip install .`）与元数据读取。
+#  · **`[project.scripts]` 控制台入口已于阶段 296 补齐**（见下方表格）：
+#    命令名采用 `wme` / `wme-cli` / `wme-api` 三件套（命名属发布范围决策，
+#    如需改名直接改下表即可）。此前启动靠 `python main.py` / Docker，
+#    现 wheel 安装后可直接以命令调用，服务「发布 v1.0」。
 # ==============================================================================
 [build-system]
 requires = ["setuptools>=77", "wheel"]
@@ -46,6 +48,15 @@ classifiers = [
     "Environment :: Console",
     "Operating System :: OS Independent",
 ]
+
+# 控制台入口（阶段 296 补齐，服务「发布 v1.0」）。
+# 命名属发布范围决策：wme=UI 主入口 / wme-cli=批量命令行 / wme-api=REST 服务。
+# 三入口函数均无必需参数（start_server 三参全默认、main() 无参、cli.main(argv=None)），
+# 可直接由 pip 安装出的命令无参调用。守卫见 tests/test_packaging_meta.py。
+[project.scripts]
+wme = "main:main"
+wme-cli = "cli:main"
+wme-api = "server:start_server"
 
 [tool.setuptools]
 # 顶层单文件模块（与仓库现状一一对应；`conftest.py` 是测试夹具，不发布）

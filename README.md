@@ -2174,6 +2174,16 @@ python download_model.py
 
 ### 3.3 启动
 
+安装为可分发包（`pip install .`）后，可直接用控制台命令启动（命令名详见 `pyproject.toml` 的 `[project.scripts]`，阶段 296 补齐）：
+
+```bash
+wme        # 网页界面（Gradio，等价于 python main.py）
+wme-cli    # 批量命令行（等价于 python cli.py）
+wme-api    # REST 服务（等价于 python server.py，参数有默认值）
+```
+
+开发态或不想安装时，仍可用源码直接启动：
+
 ```bash
 python main.py
 # 或
