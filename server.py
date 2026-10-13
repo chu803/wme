@@ -68,6 +68,7 @@ if _ROOT not in _sys.path:
 import config
 import api
 import job_manager as JM  # 阶段 255：异步作业模型（PDF/视频/模型下载）
+from services import api_security as SEC  # 阶段 299：token 鉴权 + 限流（安全模式）
 from utils.logger import get_logger
 
 log = get_logger("server")
@@ -426,6 +427,12 @@ class _Handler(BaseHTTPRequestHandler):
 
     # ---- GET ----
     def do_GET(self) -> None:  # noqa: N802
+        # 阶段 299：安全模式（API_AUTH_ENABLED）下，作业结果文件下载需鉴权；
+        # 其余只读 GET 豁免鉴权但仍受限流。限流对所有 GET 生效。
+        _path_no_q = self.path.split("?", 1)[0]
+        _auth_required = _path_no_q.startswith("/api/jobs/") and "/file" in _path_no_q
+        if not SEC.security_gate(self, auth_required=_auth_required):
+            return
         if self.path.startswith("/api/health"):
             payload: Dict[str, Any] = {"status": "ok", **api.get_capabilities()}
             # 阶段 199：把并发闸门状态一并暴露，服务方可自省「繁忙」还是「死服」。
@@ -463,6 +470,10 @@ class _Handler(BaseHTTPRequestHandler):
 
     # ---- POST ----
     def do_POST(self) -> None:  # noqa: N802
+        # 阶段 299：安全模式下所有 POST 端点（含作业提交）必须携带有效 token；
+        # 限流对所有 POST 生效。未过闸已回写 401/429，直接返回。
+        if not SEC.security_gate(self, auth_required=True):
+            return
         if self.path.startswith("/api/remove"):
             body = self._read_body()
             if body is None:
@@ -557,6 +568,15 @@ def start_server(host: Optional[str] = None, port: Optional[int] = None,
         raise RuntimeError(
             "REST 服务已被 config.API_ENABLED 禁用，无法启动。"
             "如需启用，请在环境变量中设置 API_ENABLED=true。"
+        )
+
+    # 阶段 299：fail-closed 启动守卫——安全模式开启但密钥为空 ⇒ 拒绝启动，
+    # 不接收任何请求，避免「开了鉴权却无密钥」的伪安全。
+    if config.API_AUTH_ENABLED and not config.API_TOKEN:
+        raise RuntimeError(
+            "API 安全模式已开启（API_AUTH_ENABLED=true）但 API_TOKEN 为空。"
+            "出于 fail-closed 原则服务拒绝启动；请通过环境变量 API_TOKEN "
+            "设置一个非空共享密钥后再启动。"
         )
 
     httpd = _BoundedThreadingHTTPServer((host, port), _Handler,
@@ -669,6 +689,14 @@ GET  /api/jobs/xxxx/file   -> 下载生成后的 PDF/视频</pre>
 <code>/api/models*</code>、<code>/api/jobs*</code> 与本页——它们无副作用，服务繁忙时仍可用来自省。</p>
 <p><b>注意：</b>默认仅监听 127.0.0.1（本机）。若需局域网/公网访问，请设置
 <code>API_HOST=0.0.0.0</code> 并自行做好防火墙与鉴权，避免被他人滥用。</p>
+<h2>⑩ 安全模式（阶段 299 可选）</h2>
+<p>若接口需暴露到不可信网络，可开启<b>安全模式</b>：设置 <code>API_AUTH_ENABLED=true</code> 并给
+<code>API_TOKEN</code> 一个非空密钥（建议走环境变量，勿硬编码）。开启后：<b>所有 POST 端点</b>
+（remove/detect/inpaint/batch/jobs 提交）与<b>作业结果文件下载</b>必须携带
+<code>Authorization: Bearer &lt;token&gt;</code>（或 <code>?token=&lt;token&gt;</code>），否则返回 401；
+只读 GET（health/capabilities/models/jobs 状态）豁免鉴权但仍受<b>限流</b>保护
+（<code>API_RATE_LIMIT_PER_MIN</code> / <code>API_RATE_BURST</code>）。若开启安全模式却未设
+<code>API_TOKEN</code>，服务<b>拒绝启动</b>（fail-closed）。默认关闭，行为与未加入前一致。</p>
 </body></html>"""
 
 

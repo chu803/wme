@@ -2742,6 +2742,29 @@ API_MAX_CONCURRENCY: Final[int] = _env_int("API_MAX_CONCURRENCY", 4, 0, 64)
 #   · 若做批量吞吐优先（多用户/队列），可上调至 4（吞吐 +82%、单作业延迟 ~+18%）。
 API_ASYNC_MAX_WORKERS: Final[int] = _env_int("API_ASYNC_MAX_WORKERS", 2, 1, 8)
 
+# ------------------------------------------------------------------------------
+# API 安全模式（阶段 299 · 你决定：API 鉴权/限流）
+# ------------------------------------------------------------------------------
+# 总开关：默认关闭 ⇒ 行为与本开关加入前完全一致（仅由 API_MAX_CONCURRENCY 并发闸门
+# 保护），既有调用方/测试零影响。置 true 开启「安全模式」：
+#   · 所有 POST 端点（remove/detect/inpaint/batch/jobs 提交）+ 作业结果文件下载需 token；
+#   · 只读 GET（health/capabilities/models/jobs 状态）豁免鉴权但仍受限流；
+#   · 所有请求（GET+POST）受限流保护，防滥用拖垮 P95。
+# ⚠ fail-closed：安全模式开启但 API_TOKEN 为空时，start_server 直接拒绝启动
+#   （不接收任何请求），避免「开了鉴权却无密钥」的伪安全。
+API_AUTH_ENABLED: Final[bool] = _env_bool("API_AUTH_ENABLED", False)
+
+# 【API 共享密钥】安全模式下用于 Bearer 鉴权。强烈建议用环境变量注入，勿硬编码进仓库。
+# 为空且 API_AUTH_ENABLED=True ⇒ 服务拒绝启动。
+API_TOKEN: Final[str] = _env_str("API_TOKEN", "")
+
+# 【限流 · 每分钟请求数上限】令牌桶「速率」= 本值 / 60 秒；按密钥计（有 token 按 token，
+# 否则按客户端 IP）。突发容量见 API_RATE_BURST。
+API_RATE_LIMIT_PER_MIN: Final[int] = _env_int("API_RATE_LIMIT_PER_MIN", 60, 1, 100000)
+
+# 【限流 · 突发容量】令牌桶初始/最大令牌数，允许短时突发而不被立即限流。
+API_RATE_BURST: Final[int] = _env_int("API_RATE_BURST", 10, 1, 100000)
+
 # ==============================================================================
 # 第 13 节：合规声明文本（COMPLIANCE）
 # ------------------------------------------------------------------------------

@@ -23,6 +23,18 @@
 - `publish.yml` 在 `python -m build` 后新增 `actions/upload-artifact@v4` 步骤：将 wheel+sdist 上传为 Actions artifact，**即使未配 `PYPI_API_TOKEN` 也能在 Actions 页面下载产物本地试装**，给发布加安全网。
 - runbook 诚实边界补记：本机清华镜像缺 `build` 包与 `setuptools>=77`（`from versions: none`），`python -m build` 本机无法复现；已用等价的 `pip wheel --no-build-isolation` 验证 wheel 构建/entry_points/临时 venv 启动器；`python -m build` 在 GitHub 官方 PyPI 环境可正常取构建依赖。
 
+### 新增（阶段 299 · API 安全层：token 鉴权 + 限流，零新依赖）
+- 新增 `services/api_security.py`：纯标准库实现——`security_gate()` 统一闸门（限流 + 鉴权），
+  进程内令牌桶限流（`_rate_limit_allow`，按 token 或客户端 IP 计），`extract_token` 从
+  `Authorization: Bearer` 或 `?token=` 取密钥，`hmac.compare_digest` 恒定时间比对。
+- `server.py` 在 `do_GET`/`do_POST` 顶部接入闸门：**安全模式（`API_AUTH_ENABLED=true`）下，
+  所有 POST 端点（remove/detect/inpaint/batch/jobs 提交）与作业结果文件下载需有效 token
+  （否则 401）；只读 GET（health/capabilities/models/jobs 状态）豁免鉴权但仍受限流**；限流对所有请求生效。
+- `config.py` 新增 `API_AUTH_ENABLED`（默认 false）/ `API_TOKEN` / `API_RATE_LIMIT_PER_MIN`（默认 60）/
+  `API_RATE_BURST`（默认 10）；`start_server` 加 **fail-closed 启动守卫**：安全模式开但 token 空 ⇒ 拒绝启动。
+- **默认关闭 ⇒ 零行为变更**：既有调用方/测试不受影响；`tests/test_api_security299.py` 12 例全绿，
+  并复跑 API+打包族 70 例（251/255/256/ concurrency-d1 / auto-erase / packaging）全绿，无回归。
+
 ### 修复（阶段 295 · 全量回归验证：修复 5 处真实缺陷）
 - 自 290-b 后首次全量回归（218 文件 / 5 批），覆盖 291–294。**修复 5 处真实缺陷**：① docs/292/293/294 未登记 `docs/INDEX.md`；②③④ `tests/test_run_all_checks.py` 3 处断言未同步 C5 的 `docker_static` 默认步骤；⑤ **`scripts/cpu_load.py` 的 `process_busy_pct` 调 `GetProcessTimes` 少传第 4 个 `FILETIME` 出参 ⇒ 偶发栈损坏崩溃（0xC0000409）拖垮整个测试批**（阶段 224 潜伏 ctypes 缺陷）——修：传齐 4 出参 + 求和改 kernel+user + 加 argtypes 防复发。
 - 16 个 full-batch 失败经**逐个单跑 RC=0 全证为沙箱删除护栏 artifact**（全是 delete/cleanup/rotation 测试、零触及删除逻辑、同轮累积删除即 SIGTERM；不影响 CI）。见 `docs/295`。

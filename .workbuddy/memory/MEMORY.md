@@ -41,6 +41,12 @@ detect 真实 P95=**0.776s**（<1.5s 达标）；full P95=**8.585s**（superres=
 只读端点 `/api/capabilities`/`/api/models`/`/api/models/active`/`/api/models/verify` 已补齐（251）；推理端点绝不豁免（199 fail-closed）。**255 异步作业收口**（`job_manager.py` + `POST/GET /api/jobs[/id][/file]`，11 例全绿）。**257 D1 worker 池** `config.API_ASYNC_MAX_WORKERS` 默认 2（[1,8]）；仅 `POST /api/models/active` 仍不开放。
 - **D1 并发实测（RTX 5060 Laptop 8GB，2026-10-13，superres=off）**：worker 1→2 吞吐 0.104→0.168 img/s（+62%）、P50 9.5→9.9s（平）；worker=4 吞吐反降 0.139、P50 飙 24.7s、显存 3523→6623MB ⇒ **默认 2 已验证为甜点，提至 4/8 因显存争用致吞吐回退+尾延迟翻倍**。脚手架 `scripts/d1_concurrency_probe.py` 可复测。
 
+## API 安全层（299 · 你决定：API 鉴权/限流）
+- `services/api_security.py`：纯标准库 token 鉴权 + 进程内令牌桶限流（零新依赖，沿用零依赖 REST）。
+- `API_AUTH_ENABLED`（默认 false，总开关）/ `API_TOKEN` / `API_RATE_LIMIT_PER_MIN`(60) / `API_RATE_BURST`(10)。**默认关 ⇒ 零行为变更**。
+- 契约：安全模式下 POST 端点 + 作业文件下载需 token（401）；只读 GET 豁免鉴权仍受限流（呼应 251 闸门豁免）；start_server fail-closed（开安全模式却空 token ⇒ 拒启）。
+- 守卫 `tests/test_api_security299.py` 12 例全绿；API+打包族 70 例无回归。
+
 ## 决策级边界（已收口）
 - A4（2026-10-04）：a1-a4 归 corner_logo 非全图渐变；`ai_gradient` 仍为真·无真实图缺口。
 - ① 超分 2026-10-08 关闭（`user_overrides` → `ENABLED=false/SCALE=4/BACKEND=auto`）。
