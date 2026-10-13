@@ -39,6 +39,7 @@ detect 真实 P95=**0.776s**（<1.5s 达标）；full P95=**8.585s**（superres=
 
 ## API 侧
 只读端点 `/api/capabilities`/`/api/models`/`/api/models/active`/`/api/models/verify` 已补齐（251）；推理端点绝不豁免（199 fail-closed）。**255 异步作业收口**（`job_manager.py` + `POST/GET /api/jobs[/id][/file]`，11 例全绿）。**257 D1 worker 池** `config.API_ASYNC_MAX_WORKERS` 默认 2（[1,8]）；仅 `POST /api/models/active` 仍不开放。
+- **D1 并发实测（RTX 5060 Laptop 8GB，2026-10-13，superres=off）**：worker 1→2 吞吐 0.104→0.168 img/s（+62%）、P50 9.5→9.9s（平）；worker=4 吞吐反降 0.139、P50 飙 24.7s、显存 3523→6623MB ⇒ **默认 2 已验证为甜点，提至 4/8 因显存争用致吞吐回退+尾延迟翻倍**。脚手架 `scripts/d1_concurrency_probe.py` 可复测。
 
 ## 决策级边界（已收口）
 - A4（2026-10-04）：a1-a4 归 corner_logo 非全图渐变；`ai_gradient` 仍为真·无真实图缺口。
