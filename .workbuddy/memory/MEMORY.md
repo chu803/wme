@@ -19,6 +19,7 @@
 ## 门禁家族（持久契约）
 quality_gate + real_gate(30图) + e2e_real_probe(10图×4类) + mask_param_audit + clean_bench_probe + prompted_area_gate + perf_probe + docker_consistency_check。退出码 0/1/2（+ real_gate 退码3=环境错误）。每个 `--update/--refresh` 须接 `baseline_guard`。脚本 print 非 GBK 须 `force_utf8_stdio()`。
 - **real_gate / run_real_benchmark 必须跑在 canonical venv**：解释器 `python/envs/default/Scripts/python.exe`（torch 2.9.1+cu128 + easyocr + numpy + cv2 + PIL 全齐）。用错解释器（如系统 Python3.11.4 无 torch/easyocr）会**静默降级 OpenCV 兜底**，致五条红线全红、相对基线全漂移的 silently-wrong 误判——已加 `_require_runtime_deps()` 守卫（缺失 torch/easyocr ⇒ EXIT=3 环境错误，信息指明 canonical venv 路径），避免假红误导发布。
+- **「CI 已绿」必须以 `ci_env_probe.py` 全量、且确认零真红为准**：`real_gate` 的 `_require_runtime_deps()` 守卫在 CI 等价（屏蔽 torch/easyocr）下返回 EXIT=3；若 CLI 测试未用 `monkeypatch.setattr(rg,"_require_runtime_deps",lambda:None)` 屏蔽，断言会被 3 击穿。**仅凭单文件/隔离子集 RC=0 不能断言 CI 绿**——阶段 300 收口时上一轮只在真实 venv（torch 在、守卫天然不触发）下跑过隔离集，误判「CI 已绿」，全量 CI 探针才暴露 5 个 `test_real_gate` 真红（`cb43e84` 修复：补齐 5 处 monkeypatch）。**真红 vs 沙箱假红区分**：失败若 `SystemExit:1` 且行号指向删除/日志轮转（`sitecustomize._check_bulk_delete_guard` 会话级批量删闩锁），属本沙箱 artifact、真实 GitHub CI 无此闩锁，不计为真红、不修。
 
 ## 性能归因链
 detect 真实 P95=**0.776s**（<1.5s 达标）；full P95=**8.585s**（superres=off，结构性地板≈4.4s ⇒ 1.5s 对 full 不可达）。torch 2.9.1+cu128 + big-lama.pt。
