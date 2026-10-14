@@ -104,6 +104,7 @@ def test_gpu_failure_still_yields_a_usable_reader(monkeypatch):
     （实测记录到 `[False]` 而非 `[True, False]`）——**探针 bug 会被误读成产品缺陷**
     （LESSONS 233）。
     """
+    pytest.importorskip("easyocr")  # easyocr 是可选依赖：CI(requirements-min) 不含，缺失则跳过本用例
     import easyocr
 
     calls = []
@@ -140,6 +141,7 @@ def test_gpu_failure_still_yields_a_usable_reader(monkeypatch):
 
 def test_no_device_env_never_breaks_detection(monkeypatch):
     """**注入式反例**：设备探测抛异常时必须走 CPU，且不返回 None。"""
+    pytest.importorskip("easyocr")  # easyocr 是可选依赖：CI(requirements-min) 不含，缺失则跳过本用例
     import easyocr
 
     class _FakeReader:
@@ -185,6 +187,7 @@ def test_config_switch_is_env_overridable():
 
 def test_config_false_forces_cpu(monkeypatch):
     """配置为 False 时**不得**尝试 GPU（显式声明，不受设备探测影响）。"""
+    pytest.importorskip("easyocr")  # easyocr 是可选依赖：CI(requirements-min) 不含，缺失则跳过本用例
     import easyocr
     seen = []
 

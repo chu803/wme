@@ -58,7 +58,7 @@ detect 真实 P95=**0.776s**（<1.5s 达标）；full P95=**8.585s**（superres=
 - **296 precision↔mask_recall 结构性耦合（决定性否证）**：半透明通路在 25 门禁图产 190 个 FP 盒（translucent），盒级是 FP 但像素覆盖真值水印、贡献 ~0.076 mask_recall；关掉该通路 precision 0.079→0.26(3.3×) 但 mask_recall 0.511→0.4355 **破 0.45 红线** ⇒ 提盒精度必蚀掩码召回，无免费午餐。当前 (0.65,0.50) 为校准平衡；干净解需半透明通路**精确盒化**（深层改进，research 阻塞）。precision 低但安全（余量 37%），mask_recall 余量 12% 是更紧约束。
 - **297-298 发布管线就绪**：pyproject 补 `[project.scripts]` 三件套（`wme`=main / `wme-cli`=cli / `wme-api`=server），AST 守卫 + 真 wheel 构建验证（entry_points 真实写入、临时 venv 真装生成正确启动器）。新增 `.github/workflows/publish.yml`（tag `v*` → 门禁 → build → 发 PyPI，Secret `PYPI_API_TOKEN`）+ `docs/297-发布v1.0-runbook.md` + `docs/298-项目当前水平评估.md`。**待用户 push + 配 token + 打 tag v1.0.0 即上 PyPI**。
 
-## 数据方向 · 28 张真实豆包图入基准（300 · 已提升 release + 重锚）
+## 数据方向 · 28 张真实豆包图入基准（300 · 已提交 release + 重锚 · 57d9c5d）
 - 用户供图 `D:\照片存储` → 29 PNG 入 `benchmark_real/images/`；**c12 与 c11 字节完全相同**（sha256 `06863b7c64d4…`，collect 按 hash 去重）⇒ 实为 **28 张唯一图**（c1-c11/c13-c15/s1-s14，均 2048×2048）。
 - 28 张全带同一「豆包 AI 生成」**固定平台水印**（右下 ≈ `[1683,1936,319,71]`）；**无干净图** ⇒ 296 作战包「干净图校准 precision」目标未达成。
 - **独立量取法**（非 detector ⇒ 不触 `AUTO_PREFIX` 循环论证守卫）：跨 28 图**平均高通响应**（固定覆盖保留、自然纹理相消）定足迹，再逐图在足迹内按自身响应取阈值掩码外接框（同既有 ai_logo_* 逐图实测纪律）。v1「矩形窗口」版会吃背景噪声致框外扩（虚高 recall），已弃用。
