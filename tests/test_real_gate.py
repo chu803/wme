@@ -617,6 +617,7 @@ def test_cli_exit1_when_red_line_broken(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(rg, "TRUTH_PATH", str(bdir / "ground_truth.json"))
     monkeypatch.setattr(sys, "argv", ["real_gate.py", "--baseline", str(baseline_path)])
 
+    monkeypatch.setattr(rg, "_require_runtime_deps", lambda: None)  # 屏蔽依赖守卫：本用例测 CLI 逻辑
     assert rg.main() == 1
     out = capsys.readouterr().out
     assert "红线" in out

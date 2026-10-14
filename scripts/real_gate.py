@@ -1119,6 +1119,34 @@ def to_markdown(summary: dict) -> str:
     return "\n".join(lines)
 
 
+def _require_runtime_deps() -> "str | None":
+    """真实门禁的运行时依赖预检（fail-closed，与「质量不合格」区分）。
+
+    阶段 299.x：real_gate 依赖 torch（检测核心）与 easyocr（文字水印通路）。
+    二者缺失时检测器会静默降级（OpenCV 兜底），导致 **全部红线被假阳性击穿**
+    （实测：缺失 easyocr 时 general/mask_recall 0.5111→0.3554、precision 0.0789→0.0388，
+    EXIT 由 0 变 1）——看起来像质量回退，实为环境问题。故缺失关键依赖时，
+    以明确的「环境错误」退出（退出码 3），与质量不合格（1）/ 跳过（2）区分，
+    避免 silently-wrong 的体检结论误导发布决策。
+    """
+    missing = []
+    for mod in ("torch", "easyocr"):
+        try:
+            __import__(mod)
+        except Exception:
+            missing.append(mod)
+    if missing:
+        return (
+            "环境错误：缺失关键依赖 " + ", ".join(missing) +
+            "。real_gate 需要 torch + easyocr 才能得出可靠读数；"
+            "缺失会导致 silently-wrong 的全红误判（非真实质量回退）。\n"
+            "请使用项目 venv 运行（含 torch 2.9.1+cu128 与 easyocr），例如：\n"
+            "  .workbuddy/binaries/python/envs/default/Scripts/python.exe "
+            "scripts/real_gate.py --strict-scope"
+        )
+    return None
+
+
 def main() -> int:
     # Windows 上 stdout 被重定向到管道时，Python 按 **ANSI 代码页**（简体中文 = GBK）编码输出；
     # 而本脚本的横幅含 `⚠`（U+26A0）与 `✅/❌`——**GBK 不可编码** ⇒ `print(to_markdown(...))`
@@ -1144,6 +1172,13 @@ def main() -> int:
     ap.add_argument("--no-area", action="store_true",
                     help="跳过「未承诺预设的掩码面积」监控（提速用；门禁默认开启）")
     args = ap.parse_args()
+
+    # 运行时依赖预检（fail-closed）：缺失 torch/easyocr 会让结果 silently-wrong，
+    # 以「环境错误」退出（3）与质量不合格（1）区分，避免假阳性全红误导发布。
+    _dep_err = _require_runtime_deps()
+    if _dep_err:
+        print(_dep_err, file=sys.stderr)
+        return 3
 
     # 数据集缺失 → 跳过（exit 2，与「通过」区分开）。
     for p in (MANIFEST_PATH, TRUTH_PATH):

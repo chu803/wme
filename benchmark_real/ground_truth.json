@@ -493,6 +493,482 @@
       ],
       "labeled_at": "2026-10-05T06:44:27Z",
       "labeled_by": "measured:highpass"
+    },
+    {
+      "image_id": "c1",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1928,
+            318,
+            78
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c2",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1937,
+            318,
+            70
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c3",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1928,
+            317,
+            79
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c4",
+      "watermarks": [
+        {
+          "bbox": [
+            1675,
+            1928,
+            327,
+            87
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c5",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1928,
+            314,
+            78
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c6",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1937,
+            318,
+            70
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c7",
+      "watermarks": [
+        {
+          "bbox": [
+            1675,
+            1928,
+            325,
+            79
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c8",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1938,
+            315,
+            68
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c9",
+      "watermarks": [
+        {
+          "bbox": [
+            1675,
+            1928,
+            335,
+            83
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c10",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1937,
+            318,
+            70
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c11",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1938,
+            315,
+            68
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c13",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1928,
+            317,
+            87
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c14",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1938,
+            315,
+            68
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "c15",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1936,
+            318,
+            74
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s1",
+      "watermarks": [
+        {
+          "bbox": [
+            1675,
+            1928,
+            335,
+            87
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s2",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1937,
+            317,
+            69
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s3",
+      "watermarks": [
+        {
+          "bbox": [
+            1675,
+            1928,
+            327,
+            79
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s4",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1938,
+            317,
+            68
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s5",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1937,
+            315,
+            69
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s6",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1938,
+            315,
+            68
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s7",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1928,
+            318,
+            81
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s8",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1933,
+            315,
+            73
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s9",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1938,
+            317,
+            68
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s10",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1936,
+            318,
+            74
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s11",
+      "watermarks": [
+        {
+          "bbox": [
+            1684,
+            1928,
+            318,
+            78
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s12",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1938,
+            315,
+            68
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s13",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1938,
+            315,
+            68
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
+    },
+    {
+      "image_id": "s14",
+      "watermarks": [
+        {
+          "bbox": [
+            1686,
+            1937,
+            315,
+            70
+          ],
+          "style": "corner_logo",
+          "note": "右下角「豆包 AI 生成」文字水印。bbox 为逐图约束量取（跨图平均高通先验 [1683,1936,319,71] 邻域窗口内、按本图自身高通响应取阈值掩码外接框；非 detector 输出）。"
+        }
+      ],
+      "labeled_at": "2026-10-13T11:57:48Z",
+      "labeled_by": "measured:per-image-constrained"
     }
   ],
   "_note": "阶段 172-A + A4'（2026-10-04 订正）：角标板为真值精修。a1–a4 经 clean 对 + 人工精读确认为「豆包 AI 生成角标」（角落半透明多面体三角，corner_logo），**不是全图渐变**——原 gradient_watermark + 近全图 bbox 系 diff 被重渲染颗粒淹没所致，已订正为角标真实位置。副作用：ai_gradient（全图渐变）目前仍无真实图真值，保留为已知缺口（committed=False）。\n2026-10-04 补充：新增 q1–q6 / q1;.png–q5;.png 共 11 张（豆包生成，corner_logo 文字水印），bbox 由高通路程序化测得（非人工网格精读，本环境不可视觉读图）。q1_2 为 neon 图、水印角位不确定（标右上）。"

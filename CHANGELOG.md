@@ -5,6 +5,18 @@
 
 ## [Unreleased]
 
+### 数据（阶段 300 · 28 张真实豆包图入基准 + 重锚，mask_recall 余量 12%→24.8%）
+- 用户供图 `D:\照片存储` 收编 **28 张**（c1–c11/c13–c15/s1–s14，2048×2048）入 `benchmark_real/`：真值标注 **29→57 条**，承诺面实评 **25→53 图**。**c12 与 c11 字节完全相同**（sha256 `06863b7c64d4…`），`collect_real_assets.py scan` 已按 hash 去重故不入基准（避免同图双计污染聚合）。
+- **独立量取法**（不触 `tests/test_real_asset_preflight.py` 的 `auto:` 循环论证硬守卫）：跨 28 图**平均高通响应**——固定平台覆盖保留、自然纹理相消——干净浮出「豆包 AI 生成」文字足迹 `[1683,1936,319,71]`；再逐图在足迹内按自身响应取阈值掩码外接框（19 个不同 bbox，符合既有 `ai_logo_*` 逐图实测纪律，也过 preflight 的模板化/信息量双守卫）。
+- **再锚后实测（53 图 · general）**：mask_recall **0.5111→0.5984**、recall 0.8400→0.9057、mean_iou 0.5876→0.6673、precision 0.0789→0.0758、mask_iou 0.313→0.3124、mask_coverage 0.0120→0.0137、coverage_ratio 2.21→2.47。**红线一条未动**，夹逼不变式全部仍满足；`real_gate --strict-scope` **EXIT=0**。
+- **mask_recall 余量 ~12%→~24.8%**（仍是最薄一条，259 advisory 盯防）——「红线未随数据集重锚」的担忧实质性缓解；漂移告警线与硬线之间从 0.010 恢复到 0.089 的真实缓冲。
+- **A/B 泛化诊断**（口径自证：原 25 图 box_recall 0.8400 与门禁基线逐位相同）：新 28 张 **0.9643**（27/28）> 原 25 张 0.8400（21/25）⇒ 检测器对新真实图泛化更优。唯一漏检 `c15`（密集小字母艺术字 + 水印低对比度，OCR 被装饰字母占满），经放大目视确认标注无误，属**真漏检**。
+- **新增开放项**：两条未承诺通路面积漂移略超 15% 容差——`ai_faint_tiled` 2.38%→2.80%（+17.6%）、`ai_grid` 7.58%→8.88%（+17.2%），均远低于硬红线 7.5%/12.5%；成因为新图自然纹理更丰富的**构成效应**，非检测器回退。见 `docs/258` §六。
+- 连带同步（经验 81）：`--update --force-update` 重锚基线后，同步 `tests/test_detector_audit100.py`(MSER_OFF) / `tests/test_overdetection99.py`(CONVERGED) / `tests/test_watermark_scope.py`(ai_logo 29→57) / `tests/test_redline_margin_health259.py`(余量带)；`MSER_ON` 等注入反例锚点保持不变。README / `docs/258` / `docs/298` / `docs/quality/product_scorecard.json` 的口径与指标一并刷新。
+
+### 修复（阶段 300-b · `run_all_checks.py --help` 崩溃）
+- `--cov` 的 help 字符串含字面 `%`，argparse 的 `_expand_help` 将其当格式符解析 ⇒ `--help` 直接以 `ValueError: unsupported format character` 崩溃（全角逗号紧邻百分号）。修：转义为 `%%`。验证：修复后 `--help` EXIT=0 且正常输出用法。
+
 ### 新增（阶段 297 · 发布 v1.0 基建：[project.scripts] 控制台入口三件套）
 - `pyproject.toml` 新增 `[project.scripts]`：`wme`（网页 UI）= `main:main` / `wme-cli`（批量命令行）= `cli:main` / `wme-api`（REST 服务）= `server:start_server`；命名属发布范围决策，改名改表即可。三入口函数均经 AST 核验无必需参数，`pip install` 后可直接无参调用。
 - `tests/test_packaging_meta.py` 新增 `test_console_scripts_declared_and_resolvable`：双向锁定「三命令都声明 + module:func 指向磁盘真实顶层可调用」。

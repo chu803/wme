@@ -148,6 +148,9 @@ def run_sweep(*, stage: str, items, workers, requests: int, engine: str,
 
 
 def main(argv=None) -> int:
+    # 阶段 170：输出编码加固（详见 scripts/console_encoding.py）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser(description="D1 并发吞吐探针（需本机 GPU 实跑）")
     ap.add_argument("--stage", choices=("full", "detect"), default="full",
                     help="full=检测+修复全链路(GPU/LaMa)；detect=仅检测(CPU 绑定)")

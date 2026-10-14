@@ -156,6 +156,13 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/run_all_checks.py": "S 统一验证入口（会递归拉起 pytest 子进程，超出本守卫 300s 超时，"
                                  "且会被 pytest 套件内再调 pytest 递归占用）",
     "scripts/perf_probe.py": "S 性能探针（跑真实检测推理，10 次；语义同门禁一族）",
+    # 阶段 300-b 补登记：该文件由**阶段 299**（D1 并发实测）新建时漏登记 ⇒
+    #   `test_selfcheck_coverage_is_accounted_for` 与 `test_scripts_console_encoding`
+    #   两守卫常红。其 `__main__` 扫 worker=1/2/4/8 跑**全链路推理**（分钟级 + GPU），
+    #   语义同 perf_probe 一族，不适合做子进程自检（会拖垮套件）。
+    #   其判据正确性由 `tests/test_concurrency-d1.py` 覆盖；编码加固已在 main() 顶部补
+    #   `force_utf8_stdio()`（阶段 300-b）。
+    "scripts/d1_concurrency_probe.py": "S D1 并发吞吐探针（扫 worker 1/2/4/8 跑全链路推理，分钟级 + GPU；语义同 perf_probe）",
     "scripts/a4_gradient_proof.py": "S ai_gradient 真渐变证伪实验脚本（诊断用；需真实图输入，默认无输入 rc=2，不登记为运行时自检）",
     "scripts/clean_artifacts.py": "S 仓库产物清理脚本（运维用；默认 dry-run 只读，非运行时模块自检）",
 }

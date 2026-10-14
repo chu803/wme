@@ -17,7 +17,8 @@
 - 能力声明：`WATERMARK_TYPE_COMMITTED={ai_logo}` + `KNOWN_SYNTHETIC_GAP={ai_gradient}`。
 
 ## 门禁家族（持久契约）
-quality_gate + real_gate(30图) + e2e_real_probe(10图×4类) + mask_param_audit + clean_bench_probe + prompted_area_gate + perf_probe + docker_consistency_check。退出码 0/1/2。每个 `--update/--refresh` 须接 `baseline_guard`。脚本 print 非 GBK 须 `force_utf8_stdio()`。
+quality_gate + real_gate(30图) + e2e_real_probe(10图×4类) + mask_param_audit + clean_bench_probe + prompted_area_gate + perf_probe + docker_consistency_check。退出码 0/1/2（+ real_gate 退码3=环境错误）。每个 `--update/--refresh` 须接 `baseline_guard`。脚本 print 非 GBK 须 `force_utf8_stdio()`。
+- **real_gate / run_real_benchmark 必须跑在 canonical venv**：解释器 `python/envs/default/Scripts/python.exe`（torch 2.9.1+cu128 + easyocr + numpy + cv2 + PIL 全齐）。用错解释器（如系统 Python3.11.4 无 torch/easyocr）会**静默降级 OpenCV 兜底**，致五条红线全红、相对基线全漂移的 silently-wrong 误判——已加 `_require_runtime_deps()` 守卫（缺失 torch/easyocr ⇒ EXIT=3 环境错误，信息指明 canonical venv 路径），避免假红误导发布。
 
 ## 性能归因链
 detect 真实 P95=**0.776s**（<1.5s 达标）；full P95=**8.585s**（superres=off，结构性地板≈4.4s ⇒ 1.5s 对 full 不可达）。torch 2.9.1+cu128 + big-lama.pt。
@@ -56,6 +57,20 @@ detect 真实 P95=**0.776s**（<1.5s 达标）；full P95=**8.585s**（superres=
 ## 发布工程（296-298，本会话）
 - **296 precision↔mask_recall 结构性耦合（决定性否证）**：半透明通路在 25 门禁图产 190 个 FP 盒（translucent），盒级是 FP 但像素覆盖真值水印、贡献 ~0.076 mask_recall；关掉该通路 precision 0.079→0.26(3.3×) 但 mask_recall 0.511→0.4355 **破 0.45 红线** ⇒ 提盒精度必蚀掩码召回，无免费午餐。当前 (0.65,0.50) 为校准平衡；干净解需半透明通路**精确盒化**（深层改进，research 阻塞）。precision 低但安全（余量 37%），mask_recall 余量 12% 是更紧约束。
 - **297-298 发布管线就绪**：pyproject 补 `[project.scripts]` 三件套（`wme`=main / `wme-cli`=cli / `wme-api`=server），AST 守卫 + 真 wheel 构建验证（entry_points 真实写入、临时 venv 真装生成正确启动器）。新增 `.github/workflows/publish.yml`（tag `v*` → 门禁 → build → 发 PyPI，Secret `PYPI_API_TOKEN`）+ `docs/297-发布v1.0-runbook.md` + `docs/298-项目当前水平评估.md`。**待用户 push + 配 token + 打 tag v1.0.0 即上 PyPI**。
+
+## 数据方向 · 28 张真实豆包图入基准（300 · 已提升 release + 重锚）
+- 用户供图 `D:\照片存储` → 29 PNG 入 `benchmark_real/images/`；**c12 与 c11 字节完全相同**（sha256 `06863b7c64d4…`，collect 按 hash 去重）⇒ 实为 **28 张唯一图**（c1-c11/c13-c15/s1-s14，均 2048×2048）。
+- 28 张全带同一「豆包 AI 生成」**固定平台水印**（右下 ≈ `[1683,1936,319,71]`）；**无干净图** ⇒ 296 作战包「干净图校准 precision」目标未达成。
+- **独立量取法**（非 detector ⇒ 不触 `AUTO_PREFIX` 循环论证守卫）：跨 28 图**平均高通响应**（固定覆盖保留、自然纹理相消）定足迹，再逐图在足迹内按自身响应取阈值掩码外接框（同既有 ai_logo_* 逐图实测纪律）。v1「矩形窗口」版会吃背景噪声致框外扩（虚高 recall），已弃用。
+- `real_asset_preflight` 的**模板化/信息量守卫**（单 bbox 占比≥50%、去重占比<0.5）会否掉「统一 bbox」——该守卫假设位置各异，对固定平台覆盖是**已知误报面**（既有 ai_logo_* 靠逐图微差通过）。
+- **已提升（用户授权 A）**：28 条写入 release `ground_truth.json`（29→57 条）；承诺面实评 25→**53 图**。连带同步 `test_watermark_scope.py`（ai_logo 29→57）、`test_detector_audit100.py`(MSER_OFF)、`test_overdetection99.py`(CONVERGED)、`test_redline_margin_health259.py`(余量带)。**`MSER_ON`/`STAGE*_LEVEL` 注入反例锚点保持不变**。红线一条未动（夹逼不变式仍满足）。
+- **门禁结果（53 实评 = 57 标注 − 4 缺口）**：mask_recall **0.5111→0.5984**（≥0.45，余量 ~12%→**~24.8%**）/ precision 0.0789→0.0758（≥0.05）/ 区域召回 0.84→0.9057 / mean_iou 0.5876→0.6673 / mask_iou 0.313→0.3124 / mask_coverage 0.0120→0.0137 / 过检倍率 2.21→2.47 ⇒ **全部红线通过，`real_gate --strict-scope` EXIT=0**，已 `--update --force-update` 重锚基线。
+- **A/B 泛化诊断**（口径自证：orig 组 box_recall 0.8400 与门禁基线逐位相同）：新 28 张 **0.9643**（27/28 命中）> 原 25 张 0.8400（21/25）⇒ 检测器对新真实图**泛化良好且更优**。唯一漏检 c15（密集小字母艺术字 + 水印低对比度，OCR 被装饰字母占满）；放大目视确认标注无误，属**真漏检**。
+- **新增开放项**：未承诺通路面积漂移 ai_faint_tiled 2.38%→2.80%(+17.6%)、ai_grid 7.58%→8.88%(+17.2%)，均略超 15% 容差但远低于硬红线 7.5%/12.5%；成因为新图自然纹理更丰富的**构成效应**，非检测器回退。
+- **顺修两个既存红灯（阶段 300-b）**：`scripts/d1_concurrency_probe.py`（299 新建）漏同步两个守卫 ⇒ `test_selfcheck_coverage_is_accounted_for` 与 `test_scripts_console_encoding` 常红。修：登记进 `NOT_REGISTERED_BY_DESIGN` + main() 补 `force_utf8_stdio()`。
+- **另修 `run_all_checks.py --help` 崩溃**：`--cov` help 字符串字面 `%` 被 argparse 当格式符 ⇒ ValueError；转义 `%%` 后 EXIT=0。
+- **已知 flaky（非本轮引入）**：`test_utils_audit90.py` 两个 rotation 用例在全量下顺序污染（共用物理 `logs/app.log`，`[8]` 参数最敏感）；单跑/文件级全绿，该文件注释自述「长期 flaky 真根因」，专门守卫 `test_logging_global_leak245.py`/`246` 均绿。
+- 文档同步：README 验证状态列、`docs/258` §六（新增再锚小节）、`docs/298`、`docs/quality/product_scorecard.json`、CHANGELOG。探针产物归档 `.scratch/data_direction_20261013/`。
 
 ## 文档铁律（294 沉淀，本会话再犯一次 ⇒ 必须双登记）
 ① **新增根级文件必须同步登记 `tests/test_repo_hygiene._ALLOWED_ROOT_FILES`**；② **新增 `docs/*.md` 必须同步登记 `docs/INDEX.md`**（`tests/test_docs_index` 机械守卫，漏登必红）。295 因漏登 INDEX 抓回归；**298 自己建 297-runbook 时又漏登 INDEX，补登 297+298 后 test_docs_index 5 例全绿** ⇒ 此律两度应验。阶段收尾须跑**更广回归**（非仅靶向文件）。

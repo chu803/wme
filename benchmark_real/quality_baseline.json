@@ -9,51 +9,51 @@
       "ai_grid",
       "ai_gradient"
     ],
-    "n_images": 25,
-    "n_expected": 25,
+    "n_images": 53,
+    "n_expected": 53,
     "dataset_dir": "benchmark_real",
-    "generated_at": "2026-10-07T15:18:11"
+    "generated_at": "2026-10-13T20:49:28"
   },
   "aggregate": {
     "per_preset": {
       "general": {
-        "n": 25,
-        "mask_recall": 0.5111,
-        "precision": 0.0789,
-        "recall": 0.84,
-        "mean_iou": 0.5876,
-        "mask_iou": 0.313,
-        "mask_coverage": 0.012,
-        "coverage_ratio": 2.21
+        "n": 53,
+        "mask_recall": 0.5984,
+        "precision": 0.0758,
+        "recall": 0.9057,
+        "mean_iou": 0.6673,
+        "mask_iou": 0.3124,
+        "mask_coverage": 0.0137,
+        "coverage_ratio": 2.47
       }
     },
     "area_only": {
       "ai_faint_tiled": {
-        "n": 29,
-        "mask_coverage_mean": 0.0238,
-        "mask_coverage_p90": 0.0469,
+        "n": 57,
+        "mask_coverage_mean": 0.028,
+        "mask_coverage_p90": 0.0511,
         "mask_coverage_max": 0.102,
-        "n_with_mask": 29,
-        "pred_count_mean": 30.1
+        "n_with_mask": 57,
+        "pred_count_mean": 32.4
       },
       "ai_text_heavy": {
-        "n": 29,
-        "mask_coverage_mean": 0.0109,
-        "mask_coverage_p90": 0.0288,
+        "n": 57,
+        "mask_coverage_mean": 0.0125,
+        "mask_coverage_p90": 0.0241,
         "mask_coverage_max": 0.0456,
-        "n_with_mask": 29,
-        "pred_count_mean": 9.3
+        "n_with_mask": 57,
+        "pred_count_mean": 10.9
       },
       "ai_grid": {
-        "n": 29,
-        "mask_coverage_mean": 0.0758,
+        "n": 57,
+        "mask_coverage_mean": 0.0888,
         "mask_coverage_p90": 0.1473,
         "mask_coverage_max": 0.1496,
-        "n_with_mask": 29,
-        "pred_count_mean": 634.1
+        "n_with_mask": 57,
+        "pred_count_mean": 747.1
       },
       "ai_gradient": {
-        "n": 29,
+        "n": 57,
         "mask_coverage_mean": 0.0,
         "mask_coverage_p90": 0.0,
         "mask_coverage_max": 0.0,
@@ -61,7 +61,7 @@
         "pred_count_mean": 0.0
       }
     },
-    "n_images": 25
+    "n_images": 53
   },
   "scope": {
     "labeled": [
@@ -89,7 +89,7 @@
       "ai_text_heavy"
     ],
     "declared_images": 29,
-    "unspecified_images": 30,
+    "unspecified_images": 58,
     "contradictory": [],
     "unknown_styles": [],
     "complete": true

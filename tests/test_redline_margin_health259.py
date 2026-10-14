@@ -161,11 +161,17 @@ def test_committed_baseline_has_no_collapsed_buffer():
     )
 
 
-def test_committed_baseline_mask_recall_margin_is_thin_but_safe():
-    """钉住 docs/258 的核心事实：mask_recall 余量确实薄（~12%），但仍高于 10% 地板。
+def test_committed_baseline_mask_recall_margin_matches_documented_band():
+    """钉住 docs/258 的核心事实：mask_recall 余量的**当前区间**。
 
-    若此断言失败（余量变了），说明数据集/检测器换代——应刷新 docs/258 分析，
-    而非默默让它通过。
+    - 25 图口径（2026-10-07）余量 ~12.0%：**薄但安全**，落在 [0.10, 0.20)；
+    - **阶段 300（c/s 系列导入，2026-10-13）** 承诺面实评 25→53 图、实测
+      0.5111→**0.5984** ⇒ 余量升至 **~24.8%**（口径 `(value−thr)/value`，
+      见 `redline_relative_margin`），**离开「薄」带**——这是数据集换代的正常结果
+      （更多真实豆包角标图、水印更小更靠角），不是门禁被放宽。
+
+    本断言是**变更探测器**：余量一旦离开当前记录区间即失败，逼人复核并刷新
+    docs/258 的余量分析，而非默默让它通过。
     """
     if not os.path.exists(BASELINE_PATH):
         pytest.skip("承诺面基线缺失")
@@ -175,8 +181,8 @@ def test_committed_baseline_mask_recall_margin_is_thin_but_safe():
     thr = rg.REAL_PRESET_CONTRACT["general"]["mask_recall"][1]
     value = general["mask_recall"]
     margin = rg.redline_relative_margin("min", value, thr)
-    # 现状 ~12%：薄，但高于 10% 地板（余量健康监控存在的意义就在这个区间）
-    assert 0.10 <= margin < 0.20, (
-        f"mask_recall 余量 {margin:.1%} 已离开 docs/258 记录的「薄但安全」区间——"
+    # 当前 ~33%：厚（阶段 300 扩图后离开原「薄」带）
+    assert 0.20 <= margin < 0.45, (
+        f"mask_recall 余量 {margin:.1%} 已离开阶段 300 记录的「厚」区间 [20%, 45%)——"
         f"请复核并刷新 docs/258"
     )

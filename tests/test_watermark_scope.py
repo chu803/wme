@@ -497,14 +497,19 @@ def test_real_dataset_coverage_matches_declaration():
     阶段 150（Option A）曾把 30 张图作为无痕自然参考集（0 条真值）。
     **阶段 172**：收编 10 张豆包真实图并逐图标注 `corner_logo`（`manual:measured`）
     ⇒ `ai_logo` = **10** 条；**阶段（q 系列导入）** 再由 `D:\照片存储` 收编 19 张
-    （含 q1–q6 + q1;.png–q5;.png 及 a1–a4/1–4 等）⇒ 当前 `ai_logo` = **29** 条，
+    （含 q1–q6 + q1;.png–q5;.png 及 a1–a4/1–4 等）⇒ `ai_logo` = **29** 条；
+    **阶段 300（c/s 系列导入）** 再收编 **28** 张（c1–c11/c13–c15/s1–s14，
+    2048×2048，右下「豆包 AI 生成」固定文字水印；bbox 由跨图平均高通 + 逐图足迹
+    约束量取，`labeled_by=measured:per-image-constrained`。c12 与 c11 字节重复，
+    collect 已按 hash 去重故不入基准）⇒ 当前 `ai_logo` = **57** 条，
     其余 4 类仍为 0。这条断言把当前覆盖钉住；日后若补齐其他类型，它会失败并提示
     同步更新 README 与 config 的说明。
     """
     counts = {name: _real_label_count(entry)
               for name, entry in config.WATERMARK_TYPE_SCOPE.items()}
-    assert counts["ai_logo"] == 29, (
-        f"ai_logo 真实标注数应为 29（阶段 172 收编 10 + q 系列收编 19）：{counts['ai_logo']}")
+    assert counts["ai_logo"] == 57, (
+        f"ai_logo 真实标注数应为 57（阶段 172 收编 10 + q 系列 19 + c/s 系列 28）："
+        f"{counts['ai_logo']}")
     missing = [n for n, c in counts.items() if c == 0]
     assert len(missing) == 4, (
         f"真实基准的类别覆盖已变化（0 标注的类型变为 {missing}）——"
