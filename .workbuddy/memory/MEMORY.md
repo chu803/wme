@@ -9,7 +9,7 @@
 - 分层 `ui→services→core→utils→config`，严禁反向依赖；`core/services/utils` 零 gradio；`config` 不依赖 `utils.logger`。
 - 探针/basetemp 用非 Temp 路径；沙箱批量删 >50 文件 → `SystemExit(1)`（两段式受限 + 会话闩锁，归档 rename 优于删除）。
 - 多段编辑须串行 + 重读校验；注入式反例读写 `newline=''`、sha 对原始字节（`'rb'`）计算。
-- 网络：PyTorch/GitHub/HF/清华镜像不可达；PyPI 清华镜像可达；大文件走 `download_model.py`。
+- 网络：PyTorch/HF/清华镜像不可达（沿用旧记，未实测）；**GitHub TCP:443 实测可达，但本沙箱无凭证（remote 无 token、无 credential.helper），HTTPS push 交互鉴权挂起 ⇒ 推送须在用户已配凭证侧执行**；PyPI 清华镜像可达；大文件走 `download_model.py`。
 
 ## 关键边界 · 真值审计
 - 真实基准（29 图 / general）：mask_recall **0.5111** / precision 0.0789 / recall 0.84 / mean_iou 0.5876 / mask_iou 0.313 / mask_coverage 0.0107 / coverage_ratio 2.21。红线 recall≥0.64 / precision≥0.05 / mean_iou≥0.35 / **mask_recall≥0.45** + 崩溃护栏 mask_iou≥**0.20** / mask_coverage≤0.020 / coverage_ratio≤3.50。`real_gate --strict-scope` EXIT=0。
