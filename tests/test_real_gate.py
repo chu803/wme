@@ -511,6 +511,7 @@ def test_cli_returns_exit2_when_dataset_missing(tmp_path, monkeypatch):
     monkeypatch.setattr(rg, "MANIFEST_PATH", str(tmp_path / "nope_manifest.json"))
     monkeypatch.setattr(rg, "TRUTH_PATH", str(tmp_path / "nope_truth.json"))
     monkeypatch.setattr(sys, "argv", ["real_gate.py"])
+    monkeypatch.setattr(rg, "_require_runtime_deps", lambda: None)  # 屏蔽依赖守卫：本用例测 CLI 逻辑
     assert rg.main() == 2
 
 
@@ -535,6 +536,7 @@ def test_cli_update_writes_baseline(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["real_gate.py", "--update",
                                       "--baseline", str(baseline_path)])
 
+    monkeypatch.setattr(rg, "_require_runtime_deps", lambda: None)  # 屏蔽依赖守卫：本用例测 CLI 逻辑
     rc = rg.main()
     assert rc in (0, 1), f"--update 的退出码只应是 0（全绿）或 1（判定未过），实得 {rc}"
     assert baseline_path.exists(), "--update 必须写出基线快照（即便判定未过）"
@@ -558,6 +560,7 @@ def test_cli_update_still_evaluates_red_lines(tmp_path, monkeypatch, capsys):
     monkeypatch.setattr(sys, "argv", ["real_gate.py", "--update",
                                       "--baseline", str(baseline_path)])
 
+    monkeypatch.setattr(rg, "_require_runtime_deps", lambda: None)  # 屏蔽依赖守卫：本用例测 CLI 逻辑
     assert rg.main() == 1, "--update 在红线失败时必须返回 1（不得成为静默通道）"
     out = capsys.readouterr().out
     assert "刷新后继续按红线" in out, "缺少「刷新不绕过判定」的可见提示"
@@ -574,6 +577,7 @@ def test_cli_force_update_skips_only_the_drift_guard(tmp_path, monkeypatch, caps
     monkeypatch.setattr(sys, "argv", ["real_gate.py", "--update", "--force-update",
                                       "--baseline", str(baseline_path)])
 
+    monkeypatch.setattr(rg, "_require_runtime_deps", lambda: None)  # 屏蔽依赖守卫：本用例测 CLI 逻辑
     assert rg.main() == 1, "force-update 不得绕过红线"
     assert baseline_path.exists(), "force-update 应完成写盘"
 
@@ -595,6 +599,7 @@ def test_baseline_roundtrip_yields_zero_drift(tmp_path, monkeypatch):
 
     monkeypatch.setattr(sys, "argv", ["real_gate.py", "--update",
                                       "--baseline", str(baseline_path)])
+    monkeypatch.setattr(rg, "_require_runtime_deps", lambda: None)  # 屏蔽依赖守卫：本用例测 CLI 逻辑
     rg.main()                                 # 退出码由上面两条用例负责
     assert baseline_path.exists(), "--update 必须写出基线"
 
