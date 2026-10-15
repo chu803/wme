@@ -2172,9 +2172,21 @@ python download_model.py
 
 脚本会自动从 GitHub / 国内镜像下载 `models/big-lama.pt`（约 205 MB）。不下载也能跑，但会退回到 OpenCV 传统算法，大面积水印效果差。
 
-### 3.3 启动
+### 3.3 安装与启动
 
-安装为可分发包（`pip install .`）后，可直接用控制台命令启动（命令名详见 `pyproject.toml` 的 `[project.scripts]`，阶段 296 补齐）：
+**推荐：从 PyPI 安装**（包名 `wme-watermark-eraser`，v1.0.0 起，发布后即可用）：
+
+```bash
+pip install wme-watermark-eraser
+```
+
+或克隆仓库后本地源码安装为可分发包：
+
+```bash
+pip install .
+```
+
+安装后可直接用控制台命令启动（命令名详见 `pyproject.toml` 的 `[project.scripts]`，阶段 296 补齐）：
 
 ```bash
 wme        # 网页界面（Gradio，等价于 python main.py）
