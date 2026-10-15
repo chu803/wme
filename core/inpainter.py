@@ -293,6 +293,52 @@ def _tile_if_needed(
     return merged
 
 
+def _mask_bbox(mask: np.ndarray) -> "tuple[int, int, int, int] | None":
+    """返回掩码非零区域的外接框 (y0, y1, x0, x1)（含端点）；全黑返回 None。"""
+    ys, xs = np.nonzero(mask)
+    if ys.size == 0:
+        return None
+    return int(ys.min()), int(ys.max()), int(xs.min()), int(xs.max())
+
+
+def _should_crop(image: np.ndarray, mask: np.ndarray) -> bool:
+    """是否值得裁剪到水印包围盒：开关开 + 图够大 + 掩码够小（三者同时满足）。"""
+    if not config.INFER_CROP_TO_MASK:
+        return False
+    h, w = image.shape[:2]
+    if max(h, w) < config.INFER_CROP_MIN_SIDE:
+        return False
+    if mask.size == 0:
+        return False
+    ratio = float(np.count_nonzero(mask)) / float(mask.size)
+    return ratio < config.INFER_CROP_MAX_MASK_RATIO
+
+
+def _inpaint_cropped(eng, image, mask, device, progress):
+    """裁剪到水印包围盒（+margin）后修复，再贴回原图（引擎无关，包在 _tile_if_needed 外）。
+
+    ⚠ 质量边界（实测）：这**改变输出**——LaMa 对 crop vs 整图有尺寸相关行为（~0.5% 像素
+    差 >10，且不随 margin 缩小）。故由 INFER_CROP_TO_MASK 门控、默认关；是否默认开由
+    ΔPSNR 门禁（e2e_real_probe）判决，未过判决不改默认行为。
+    """
+    h, w = image.shape[:2]
+    bb = _mask_bbox(mask)
+    if bb is None:
+        return _tile_if_needed(eng, image, mask, device=device, progress=progress)
+    y0, y1, x0, x1 = bb
+    m = config.INFER_CROP_MARGIN
+    cy0, cx0 = max(0, y0 - m), max(0, x0 - m)
+    cy1, cx1 = min(h, y1 + m + 1), min(w, x1 + m + 1)
+    crop_img = image[cy0:cy1, cx0:cx1]
+    crop_mask = mask[cy0:cy1, cx0:cx1]
+    log.info("裁剪到水印包围盒 %dx%d（占图 %.1f%%，margin=%d）后修复，跳过整图推理。",
+             cx1 - cx0, cy1 - cy0, 100.0 * (cx1 - cx0) * (cy1 - cy0) / (w * h), m)
+    cropped = _tile_if_needed(eng, crop_img, crop_mask, device=device, progress=progress)
+    out = image.copy()
+    out[cy0:cy1, cx0:cx1] = cropped
+    return out
+
+
 def _denoise(result: np.ndarray, mask: np.ndarray, strength: int, only_masked: bool) -> np.ndarray:
     """
     对修复结果做非局部均值降噪，平滑模型生成的细微噪点。
@@ -408,6 +454,8 @@ def _run_engine_once(
                     f"引擎 {eng_name} 初始化失败（可能缺少模型文件）：{exc}"
                 ) from exc
             raise
+    if _should_crop(image, bin_mask):
+        return _inpaint_cropped(eng, image, bin_mask, device, progress)
     return _tile_if_needed(eng, image, bin_mask, device=device, progress=progress)
 
 

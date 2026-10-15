@@ -2069,6 +2069,22 @@ TILE_OVERLAP: Final[int] = _env_int("TILE_OVERLAP", 64, 0, 512)
 #   False : 所有块都送进模型（更慢，无实际收益，仅用于调试对比）
 TILE_SKIP_EMPTY: Final[bool] = _env_bool("TILE_SKIP_EMPTY", True)
 
+# 【是否裁剪到水印包围盒再修复】
+#   掩码占比小且图较大时，只对「水印包围盒 + margin」送引擎推理，跳过整图 forward
+#   （LaMa fp32 大图 forward 是 full 管线主瓶颈，实测 2048² 上 ~4-8s）。
+#   ⚠ 它**改变输出**：LaMa 对 crop vs 整图有尺寸相关行为（实测 ~0.5% 像素差 >10，
+#   且不随 margin 缩小），故**默认关**；是否默认开由 ΔPSNR 门禁（e2e_real_probe）判决。
+INFER_CROP_TO_MASK: Final[bool] = _env_bool("INFER_CROP_TO_MASK", False)
+
+# 【裁剪触发：图长边下限】长边低于此值不裁（小图整图推理本就快，裁了无收益）。
+INFER_CROP_MIN_SIDE: Final[int] = _env_int("INFER_CROP_MIN_SIDE", 1024, 256, 8192)
+
+# 【裁剪触发：掩码占比上限】掩码像素占图比例超过此值不裁（大掩码的包围盒≈整图，无意义）。
+INFER_CROP_MAX_MASK_RATIO: Final[float] = _env_float("INFER_CROP_MAX_MASK_RATIO", 0.25, 0.01, 0.95)
+
+# 【包围盒外扩 margin】单位：像素。给 LaMa 补足水印周边上下文（裁剪改变输出的主因）。
+INFER_CROP_MARGIN: Final[int] = _env_int("INFER_CROP_MARGIN", 256, 0, 1024)
+
 # =============================================================================
 # 第 8.x 节：性能与内存优化配置（PERF，阶段 14 新增）
 # =============================================================================
