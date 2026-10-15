@@ -95,7 +95,7 @@
 
 ---
 
-## [1.0.0] —— 核心能力与质量体系成型
+## [1.0.0] —— 核心能力与质量体系成型（2026-10-15 发布）
 
 ### 核心能力
 - **多输入源**：图片 / PDF（多页拆分-逐页处理-回填）/ 视频（拆帧-逐帧-拼回，支持掩码复用 + 漂移护栏）。
@@ -106,18 +106,24 @@
 - **五入口**：Gradio 网页界面 / REST API / CLI / 插件系统 / 打包 EXE（PyInstaller）。
 
 ### 质量体系（88 起）
-- 三条并行门禁：合成 `quality_gate.py` + 真实 `real_gate.py` + 修复侧 `e2e_real_probe.py --gate`；
-  掩码标定审计 `mask_param_audit.py`。
+- **门禁家族 8 成员**：`quality_gate`（合成）+ `real_gate`（真实，五红线）+ `e2e_real_probe`（修复侧）+
+  `mask_param_audit` + `clean_bench_probe` + `prompted_area_gate` + `perf_probe` + `docker_consistency_check`。
 - 真值审计体系：`scripts/audit_selector.py`（覆盖度荒漠选点）+ `AUDITED_SINCE` 登记，
-  已连续审计 19 个模块（88 → 115）。
-- 注入式反例：每处修复均验证「守卫真会失败」。
-- 经验库 `LESSONS.md`（125 条）；能力声明 SSOT `config.WATERMARK_TYPE_SCOPE`。
+  已审 **45 个模块**（5j 深度续审链 276–290 收官，`--unaudited` 返回空表）。
+- 注入式反例：每处修复均验证「守卫真会失败」（revert → 守卫 RC=1）。
+- 经验库 `.workbuddy/memory/LESSONS.md`（281 条）；能力声明 SSOT `config.WATERMARK_TYPE_SCOPE`。
 
 ### 工程化
 - 分层架构 `ui → services → core → utils → config`（严禁反向依赖，core/services 零 gradio）。
-- 107 个测试文件、约 1516 用例；118 份设计/审计文档。
+- **219 个测试文件、2500+ 用例；249+ 篇设计/审计文档**（规模 SSOT 见 README §4，`tests/test_readme_scale.py` 守护下限）。
 - 依赖三档：`requirements.txt`（完整）/ `-min`（无 torch）/ `-gpu`（CUDA）。
 - Dockerfile（CPU，含 GPU recipe）+ PyInstaller `build.spec`。
+
+### 发布与真实数据验证（297–300）
+- **可安装分发**：`pyproject.toml` `[project.scripts]` 三件套 `wme`/`wme-cli`/`wme-api`；wheel **0.66MB** + sdist **1.4MB**（纯 Python，不含基准大图）；`.github/workflows/publish.yml` 打 tag `v*` → 门禁 → 构建 → 发 PyPI（Secret `PYPI_API_TOKEN`）。
+- **API 安全层**（299）：`services/api_security.py` 纯标准库 token 鉴权 + 进程内令牌桶限流，默认关闭 ⇒ 零行为变更。
+- **真实数据基准**（300）：28 张豆包真实图入 `benchmark_real/`，承诺面实评 25→53 图；mask_recall 0.5111→**0.5984**（余量 ~24.8%），五红线全过、`real_gate --strict-scope` EXIT=0。
+- 仓库已发布：`github.com/chu803/wme`。
 
 ---
 
