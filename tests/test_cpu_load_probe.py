@@ -22,6 +22,14 @@ if _ROOT not in sys.path:
 
 from scripts import cpu_load as cl  # noqa: E402
 
+#: cpu_load 探针依赖 Windows 专有 ctypes（ctypes.windll / ctypes.WinDLL）；
+#: 非 Windows 平台（如 CI 的 ubuntu）这些符号不存在 ⇒ 相关用例必须跳过，
+#: 否则以 AttributeError 假失败（仓库发布后首次 Linux CI 暴露，见 docs/300）。
+_IS_WINDOWS = sys.platform.startswith("win")
+_win_only = pytest.mark.skipif(
+    not _IS_WINDOWS,
+    reason="cpu_load 探针走 Windows ctypes（windll/WinDLL），非 Windows 平台跳过")
+
 
 # ==============================================================================
 # ① 公式：必须扣掉 kernel 里的 idle
@@ -34,6 +42,7 @@ def test_module_doc_states_the_kernel_includes_idle():
         "必须明确写出「kernel 包含 idle」这一 Windows 语义")
 
 
+@_win_only
 def test_sample_is_reliable_on_this_machine():
     """在真实机器上采样必须 `reliable=True`。
 
@@ -47,6 +56,7 @@ def test_sample_is_reliable_on_this_machine():
         f"（疑似重复计数上界写错——上界应为 2×N 而非 1×N）")
 
 
+@_win_only
 def test_busy_pct_within_valid_range():
     """占用率必须落在 [0, 100]，且 busy% + idle% ≈ 100。"""
     s = cl.CpuLoadProbe().sample(1.0)
@@ -58,6 +68,7 @@ def test_busy_pct_within_valid_range():
         f"busy({s.busy_pct:.1f}) + idle({s.idle_pct:.1f}) 应≈100")
 
 
+@_win_only
 def test_busy_cores_within_physical_limit():
     """折算的忙核数不得超过物理核数（否则说明重复计数未扣干净）。"""
     n = os.cpu_count() or 1
@@ -71,6 +82,7 @@ def test_busy_cores_within_physical_limit():
 # ==============================================================================
 # ② 注入式反例：把「错误公式」显式构造出来，证明探针不会踩坑
 # ==============================================================================
+@_win_only
 def test_wrong_formula_would_overestimate_is_documented():
     """**反向验证**：证明 `kernel + user` 确实是错的（否则本守卫只是形式主义）。
 
@@ -95,6 +107,7 @@ def test_wrong_formula_would_overestimate_is_documented():
     assert right < 100.0, "正确公式应给出< 100% 的真实占用"
 
 
+@_win_only
 def test_idle_is_counted_twice_in_raw_sum():
     """三者和必然**超过** 1×N（因idle 被 kernel 重复包含）⇒ 判据上界须为 2×N。"""
     n = os.cpu_count() or 1
@@ -138,6 +151,7 @@ def test_unreliable_sample_never_claims_idle():
 # ==============================================================================
 # ④ 交叉验证：逐进程 vs 系统级
 # ==============================================================================
+@_win_only
 def test_process_and_system_estimates_are_same_order():
     """两个来源必须**同量级**（各自都会偏差：逐进程低估、系统级含驱动态）。
 
@@ -157,6 +171,7 @@ def test_process_and_system_estimates_are_same_order():
         f"⇒ 至少一个口径已损坏")
 
 
+@_win_only
 def test_repeated_sampling_is_stable_enough():
     """同机连采多次，占用率不应剧烈跳动（若跳动说明时钟域有问题）。"""
     probe = cl.CpuLoadProbe()
