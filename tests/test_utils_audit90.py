@@ -22,6 +22,12 @@ import pytest
 import config
 from utils import logger as L
 
+#: 旧「多 handler 同文件」轮转冲突是 **Windows 文件锁特异**现象（L1 旧缺陷即 Windows
+#: PermissionError）；Linux 允许重命名打开的文件、冲突是否触发变成时序相关 ⇒ 该注入式
+#: 反例在非 Windows 上不稳定（首跑 Linux CI flaky），需平台守卫。共享-handler 修复本身
+#: 由 test_rotation_is_healthy_* 跨平台验证，跳过他平台不损关键覆盖。
+_IS_WINDOWS = (os.name == "nt")
+
 
 # --------------------------------------------------------------------------- #
 # 夹具：把全局状态与日志目录隔离到 tmp，避免污染项目 logs/ 与其它用例
@@ -162,6 +168,7 @@ def test_rotation_is_healthy_with_many_loggers(fresh_logger, n_loggers):
     assert os.path.getsize(applog) <= handler.maxBytes * 2
 
 
+@pytest.mark.skipif(not _IS_WINDOWS, reason="旧多-handler 轮转冲突依赖 Windows 文件锁；Linux 文件语义不同、时序相关，反例不稳定")
 def test_stale_multi_handler_would_break_rotation(fresh_logger):
     """注入式反例：手工给两个 logger 各挂一个独立 handler（模拟旧实现），必须复现失败。"""
     logs_dir = str(config.LOG_DIR)

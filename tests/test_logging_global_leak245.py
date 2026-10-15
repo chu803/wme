@@ -45,6 +45,10 @@ for _p in (_ROOT, os.path.join(_ROOT, "scripts")):
 
 import config  # noqa: E402
 
+#: 多-handler 轮转冲突的「Logging error」是 Windows 文件锁特异现象；Linux 允许重命名打开的
+#: 文件、冲突触发时序相关 ⇒ 该前提断言仅在 Windows 稳定。核心守卫（全局注册表还原）跨平台有效。
+_IS_WINDOWS = (os.name == "nt")
+
 
 def test_stale_multi_handler_does_not_leak_into_global_registry(monkeypatch, tmp_path):
     """跑完注入式反例后，全局 logger 必须恢复原状（handler 已摘除、propagate 已还原）。
@@ -99,9 +103,12 @@ def test_stale_multi_handler_does_not_leak_into_global_registry(monkeypatch, tmp
             lg.propagate = propagate
             lg.setLevel(level)
 
-    # 反例必须真的复现了失败（否则本守卫的上下文失效）
-    assert "--- Logging error ---" in err.getvalue(), (
-        "注入式反例本应复现轮转失败；未复现说明前提已变，本守卫需重新评估")
+    # 反例必须真的复现了失败（否则本守卫的上下文失效）——但「Logging error」这一失败形态是
+    # Windows 文件锁特异（Linux 重命名打开文件不冲突、时序相关），故仅 Windows 断言；
+    # 核心守卫（下方全局注册表还原）跨平台有效，不依赖此前提。
+    if _IS_WINDOWS:
+        assert "--- Logging error ---" in err.getvalue(), (
+            "注入式反例本应复现轮转失败；未复现说明前提已变，本守卫需重新评估")
 
     # 核心断言：全局注册表已还原
     assert lg1.handlers == [], (
