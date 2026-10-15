@@ -106,6 +106,13 @@ def test_concurrency_peak_never_exceeds_limit(slow_inpaint):
     httpd, base = _make_server(2)
     try:
         _fire_concurrent(base, 6)
+        # 客户端线程 join 返回 ≠ 服务端 handler 的 finally 已释放信号量；Linux 线程调度下
+        # 该窗口可能没合上 ⇒ active 瞬时非 0（首跑 Linux CI 实测 1==0 假红，非真泄漏——
+        # Windows 能归零即证明确实会 decrement，只是慢）。有界等待其归零，而非客户端一
+        # 返回就断言（计时竞态防护，跨 OS 稳定）。
+        _deadline = time.time() + 15.0
+        while time.time() < _deadline and httpd.concurrency_stats()["active"] != 0:
+            time.sleep(0.05)
         stats = httpd.concurrency_stats()
         assert stats["max_concurrency"] == 2
         assert stats["gated"] is True
