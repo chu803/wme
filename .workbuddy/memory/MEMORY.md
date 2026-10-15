@@ -34,8 +34,8 @@ detect 真实 P95=**0.776s**（<1.5s 达标）；full P95=**8.585s**（superres=
 技术内核强、商品外壳缺。P1 数据质量 → P2 产品化性能 → P3 生态。护城河=全本地离线 + 免手涂 8 预设 + 图/PDF/视频全源 + 合规定位。记分卡 `docs/quality/product_scorecard.json`（291 刷新 / 296 续修）：overall **B-** / eng **A** / core **B-** / prod **C+** / eco **D**。
 
 ## 仓库与交付
-- git：`init -b main`，身份 `WME Dev <dev@wme.local>`；CI `ci.yml`→`run_all_checks.py`；推远端前跑 `scripts/ci_env_probe.py`。
-- 历史重写（205）：`models/big-lama.pt` 已从全部历史移除（`.git` 326.6→143.8MB）；曾致 `.gitignore` 回归 + `config.user_overrides.json` 误入库，291 已 `git rm --cached` + 加固。
+- git：`init -b main`，身份 `WME Dev <dev@wme.local>`；CI `ci.yml`→`run_all_checks.py`；推远端前跑 `scripts/ci_env_probe.py`。**已发布（2026-10-15）**：远端 `github.com/chu803/wme`（GitHub 规范为小写，本地 origin 已 set-url 为小写），`main` 已推、本地 HEAD `5db368d`、上传 422MB；⚠ 沙箱内代理 git 写被网络策略阻断（读通/写 `ECONNRESET`，带 token 亦然），**推送须用户本机终端执行**。
+- 历史重写（205）：`models/big-lama.pt` 已从全部历史移除（当时 `.git` 326.6→143.8MB；后因阶段 300 提交 28 张豆包大图，现 `.git` ≈425MB，含 `benchmark_real/images` ≈280MB 二值图——用户已授权入库、不移 LFS）；曾致 `.gitignore` 回归 + `config.user_overrides.json` 误入库，291 已 `git rm --cached` + 加固。
 - 验证入口 `scripts/run_all_checks.py`（CI 子集 / `--full` / `--gates`）；E2 删除 `scripts/clean_artifacts.py`（archive 优先）。
 - Docker（C5 收口）：`.dockerignore` 上下文 4.4MB；⚠ 本机无 docker CLI，镜像从未真 build（仅静态契约 + 一致性脚本门禁）。`Dockerfile.gpu` P0（python3.11 错配修复 + torch 2.9.1+cu128 统一、删 torchvision）；`docker-compose.yml` cpu/gpu profile。
 
