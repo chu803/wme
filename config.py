@@ -2072,9 +2072,13 @@ TILE_SKIP_EMPTY: Final[bool] = _env_bool("TILE_SKIP_EMPTY", True)
 # 【是否裁剪到水印包围盒再修复】
 #   掩码占比小且图较大时，只对「水印包围盒 + margin」送引擎推理，跳过整图 forward
 #   （LaMa fp32 大图 forward 是 full 管线主瓶颈，实测 2048² 上 ~4-8s）。
-#   ⚠ 它**改变输出**：LaMa 对 crop vs 整图有尺寸相关行为（实测 ~0.5% 像素差 >10，
-#   且不随 margin 缩小），故**默认关**；是否默认开由 ΔPSNR 门禁（e2e_real_probe）判决。
-INFER_CROP_TO_MASK: Final[bool] = _env_bool("INFER_CROP_TO_MASK", False)
+#   ⚠ 它**改变输出**：LaMa 对 crop vs 整图有尺寸相关行为（实测 mask 内 in>10 最高 ~63%，
+#   且不随 margin 缩小）——属「换速度改水印填充」权衡。但 mask 外（干净区）与 full 逐字节一致
+#   （crop 只贴回 mask 区），LaMa 在 mask 外固有轻微扰动两种模式同量级、crop 不更差。
+#   默认开：crop_quality_probe 全量 58 张 ≥2048 图判决——安全判据 58/58 通过（干净区零新增风险），
+#   速度中位 1.51x、2048² 实测 ~3.2x；质量软门禁未全过（水印填充不同，无干净真值不可判优劣）。
+#   如需回退为 full（不裁）设 INFER_CROP_TO_MASK=0。
+INFER_CROP_TO_MASK: Final[bool] = _env_bool("INFER_CROP_TO_MASK", True)
 
 # 【裁剪触发：图长边下限】长边低于此值不裁（小图整图推理本就快，裁了无收益）。
 INFER_CROP_MIN_SIDE: Final[int] = _env_int("INFER_CROP_MIN_SIDE", 1024, 256, 8192)

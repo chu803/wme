@@ -317,9 +317,13 @@ def _should_crop(image: np.ndarray, mask: np.ndarray) -> bool:
 def _inpaint_cropped(eng, image, mask, device, progress):
     """裁剪到水印包围盒（+margin）后修复，再贴回原图（引擎无关，包在 _tile_if_needed 外）。
 
-    ⚠ 质量边界（实测）：这**改变输出**——LaMa 对 crop vs 整图有尺寸相关行为（~0.5% 像素
-    差 >10，且不随 margin 缩小）。故由 INFER_CROP_TO_MASK 门控、默认关；是否默认开由
-    ΔPSNR 门禁（e2e_real_probe）判决，未过判决不改默认行为。
+    ⚠ 质量边界（实测）：LaMa 对 crop vs 整图有尺寸相关行为，mask 内修复结果略有差异
+    （in>10 最高 ~63%，取决于图）。但**margin 环（mask 外、crop 内）保持原样**——
+    只把 mask 区贴回，绝不动 margin 环，故 crop 在 mask 外与 full 逐字节一致
+    （LaMa 在 mask 外的固有轻微扰动两种模式同量级、crop 不更差）。仅 mask 内修复略有不同。
+
+    由 INFER_CROP_TO_MASK 门控、**默认开**（crop_quality_probe 全量 58 张判决：干净区安全
+    58/58 通过、速度中位 1.51x / 2048² ~3.2x）。如需回退 full 设 INFER_CROP_TO_MASK=0。
     """
     h, w = image.shape[:2]
     bb = _mask_bbox(mask)
@@ -335,7 +339,9 @@ def _inpaint_cropped(eng, image, mask, device, progress):
              cx1 - cx0, cy1 - cy0, 100.0 * (cx1 - cx0) * (cy1 - cy0) / (w * h), m)
     cropped = _tile_if_needed(eng, crop_img, crop_mask, device=device, progress=progress)
     out = image.copy()
-    out[cy0:cy1, cx0:cx1] = cropped
+    # 只把被修复的掩码区贴回；margin 环保持原样（与 full 模式逐字节一致）。
+    mm = crop_mask > 0
+    out[cy0:cy1, cx0:cx1][mm] = cropped[mm]
     return out
 
 

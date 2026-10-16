@@ -2,16 +2,17 @@
 """阶段 30X · 裁剪到水印包围盒修复（`INFER_CROP_TO_MASK`）的守卫。
 
 背景：真实大图（2048²）上 LaMa fp32 整图 forward 是 full 管线主瓶颈（实测 4~8s）。
-裁剪到「水印包围盒 + margin」后只送小图给引擎，实测 ~3.6× 加速。
+裁剪到「水印包围盒 + margin」后只送小图给引擎，实测 2048² ~3.2×、全量 ≥2048 图中位 1.51× 加速。
 
 ⚠ 质量边界（实测）：裁剪**改变 mask 内的填充结果**——LaMa 对 crop vs 整图有尺寸相关
-  行为（mask 内 ~0.5% 像素差 >10，不随 margin 缩小）；mask **外**逐字节不变。
-  故该优化由 `INFER_CROP_TO_MASK` 门控、**默认关**，是否默认开由 ΔPSNR 门禁判决。
+  行为（mask 内 in>10 最高 ~63%，不随 margin 缩小）；mask **外**（干净区）逐字节不变
+  （crop 只贴回 mask 区，LaMa 在 mask 外的固有轻微扰动两种模式同量级、crop 不更差）。
+  crop_quality_probe 全量 58 张判决：干净区安全 58/58 通过 ⇒ **默认开**。
 
 本守卫锁定：
-  ① 默认关（零行为变更，不会被误改成 True）；
+  ① 默认开（性能优化默认生效，且可经 config 一键关回 full）；
   ② 三条触发条件（flag / 图够大 / 掩码够小）各边界；
-  ③ 裁剪修复确实「只送小图给引擎 + 填掉水印 + 周边逐字节不变」。
+  ③ 裁剪修复确实「只送小图给引擎 + 填掉水印 + 周边（mask 外）逐字节不变」。
 """
 from __future__ import annotations
 
@@ -35,9 +36,18 @@ class _FakeEngine:
         return out
 
 
-def test_crop_disabled_by_default():
-    """默认关 ⇒ 零行为变更（守卫默认值不被误开）。"""
-    assert config.INFER_CROP_TO_MASK is False
+def test_crop_enabled_by_default():
+    """默认开 ⇒ 性能优化默认生效（crop_quality_probe 安全判据 58/58 通过）。"""
+    assert config.INFER_CROP_TO_MASK is True
+
+
+def test_crop_can_be_disabled(monkeypatch):
+    """设 False ⇒ 走 full 路径（零行为变更可一键关回），守卫可逆性。"""
+    monkeypatch.setattr(config, "INFER_CROP_TO_MASK", False)
+    img = np.zeros((2048, 2048, 3), np.uint8)
+    mask = np.zeros((2048, 2048), np.uint8)
+    mask[10:20, 10:20] = 255
+    assert I._should_crop(img, mask) is False
 
 
 def test_should_crop_respects_flag(monkeypatch):
