@@ -133,5 +133,15 @@ def test_disabled_signal_does_not_route_to_ai_logo(monkeypatch):
     assert rec.scores.get("corner_watermark") == 0.0
 
 
+# ------------------------------------------------------------------------------
+# 极小图不崩（#450 回归守卫：ROI 分数切片在 1×1 等图上为空，早年直接 cv2.resize 崩）
+# ------------------------------------------------------------------------------
+@pytest.mark.parametrize("hw", [(1, 1), (2, 3), (3, 2), (4, 4), (8, 8)])
+def test_signal_tiny_image_no_crash(hw):
+    img = np.full((hw[0], hw[1], 3), 240, np.uint8)
+    assert pr._corner_watermark_signal(_to_gray(img)) == 0.0
+    assert pr.recommend_preset(img).preset == config.RECOMMEND_DEFAULT_PRESET
+
+
 if __name__ == "__main__":
     raise SystemExit(pytest.main([__file__, "-v"]))

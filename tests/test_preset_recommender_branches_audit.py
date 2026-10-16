@@ -178,9 +178,18 @@ def test_confidence_equals_max_scores():
     assert abs(rec.confidence - max(rec.scores.values())) < 1e-9
 
 
+# 阶段 450：scores 键集契约（新增 corner_watermark 角标模板匹配信号，与
+# utils/recommend_view._FEATURE_KEYS、utils/i18n 双语标签同名同序，见 test_utils_audit98 I3）。
+_EXPECTED_SCORE_KEYS = {
+    "gradient", "grid", "tiled", "translucent", "solid_logo",
+    "corner_watermark", "text", "signature", "regularity",
+}
+
+
 def test_scores_shape_and_range():
     rec = pr.recommend_preset(_tiled_fixture())
-    assert len(rec.scores) == 8, "评分字典应恒为 8 键"
+    assert set(rec.scores) == _EXPECTED_SCORE_KEYS, (
+        f"评分字典键集应为 9 键（阶段450 增 corner_watermark）：{set(rec.scores)}")
     assert all(0.0 <= v <= 1.0 for v in rec.scores.values()), "分值越界"
     assert set(rec.triggered) <= set(rec.scores), "triggered 必须是 scores 键的子集"
 

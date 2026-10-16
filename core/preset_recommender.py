@@ -356,6 +356,8 @@ def _corner_watermark_signal(gray_u8: np.ndarray) -> float:
             sub = em[int(h * 0.80):, int(w * 0.74):]
         else:
             sub = em[int(h * 0.45):int(h * 0.72), int(w * 0.78):]
+        if sub.size == 0:
+            return None  # 极小图（如 1×1）中右/右下分数切片可能为空 ⇒ 跳过，避免 cv2.resize 崩
         return cv2.resize(sub, (48, 64))
 
     def _ncc(a, b):
@@ -366,6 +368,8 @@ def _corner_watermark_signal(gray_u8: np.ndarray) -> float:
     best, best_edge = 0.0, 0.0
     for kind in ("br", "mr"):
         r = _roi(kind)
+        if r is None:
+            continue
         if r.mean() < config.RECOMMEND_CORNER_WATERMARK_MIN_EDGE:
             continue
         for tpl in bank:

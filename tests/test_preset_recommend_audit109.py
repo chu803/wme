@@ -154,8 +154,13 @@ def test_stripe_recommendation_is_not_the_zero_recall_preset():
 
 @pytest.mark.slow
 def test_real_photo_distribution_unchanged():
-    """AND→OR 在 30 张真实照片上**零副作用**：分布须逐项等于 {ai_multi:20, ai_text_heavy:10}。
+    """30 张真实照片上的推荐分布**基线锁定**（防无意漂移）。
 
+    基线演变：
+      · 阶段 109（AND→OR 零副作用）：{ai_multi:20, ai_text_heavy:10}；
+      · 阶段 450（角标模板匹配，见 #450）：右下/中右角标图改推 ai_logo（edge=False，
+        跳过 edge+OCR 空跑）⇒ 前 30 张里 1.png / 2.png 由 multi/text_heavy 转 ai_logo，
+        重锚为 **{ai_multi:19, ai_text_heavy:9, ai_logo:2}**。
     数据集（`benchmark_real/images/`）是 gitignored ⇒ 缺失时跳过（不制造假红）。
     """
     from core.image_utils import load_image
@@ -172,8 +177,9 @@ def test_real_photo_distribution_unchanged():
         img = _resize_long_side(load_image(os.path.join(img_dir, fn)), 640)
         rec = pr.recommend_preset(img)
         dist[rec.preset] = dist.get(rec.preset, 0) + 1
-    assert dist == {"ai_multi": 20, "ai_text_heavy": 10}, (
-        f"真实照片推荐分布变了：{dist}（阶段 109 记录的基线是 ai_multi 20 / ai_text_heavy 10）")
+    assert dist == {"ai_multi": 19, "ai_text_heavy": 9, "ai_logo": 2}, (
+        f"真实照片推荐分布变了：{dist}（阶段 450 重锚基线是 ai_multi 19 / "
+        f"ai_text_heavy 9 / ai_logo 2；若为有意变更请同步更新本基线与说明）")
 
 
 # ---------------------------------------------------------------------------
