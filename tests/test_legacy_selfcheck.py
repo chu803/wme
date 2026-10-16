@@ -164,6 +164,9 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     #   `force_utf8_stdio()`（阶段 300-b）。
     "scripts/d1_concurrency_probe.py": "S D1 并发吞吐探针（扫 worker 1/2/4/8 跑全链路推理，分钟级 + GPU；语义同 perf_probe）",
     "scripts/crop_quality_probe.py": "S 裁剪修复质量探针（2048² 真实图跑 crop vs full，判决 INFER_CROP_TO_MASK 能否默认开；分钟级 + GPU，不参与子进程自检）",
+    "scripts/detect_cost_probe.py": "S detect/recommend 成本拆分探针（real_gate 用显式预设故不影响红线；本脚本量化 recommend 不重跑 detect/OCR，并拆出 edge+OCR 真实冗余；分钟级 + GPU，不参与子进程自检）",
+    "scripts/probe_recommend_dist.py": "S 阶段450 recommend 全量预设分布探针（读 benchmark_real 图集；诊断用，不参与子进程自检）",
+    "scripts/verify_corner_reco.py": "S 阶段450 角标模板匹配判据真值校验（读 ground_truth.json + benchmark_real 图集，验证 GT 角标→ai_logo 且自然图 0 误命中；诊断用，不参与子进程自检）",
     "scripts/a4_gradient_proof.py": "S ai_gradient 真渐变证伪实验脚本（诊断用；需真实图输入，默认无输入 rc=2，不登记为运行时自检）",
     "scripts/clean_artifacts.py": "S 仓库产物清理脚本（运维用；默认 dry-run 只读，非运行时模块自检）",
 }

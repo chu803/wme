@@ -139,6 +139,7 @@ TRANSLATIONS: dict = {
                     "tiled": "填充式平铺水印",
                     "translucent": "半透明散点覆盖",
                     "solid_logo": "角落实体 LOGO / 标识",
+                    "corner_watermark": "右下角平台角标（模板匹配）",
                     "text": "满图文字笔画密集",
                     "signature": "底部署名栏文字密集",
                     "regularity": "频域平铺规则性",
@@ -937,6 +938,7 @@ TRANSLATIONS: dict = {
                     "tiled": "Filled tiled watermark",
                     "translucent": "Semi-transparent scattered coverage",
                     "solid_logo": "Solid corner LOGO / mark",
+                    "corner_watermark": "Bottom-right platform corner mark (template match)",
                     "text": "Dense full-image text strokes",
                     "signature": "Dense bottom signature-bar text",
                     "regularity": "Frequency-domain tiling regularity",
@@ -1903,7 +1905,8 @@ if __name__ == "__main__":
     for k in ("btn", "title", "msg.no_upload", "msg.bad_image", "msg.no_result",
               "msg.fail", "list_sep", "score_line", "scores_none",
               "feature.gradient", "feature.grid", "feature.tiled",
-              "feature.translucent", "feature.solid_logo", "feature.text",
+              "feature.translucent", "feature.solid_logo",
+              "feature.corner_watermark", "feature.text",
               "feature.signature", "feature.regularity", "feature.none",
               "scores_title"):
         assert t(f"detect.recommend.{k}") != f"detect.recommend.{k}", \

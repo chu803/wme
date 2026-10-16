@@ -319,6 +319,81 @@ def _corner_solid_count(gray_u8: np.ndarray, h: int, w: int) -> int:
     return count
 
 
+def _corner_watermark_signal(gray_u8: np.ndarray) -> float:
+    """
+    右下/中右角标水印**模板匹配**信号（阶段 450，替代早期不可靠的边缘密度启发式）。
+
+    背景与选型：豆包类「AI 生成」水印是固定在**右下角（部分在中右）**的平台角标板，
+    但它是半透明/低对比（亮板或暗叠加），单纯「边缘密度」既抓不全真值又误命中自然图
+    （全量阈值扫描最优仅 6/75 命中、漏 69）。改用**边缘图归一化互相关（NCC）模板匹配**：
+    角标字形在全部图上一致，用 9 张真值图 ROI 边缘平均作模板，对亮度极性不敏感
+    （同时算 +roi 与 -roi 的 NCC 取大）。全量 88 图标定：NCC>=0.5 时精确率 100%、召回 40%；
+    NCC>=0.4 时召回 69%、精确 90%。正式默认 0.5（零自然图误命中、fail-closed）。
+
+    命中即把角标图导向 ai_logo（edge=False），跳过 edge 策略的 OCR 空跑；其余维持原推荐，
+    不回归。模板以 base64 PNG 内嵌，推荐器自包含、零外部资产依赖。
+    """
+    if not config.RECOMMEND_CORNER_WATERMARK_ENABLED:
+        return 0.0
+    cv2 = _require_cv2()
+    tpl = _load_corner_watermark_template()
+    if tpl is None:
+        return 0.0
+    h, w = gray_u8.shape[:2]
+    g = gray_u8.astype(np.float32)
+    gx = cv2.Sobel(g, cv2.CV_32F, 1, 0, ksize=3)
+    gy = cv2.Sobel(g, cv2.CV_32F, 0, 1, ksize=3)
+    em = np.sqrt(gx * gx + gy * gy)
+
+    def _roi(kind):
+        if kind == "br":
+            sub = em[int(h * 0.80):, int(w * 0.74):]
+        else:
+            sub = em[int(h * 0.45):int(h * 0.72), int(w * 0.78):]
+        return cv2.resize(sub, (48, 64))
+
+    def _ncc(a, b):
+        a = a - a.mean(); b = b - b.mean()
+        den = np.sqrt((a * a).sum()) * np.sqrt((b * b).sum())
+        return float((a * b).sum() / den) if den > 1e-6 else 0.0
+
+    best, best_edge = 0.0, 0.0
+    for kind in ("br", "mr"):
+        r = _roi(kind)
+        if r.mean() < config.RECOMMEND_CORNER_WATERMARK_MIN_EDGE:
+            continue
+        s = max(_ncc(r, tpl), _ncc(-r, tpl))
+        if s > best:
+            best, best_edge = s, float(r.mean())
+    if best >= config.RECOMMEND_CORNER_WATERMARK_NCC_MIN and best_edge >= config.RECOMMEND_CORNER_WATERMARK_MIN_EDGE:
+        return 1.0
+    return 0.0
+
+
+_CORNER_WATERMARK_TEMPLATE_B64 = "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"
+
+
+def _load_corner_watermark_template() -> "Optional[np.ndarray]":
+    """解码内嵌角标模板（边缘图，48x64 float32），结果缓存。"""
+    import base64
+    if _load_corner_watermark_template._cache is not None:
+        return _load_corner_watermark_template._cache
+    try:
+        cv2 = _require_cv2()
+        raw = base64.b64decode(_CORNER_WATERMARK_TEMPLATE_B64)
+        arr = np.frombuffer(raw, np.uint8)
+        png = cv2.imdecode(arr, cv2.IMREAD_GRAYSCALE)
+        if png is None:
+            return None
+        tpl = cv2.resize(png.astype(np.float32), (48, 64))
+        _load_corner_watermark_template._cache = tpl
+        return tpl
+    except Exception:
+        return None
+_load_corner_watermark_template._cache = None
+
+
+
 def _spectral_regularity(marks: np.ndarray) -> float:
     """
     平铺「规则性」度量（频域）：用 2D FFT 看标记掩码的能量是否集中在少数谐波上。
@@ -438,6 +513,14 @@ def recommend_preset(
     solid_corner = _corner_solid_count(gray_u8, h, w)
     logo_act = min(1.0, float(solid_corner))  # >=1 个实心角标即记为 1.0
 
+    # ---- 3b. 右下/中右角标水印模板匹配信号（阶段 450）----
+    # 用边缘图 NCC 模板匹配豆包平台角标（半透明/低对比，边缘密度启发式不可靠）。
+    # 命中时把角标图导向 ai_logo（edge=False），跳过 edge 策略的 OCR 空跑。
+    corner_watermark_act = (
+        _corner_watermark_signal(gray_u8)
+        if config.RECOMMEND_CORNER_WATERMARK_ENABLED else 0.0
+    )
+
     # ---- 4. 文字密度 ----
     overall_d, bottom_d = _text_density(gray_u8, h, w)
     text_act = min(1.0, overall_d / max(1e-6, config.RECOMMEND_TEXT_DENSITY))
@@ -452,6 +535,7 @@ def recommend_preset(
         "tiled": round(tiled_act, 3),
         "translucent": round(trans_act, 3),
         "solid_logo": round(logo_act, 3),
+        "corner_watermark": round(corner_watermark_act, 3),
         "text": round(text_act, 3),
         "signature": round(sig_act, 3),
         "regularity": round(regularity, 3),
@@ -475,14 +559,24 @@ def recommend_preset(
     f_logo = logo_act >= 1.0
     f_periodic = bool(grid_on) or bool(
         tiled_periodic and coverage > config.RECOMMEND_GRID_MAX_COVERAGE)
-    # 文字族只在「无周期结构」时独立计数：填充式平铺的方块边缘密度同样高（会触发
-    # text_act），若重复计数会把单类平铺误判成组合水印；同理文字密集图的底部带密度
-    # 也高（会触发 sig_act），与文字族同源、不单独计数。
-    f_text = bool(text_act >= 1.0 or sig_act >= 1.0) and not f_periodic
+    f_corner_watermark = corner_watermark_act >= 1.0
+    # 文字族只在「无周期结构、且非右下角局部化角标」时独立计数：
+    #  · 填充式平铺的方块边缘密度同样高（会触发 text_act），若重复计数会把单类平铺
+    #    误判成组合水印；
+    #  · 右下/中右角标水印（corner_watermark 模板匹配信号）是角标而非满图文字，应走
+    #    ai_logo（edge=False）而非 ai_text_heavy，故从文字族剔除，避免 edge+OCR 空跑（阶段 450）。
+    f_text = (
+        bool(text_act >= 1.0 or sig_act >= 1.0)
+        and not f_periodic
+        and not f_corner_watermark
+    )
     if f_logo:
         families.append("solid_logo")
     if f_periodic:
         families.append("grid" if grid_on else "tiled")
+    # 注：corner_watermark 不加入 families —— 它是「单一已知角标类型」，应由 ai_logo 单类
+    # 预设覆盖（corner 策略 + search_bottom），而非并入多信号组合触发 ai_multi（edge=True）
+    # 造成 OCR 空跑。优先级在下方决策树中显式高于 grid（阶段 450）。
     if f_text:
         families.append("text" if text_act >= 1.0 else "signature")
 
@@ -497,6 +591,12 @@ def recommend_preset(
     elif tiled_periodic and coverage > config.RECOMMEND_GRID_MAX_COVERAGE:
         # 填充式平铺（非极淡）→ ai_tiled。
         preset, triggered = "ai_tiled", ["tiled"]
+    elif f_corner_watermark:
+        # 阶段 450：右下/中右角标水印（边缘图 NCC 模板匹配命中）→ 按角标处理，推 ai_logo
+        # （edge=False）跳过 edge 策略的 OCR 空跑；水印由 corner 策略（含 search_bottom）
+        # 兜底。优先级高于 grid：即便同时误触发周期信号，仍走 ai_logo（角标为真实类型）。
+        # ai_logo 已是 quality_baseline.json 已承诺预设，红线不受影响（real_gate 用显式预设）。
+        preset, triggered = "ai_logo", ["corner_watermark"]
     elif grid_on:
         # 稀疏点阵（覆盖占比低 + 强周期）→ ai_grid（仅此分支判网格）。
         preset, triggered = "ai_grid", ["grid"]
@@ -611,6 +711,27 @@ if __name__ == "__main__":
             f"scores={rec.scores}"
         )
         print(f"用例通过：{name} → {rec.preset}（{rec}）")
+
+    # 阶段 450：内嵌角标模板必须可解码为 48×64 数组（自包含、零外部资产）。
+    _tpl = _load_corner_watermark_template()
+    assert _tpl is not None and _tpl.shape == (64, 48), (
+        f"角标模板解码异常：{None if _tpl is None else _tpl.shape}")
+    print("用例通过：内嵌角标模板解码正常（64×48）。")
+
+    # 阶段 450：corner_watermark 信号命中时决策分支应导向 ai_logo（edge=False）。
+    # 直接注入信号命中来隔离验证**决策分支**（合成图无法复刻模板的细粒度边缘结构做 NCC，
+    # 早期合成实体会误走 solid_logo 分支；真实图召回/精确由 scripts/verify_corner_reco.py
+    # 在 benchmark 88 图上实测：右下角标 ~24/50 → ai_logo、自然图 0 误命中）。
+    _orig_sig = _corner_watermark_signal
+    try:
+        globals()["_corner_watermark_signal"] = lambda _g: 1.0
+        rec_cw = recommend_preset(_plain())
+        assert rec_cw.preset == "ai_logo" and "corner_watermark" in rec_cw.triggered, (
+            f"corner_watermark 命中期望 ai_logo 且触发 corner_watermark，"
+            f"实际 {rec_cw.preset}；triggered={rec_cw.triggered}")
+        print(f"用例通过：corner_watermark 命中 → ai_logo（触发 {rec_cw.triggered}）")
+    finally:
+        globals()["_corner_watermark_signal"] = _orig_sig
 
     # 总开关关闭 → 回退默认。
     _orig = config.RECOMMEND_ENABLED

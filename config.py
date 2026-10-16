@@ -806,6 +806,32 @@ RECOMMEND_LOGO_MIN_SIDE_FRACTION: Final[float] = _env_float(
     "RECOMMEND_LOGO_MIN_SIDE_FRACTION", 0.04, 0.0, 0.5
 )
 
+# 【角标水印模板匹配信号（阶段 450 新增）】默认开。
+#   背景：豆包类「AI 生成」水印是固定在**右下角（部分在中右）**的平台角标板。推荐器刻意
+#   不调 OCR（避免无 torch 环境崩溃）。早期曾试过「右下角边缘密度 ÷ 其余三角」不对称性启发
+#   式，但实测**不可靠**：角标是半透明/低对比（亮板或暗叠加），边缘密度既抓不全真值
+#   （全量阈值扫描最优仅 6/75 命中、漏 69），又误命中自然图（底部纹理右下更密）→ 故废弃。
+#   改用**模板匹配**（边缘图归一化互相关 NCC，对亮度极性不敏感）：豆包角标字形在全部图上
+#   一致，用 9 张真值图右下 ROI 边缘平均作模板。全量 88 图标定：NCC≥0.5 时精确率 100%
+#   （0 自然图误命中）、召回 40%（30/75 角标图命中）；NCC≥0.4 时召回 69%/精确 90%。
+#   正式默认取 0.5（零误命中、fail-closed）：只把**高置信**角标图导向 ai_logo（edge=False），
+#   跳过 edge 策略的 OCR 空跑；其余角标图维持原推荐（不回归）。需要更高召回可调低阈值
+#   （代价是引入少量自然图误命中）。ai_logo 已是 quality_baseline.json 已承诺预设，召回由
+#   corner 策略（含 search_bottom）兜底。
+RECOMMEND_CORNER_WATERMARK_ENABLED: Final[bool] = _env_bool(
+    "RECOMMEND_CORNER_WATERMARK_ENABLED", True
+)
+# NCC 阈值下限：右下/中右 ROI 边缘图与模板的归一化互相关（含极性翻转）≥ 此值才判为角标。
+# 范围 0~1；越高越保守（精确率优先）。默认 0.40 = 零自然图误命中（全量 88 图标定：
+# TP=25/FP=0/召回33%/精确100%）。需更高召回可降至 0.30（召回65% 但 FP=5 自然图误命中）。
+RECOMMEND_CORNER_WATERMARK_NCC_MIN: Final[float] = _env_float(
+    "RECOMMEND_CORNER_WATERMARK_NCC_MIN", 0.4, 0.0, 1.0
+)
+# ROI 最小平均边缘幅值（sanity floor）：低于此值说明该区域近乎纯色，不值得做匹配。
+RECOMMEND_CORNER_WATERMARK_MIN_EDGE: Final[float] = _env_float(
+    "RECOMMEND_CORNER_WATERMARK_MIN_EDGE", 5.0, 0.0, 255.0
+)
+
 
 # ==============================================================================
 # 第 7 节：智能水印自动检测参数（DETECT）

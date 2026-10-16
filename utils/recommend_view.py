@@ -47,7 +47,7 @@ from utils.i18n import t
 # 8 个特征按稳定顺序展示（与 core.preset_recommender 的 scores 键一致）。
 _FEATURE_KEYS = (
     "gradient", "grid", "tiled", "translucent",
-    "solid_logo", "text", "signature", "regularity",
+    "solid_logo", "corner_watermark", "text", "signature", "regularity",
 )
 _BAR_LEN = 12  # 字符分数条长度（0~1 映射到 12 格）
 
