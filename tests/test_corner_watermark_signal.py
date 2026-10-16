@@ -56,11 +56,11 @@ def _diffuse_text() -> np.ndarray:
 # ------------------------------------------------------------------------------
 # 模板本身
 # ------------------------------------------------------------------------------
-def test_template_decodes_to_expected_shape():
-    tpl = pr._load_corner_watermark_template()
-    assert tpl is not None, "内嵌角标模板应可解码"
-    assert tpl.shape == (64, 48), f"模板形状应为 (64, 48)，实际 {tpl.shape}"
-    assert pr._load_corner_watermark_template() is tpl, "二次调用应命中缓存"
+def test_template_bank_decodes():
+    bank = pr._load_corner_watermark_templates()
+    assert len(bank) == 9, f"模板库应有 9 张，实际 {len(bank)}"
+    assert all(t.shape == (64, 48) for t in bank), "每张模板应为 (64, 48)"
+    assert pr._load_corner_watermark_templates() is bank, "二次调用应命中缓存"
 
 
 # ------------------------------------------------------------------------------

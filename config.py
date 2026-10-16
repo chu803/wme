@@ -821,11 +821,14 @@ RECOMMEND_LOGO_MIN_SIDE_FRACTION: Final[float] = _env_float(
 RECOMMEND_CORNER_WATERMARK_ENABLED: Final[bool] = _env_bool(
     "RECOMMEND_CORNER_WATERMARK_ENABLED", True
 )
-# NCC 阈值下限：右下/中右 ROI 边缘图与模板的归一化互相关（含极性翻转）≥ 此值才判为角标。
-# 范围 0~1；越高越保守（精确率优先）。默认 0.40 = 零自然图误命中（全量 88 图标定：
-# TP=25/FP=0/召回33%/精确100%）。需更高召回可降至 0.30（召回65% 但 FP=5 自然图误命中）。
+# NCC 阈值下限：右下/中右 ROI 边缘图与**模板库**的归一化互相关（含极性翻转）≥ 此值才判为角标。
+# 范围 0~1；越高越保守（精确率优先）。模板库（9 张真值图 ROI 边缘图）全量 88 图标定（含
+# 留出集，模板源不计入召回防自匹配膨胀）：
+#   默认 0.30 → 精确率 100%（自然图 0 误命中）、全 GT 召回 52%（39/75）、留出集召回 54%；
+#   0.35 → 召回 48%、FP=0（更稳、余量更大）；0.25 → 召回 55% 但 FP=1（精确率下降）。
+# 同等零误命中下模板库严格优于早期单平均模板（avg@0.30 仅 45%、avg@0.40 仅 48%）。
 RECOMMEND_CORNER_WATERMARK_NCC_MIN: Final[float] = _env_float(
-    "RECOMMEND_CORNER_WATERMARK_NCC_MIN", 0.4, 0.0, 1.0
+    "RECOMMEND_CORNER_WATERMARK_NCC_MIN", 0.3, 0.0, 1.0
 )
 # ROI 最小平均边缘幅值（sanity floor）：低于此值说明该区域近乎纯色，不值得做匹配。
 RECOMMEND_CORNER_WATERMARK_MIN_EDGE: Final[float] = _env_float(
