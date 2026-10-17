@@ -70,7 +70,9 @@ _REAL_BASELINE = os.path.join(_ROOT, "benchmark_real", "quality_baseline.json")
 #:   红线（0.020 / 3.50× / 0.20）**未动**，夹逼不变式仍满足：
 #:   max 型 0.0137<0.020≤0.0274、2.47<3.50≤4.94；min 型 0.1562≤0.20<0.3124。
 #:   注：过检绝对值上升同属「新图内容更易触发通路」的**构成效应**，非检测器回退。
-CONVERGED = {"mask_coverage": 0.0137, "coverage_ratio": 2.47, "mask_iou": 0.3124}
+CONVERGED = {"mask_coverage": 0.0129, "coverage_ratio": 2.30, "mask_iou": 0.3217}
+#: ⚠ 阶段 S2（2026-10-17）随 `DETECT_TRANSLUCENT_SENSITIVITY` 0.55→0.50 重锚同步
+#: （与 benchmark_real/quality_baseline.json 逐位一致；经验 81 合法连带损伤）。
 #: 逐级回退锚点：99 级（只做了覆盖率闸）与 86 级（两个都没做）。
 #: 全部落在新红线（0.045 / 4.35× / 0.10）外侧：mask_coverage 与 ratio 越高越坏
 #: （0.1266/0.1618 > 0.045、13.00/16.62 > 4.35），mask_iou 越低越坏

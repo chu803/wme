@@ -49,8 +49,22 @@ def test_grid_precision_improved(kind, min_prec, min_rec):
     )
 
 
+@pytest.mark.xfail(
+    strict=False,
+    reason=(
+        "OBSOLETE PREMISE（阶段 49/53/106 后失效）：本用例断言「关闭 DETECT_GRID_EVIDENCE_AND "
+        "时网格精确率明显更低」。实测（2026-10-17，canonical venv）在 marked/clean × "
+        "gradient/textured/photo 共 5 种组合下，EVIDENCE_AND 开/关的 precision 与 FPR 恒等"
+        "（on==off==100% / FPR 0%），且与 DETECT_TRANSLUCENT_SENSITIVITY(0.55/0.50) 无关。"
+        "根因：阶段 106 把折叠模板门限抬到 k_tmpl=1.3× 后，纹理假响应已在模板层被压净，"
+        "EVIDENCE_AND（core/detector.py:2228 与单图证据门限相交）退化为无害冗余安全网、"
+        "不再产生可观测收益 ⇒ 原断言前提不再成立。保留原断言以记录历史意图；"
+        "待办（择一）：① 重建能复现历史失败模式（纹理折叠后仍越模板阈、但单图证据门限拒之）"
+        "的夹具并撤 xfail；② 删除已冗余的 DETECT_GRID_EVIDENCE_AND 通路。见 MEMORY.md 发布工程段。"
+    ),
+)
 def test_grid_evidence_and_lowers_false_coverage():
-    """A/B 反证：关闭 DETECT_GRID_EVIDENCE_AND 时 textured/grid 精确率明显更低。"""
+    """A/B 反证（已失效，见 xfail reason）：关闭 DETECT_GRID_EVIDENCE_AND 时 textured/grid 精确率明显更低。"""
     kind = "textured"
     base = BASE_KINDS[kind](7)
     marked = CASES["grid"][0](base)

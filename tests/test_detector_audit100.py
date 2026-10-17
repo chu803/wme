@@ -82,12 +82,15 @@ _REAL_BASELINE = os.path.join(_ROOT, "benchmark_real", "quality_baseline.json")
 #: ⚠ **阶段 300（c/s 系列导入）再锚**：2026-10-13 由 `D:\照片存储` 导入 28 张
 #:   （c1–c11/c13–c15/s1–s14，2048×2048，右下「豆包 AI 生成」固定文字水印，
 #:   bbox 由跨图平均高通 + 逐图足迹约束量取；c12 与 c11 字节重复已按 hash 去重）。
-#:   承诺面实评 25→**53 图**，实测变为 precision **0.0758** / mask_iou **0.3124** /
-#:   mask_coverage **0.0137** / coverage_ratio **2.47**（本表随之同步，与基线文件逐位一致）。
-#:   mask_recall 同步 0.5111→**0.5984**（红线 0.45 不动，夹逼不变式仍满足）。
+#:   承诺面实评 25→**53 图**，实测变为 precision **0.0801** / mask_iou **0.3217** /
+#:   mask_coverage **0.0129** / coverage_ratio **2.30**（本表随之同步，与基线文件逐位一致）。
+#:   mask_recall 同步 0.5111→**0.5960**（红线 0.45 不动，夹逼不变式仍满足）。
+#: ⚠ **阶段 S2（2026-10-17）再锚**：`DETECT_TRANSLUCENT_SENSITIVITY` 0.55→0.50 保守收紧过检，
+#:   重锚后 precision/mask_iou/mask_coverage/coverage_ratio 如上（与基线文件逐位一致）；
+#:   本表为「快照==当前默认配置实测」，随基线刷新同步（经验 81 合法连带损伤）。
 #: 本表语义是「快照 == 当前默认配置的实测」，故每次刷新基线都要同步（经验 81 的合法连带损伤）。
-MSER_OFF = {"precision": 0.0758, "mask_iou": 0.3124,
-            "mask_coverage": 0.0137, "coverage_ratio": 2.47}
+MSER_OFF = {"precision": 0.0801, "mask_iou": 0.3217,
+            "mask_coverage": 0.0129, "coverage_ratio": 2.30}
 #: 把开关开回去后的实测（真实图跑 `WME_DETECT_CORNER_MSER_ENABLED=1` 得到；阶段 100 口径）。
 MSER_ON = {"precision": 0.0392, "mask_iou": 0.0699,
            "mask_coverage": 0.1266, "coverage_ratio": 13.00}

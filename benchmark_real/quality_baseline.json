@@ -12,19 +12,19 @@
     "n_images": 53,
     "n_expected": 53,
     "dataset_dir": "benchmark_real",
-    "generated_at": "2026-10-13T20:49:28"
+    "generated_at": "2026-10-17T17:10:29"
   },
   "aggregate": {
     "per_preset": {
       "general": {
         "n": 53,
-        "mask_recall": 0.5984,
-        "precision": 0.0758,
+        "mask_recall": 0.596,
+        "precision": 0.0801,
         "recall": 0.9057,
-        "mean_iou": 0.6673,
-        "mask_iou": 0.3124,
-        "mask_coverage": 0.0137,
-        "coverage_ratio": 2.47
+        "mean_iou": 0.6638,
+        "mask_iou": 0.3217,
+        "mask_coverage": 0.0129,
+        "coverage_ratio": 2.3
       }
     },
     "area_only": {

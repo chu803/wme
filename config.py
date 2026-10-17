@@ -853,7 +853,7 @@ DETECT_TRANSLUCENT_ENABLED: Final[bool] = _env_bool("DETECT_TRANSLUCENT_ENABLED"
 #   调高：能揪出更淡的水印，但误判率上升（可能把天空、渐变背景也圈进去）
 #   调低：只检测明显水印，漏检率上升
 DETECT_TRANSLUCENT_SENSITIVITY: Final[float] = _env_float(
-    "DETECT_TRANSLUCENT_SENSITIVITY", 0.55, 0.0, 1.0
+    "DETECT_TRANSLUCENT_SENSITIVITY", 0.50, 0.0, 1.0
 )
 
 # 【是否启用角落 LOGO 检测】
