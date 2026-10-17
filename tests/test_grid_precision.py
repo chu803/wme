@@ -58,8 +58,10 @@ def test_grid_evidence_and_lowers_false_coverage():
     但在 **gradient** 底图上它是关键误报抑制器——关闭后折叠模板的伪周期把误报铺满全图
     （如 seed=3：精确率 1.00→0.10、预测覆盖率 1.2%→12.2%）。故正确夹具是 gradient，
     原断言（开显著高于关）在 gradient 上稳定成立。
-    ⚠ 选项②（删除该通路）已被证伪：会击穿 ai_grid 过检红线（real_gate 实测 ai_grid 最大
-    覆盖率 14.96% 已逼近 0.125 上限，EVIDENCE_AND 正是把它压回 ~1.2% 的那道闸）。
+    ⚠ 双刃剑（2026-10-17 真实图探针补充）：删/留都不能一概而论——本断言只在**合成 gradient
+    洪水**场景成立；在真实 doubao 图上 EVIDENCE_AND 开着反而把覆盖率推高（mean 11.29% vs
+    关 5.60%，交集把周期模板打碎 + 覆盖率裁剪「保留小区域」所致）。故它防洪、但并非普适
+    保护 ai_grid 红线，根因是 ai_grid 在非网格图上误触发 is_grid。详见 MEMORY.md 发布工程段。
     """
     kind = "gradient"
     base = BASE_KINDS[kind](3)
