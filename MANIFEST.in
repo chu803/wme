@@ -1,0 +1,23 @@
+# 源码分发（sdist）口径：只含「可安装包」本身，剔除开发/数据/文档/CI 资产。
+#
+#   背景：pyproject 的 [tool.setuptools.packages.find] 只把 core/services/ui/utils
+#   + 6 个顶层模块打进 **wheel**（用户 pip install 真正拿到的产物），但 setuptools 的
+#   sdist 默认会把仓库里的 tests/、scripts/、benchmark_real/ 等一并收进 .tar.gz
+#   ——与 pyproject 注释「测试套件不随分发发布」的意图不符（虽无害：纯源码、无二进制）。
+#   本文件把 sdist 对齐到同一口径：wheel 干净，sdist 也干净。
+#
+#   校验：构建后 sdist 不应再含 tests/；守卫见 tests/test_packaging_meta.py。
+prune tests
+prune scripts
+prune benchmark_real
+prune docs
+prune logs
+prune .github
+prune .workbuddy
+prune build
+prune dist
+prune cache
+global-exclude *.pyc
+global-exclude __pycache__
+global-exclude .pytest_cache
+global-exclude *.egg-info

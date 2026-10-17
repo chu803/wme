@@ -160,3 +160,31 @@ def test_console_scripts_declared_and_resolvable():
             f"控制台入口 {name} 指向的 {mod}:{fn} 不是 {mod}.py 顶层函数（top_funcs={sorted(top_funcs)}）"
         )
 
+
+def test_manifest_prunes_non_package_dirs_from_sdist():
+    """2026-10-17 打包口径对齐：MANIFEST.in 把 sdist 收窄到与 wheel 一致。
+
+    wheel 由 pyproject 的 packages.find 限定（只含 core/services/ui/utils + 顶层模块），
+    但 setuptools 的 sdist **默认**会把 tests/、scripts/、benchmark_real/、docs/ 等一并
+    打进 .tar.gz（实测打进去 222 个 tests 条目、1.43MB）——与「测试套件不随分发发布」
+    的意图不符（虽无害：纯源码、用户装的是 wheel）。MANIFEST.in 用 prune 把这些目录挡在
+    sdist 外（实测 sdist 296→75 条目、1.43MB→0.84MB、tests_entries=0，且仍能重建 wheel）。
+
+    静态守卫（不触发真实构建，避免在测试里跑 setuptools）：MANIFEST.in 必须存在，且对每个
+    「不该进 sdist」的顶层目录都有 `prune <dir>`。若 MANIFEST.in 被删/回退 ⇒ 本测试失败，
+    防 tests/数据悄悄回流源码包。
+    """
+    manifest = _ROOT / "MANIFEST.in"
+    assert manifest.is_file(), (
+        "缺 MANIFEST.in：sdist 默认会把 tests/scripts/benchmark_real 等一并收进 .tar.gz，"
+        "与 pyproject「测试套件不随分发发布」意图不符。请补回并 prune 这些目录。"
+    )
+    prune_dirs = {
+        ln.split()[1]
+        for ln in manifest.read_text(encoding="utf-8").splitlines()
+        if ln.strip().startswith("prune ") and len(ln.split()) == 2
+    }
+    must_prune = {"tests", "scripts", "benchmark_real", "docs", ".github", ".workbuddy"}
+    missing = sorted(must_prune - prune_dirs)
+    assert not missing, f"MANIFEST.in 未 prune 这些目录（会漏进 sdist）：{missing}"
+
