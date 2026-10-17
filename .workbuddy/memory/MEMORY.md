@@ -9,7 +9,7 @@
 - 分层 `ui→services→core→utils→config`，严禁反向依赖；`core/services/utils` 零 gradio；`config` 不依赖 `utils.logger`。
 - 探针/basetemp 用非 Temp 路径；沙箱批量删 >50 文件 → `SystemExit(1)`（两段式受限 + 会话闩锁，归档 rename 优于删除）。
 - 多段编辑须串行 + 重读校验；注入式反例读写 `newline=''`、sha 对原始字节（`'rb'`）计算。
-- 网络：GitHub TCP:443 可达但沙箱无凭证 ⇒ **push 须用户本机执行**；PyPI 清华镜像可达。
+- 网络（2026-10-17 实测修正，原记「TCP:443 可达」有误）：本机 **HTTPS github.com:443 被 reset/不可达**、系统代理关闭（ProxyEnable=0，无 ProxyServer/PAC）；但 **SSH 通路可达**（github.com:22 与 ssh.github.com:443 实测 OK）⇒ **push 走 SSH**：远端改 `git@github.com:chu803/wme.git`，需本机 ssh key 已加 GitHub；本机原无 `~/.ssh`。沙箱侧 HTTPS（代理 502）与直连均不通、`reg.exe` 被安全策略禁。PyPI 清华镜像可达。
 
 ## 沙箱能力更正（2026-10-16 关键）
 - **canonical venv 在沙箱内可用**，绝对路径 `C:\Users\HP\.workbuddy\binaries\python\envs\default\Scripts\python.exe`：torch 2.9.1+cu128 + **CUDA 12.8 可用** + easyocr/gradio/fitz/pytest 全齐。之前错判沙箱无此 venv（实际是命令里写成了项目内相对路径）。
@@ -60,7 +60,8 @@ quality_gate + real_gate(30图) + e2e_real_probe(10图×4类) + mask_param_audit
 ## 发布工程（296-298，指针）
 - **296 决定性否证**：半透明通路在 25 门禁图产 190 个 FP 盒；关掉 precision 0.079→0.26(3.3×) 但 mask_recall 0.511→0.4355 **破 0.45 红线** ⇒ 提盒精度必蚀掩码召回，无免费午餐；当前 (0.65,0.50) 为校准平衡。
 - **297-298 发布管线就绪**：pyproject `[project.scripts]` 三件套（wme/cli/api）+ AST 守卫 + 真 wheel 构建验证；`.github/workflows/publish.yml`（tag v* → 门禁 → build → PyPI，Secret PYPI_API_TOKEN）+ `docs/297-runbook` + `docs/298-评估`。**待用户 push + 配 token + 打 tag v1.0.0 即上 PyPI**。
-- **2026-10-17 预检结论（S2 收官后）**：管线三件套结构正确、`docker_consistency_check` 全绿、pyproject 三件套齐备。跑与发布同款门禁 `run_all_checks.py`（无 --gates）初见 **6 failed**；其中 **3 个是我方责任已修**：①S2 重锚的镜像常量 `MSER_OFF`(test_detector_audit100) + `CONVERGED`(test_overdetection99) 同步到新基线（文件注释 line 88 授权的「合法连带损伤」）；②`test_repo_hygiene` 被我自己的 `tee` 探针残留 `.pytest_runall_publish_preflight.log` 触发，已删。剩余 **3 个预存、非 S2 回归**：`test_grid_precision::test_grid_evidence_and_lowers_false_coverage`（**真·恒红·陈旧测试**：`DETECT_GRID_EVIDENCE_AND` 仍接线 detector.py:2228，但阶段 49/53/106 已使折叠模板自身压净纹理假响应 ⇒ 合成夹具 on/off 恒 100%/100%，与 sens 0.55/0.50 无关；按铁律不得悄悄弱化断言，须独立修复/显式 xfail 后再打 tag）+ `test_utils_audit90` 2 例 rotation（沙箱 logging 单例顺序污染，记忆记「正常机器预期全绿」）。**⇒ 唯一真阻塞项是网格 EVIDENCE_AND 陈旧测试；2 audit90 在干净 CI 预期绿。**
+- **2026-10-17 预检结论（S2 收官后）**：管线三件套结构正确、`docker_consistency_check` 全绿、pyproject 三件套齐备。跑与发布同款门禁 `run_all_checks.py`（无 --gates）初见 **6 failed**；其中 **3 个是我方责任已修**：①S2 重锚的镜像常量 `MSER_OFF`(test_detector_audit100) + `CONVERGED`(test_overdetection99) 同步到新基线（文件注释 line 88 授权的「合法连带损伤」）；②`test_repo_hygiene` 被我自己的 `tee` 探针残留 `.pytest_runall_publish_preflight.log` 触发，已删。剩余 2 个预存、非 S2 回归：`test_utils_audit90` 2 例 rotation（沙箱 logging 单例顺序污染，隔离跑即绿、干净 CI 必绿）。**⇒ 原判「唯一真阻塞=网格 EVIDENCE_AND 陈旧测试」经探针复核是误诊，已纠正（见下条）。**
+- **⚠ 2026-10-17 EVIDENCE_AND 误诊纠正（重要，防未来误删通路）**：`test_grid_evidence_and_lowers_false_coverage` 早期用 **textured(seed=7)** 夹具只见 on==off 精确率均 100%，遂判「EVIDENCE_AND 冗余、可删」并 xfail——**错**。探针扫 3 底图×8 seed：textured/photo 上它仅略降召回（精确率本就 100% 看似无用）；**gradient 上是关键误报闸**——关后折叠模板伪周期铺满全图（seed=3：精确率 1.00→0.10、覆盖率 1.2%→12.2%、44880 纯 FP），24 组 20 组发散。**选项②（删 `DETECT_GRID_EVIDENCE_AND`，detector.py:2228）已证伪**：会击穿 ai_grid 过检红线（real_gate ai_grid 最大覆盖率 14.96% 贴 0.125 上限，正是该相交压回 ~1.2%）。**已修**：夹具改 gradient(seed=3)、撤 xfail、6 passed；注入反证（`if False and ...` 摘闸）→ on==off==10% 测试如预期 FAIL，detector.py 净 diff 空。守卫 `tests/test_grid_precision.py`。
 
 ## 数据方向 · 28 张真实豆包图入基准（300，指针）
 - 用户供图 `D:\照片存储` → 29 PNG 入 `benchmark_real/images/`；c12 与 c11 字节相同（sha256 去重）⇒ 实为 **28 张唯一图**（均 2048×2048）；全带同一「豆包 AI 生成」固定平台水印（右下 ≈[1683,1936,319,71]）；**无干净图** ⇒ 296 干净图校准 precision 未达。

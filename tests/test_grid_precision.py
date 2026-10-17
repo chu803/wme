@@ -49,24 +49,20 @@ def test_grid_precision_improved(kind, min_prec, min_rec):
     )
 
 
-@pytest.mark.xfail(
-    strict=False,
-    reason=(
-        "OBSOLETE PREMISE（阶段 49/53/106 后失效）：本用例断言「关闭 DETECT_GRID_EVIDENCE_AND "
-        "时网格精确率明显更低」。实测（2026-10-17，canonical venv）在 marked/clean × "
-        "gradient/textured/photo 共 5 种组合下，EVIDENCE_AND 开/关的 precision 与 FPR 恒等"
-        "（on==off==100% / FPR 0%），且与 DETECT_TRANSLUCENT_SENSITIVITY(0.55/0.50) 无关。"
-        "根因：阶段 106 把折叠模板门限抬到 k_tmpl=1.3× 后，纹理假响应已在模板层被压净，"
-        "EVIDENCE_AND（core/detector.py:2228 与单图证据门限相交）退化为无害冗余安全网、"
-        "不再产生可观测收益 ⇒ 原断言前提不再成立。保留原断言以记录历史意图；"
-        "待办（择一）：① 重建能复现历史失败模式（纹理折叠后仍越模板阈、但单图证据门限拒之）"
-        "的夹具并撤 xfail；② 删除已冗余的 DETECT_GRID_EVIDENCE_AND 通路。见 MEMORY.md 发布工程段。"
-    ),
-)
 def test_grid_evidence_and_lowers_false_coverage():
-    """A/B 反证（已失效，见 xfail reason）：关闭 DETECT_GRID_EVIDENCE_AND 时 textured/grid 精确率明显更低。"""
-    kind = "textured"
-    base = BASE_KINDS[kind](7)
+    """A/B 反证：关闭 DETECT_GRID_EVIDENCE_AND 时 gradient/grid 精确率大幅下降。
+
+    2026-10-17 勘误：本用例早期用 textured(seed=7) 作底图，只见 on==off 精确率均 100%，
+    误判 EVIDENCE_AND 已惰性并打了 xfail。经 scripts 探针扫 3 底图 × 8 seed 发现该结论只对
+    textured/photo 成立（那里精确率本就 100%，EVIDENCE_AND 仅略降召回，看似「无用」）；
+    但在 **gradient** 底图上它是关键误报抑制器——关闭后折叠模板的伪周期把误报铺满全图
+    （如 seed=3：精确率 1.00→0.10、预测覆盖率 1.2%→12.2%）。故正确夹具是 gradient，
+    原断言（开显著高于关）在 gradient 上稳定成立。
+    ⚠ 选项②（删除该通路）已被证伪：会击穿 ai_grid 过检红线（real_gate 实测 ai_grid 最大
+    覆盖率 14.96% 已逼近 0.125 上限，EVIDENCE_AND 正是把它压回 ~1.2% 的那道闸）。
+    """
+    kind = "gradient"
+    base = BASE_KINDS[kind](3)
     marked = CASES["grid"][0](base)
     g = gt_mask(base, marked)
     h, w = marked.shape[:2]
