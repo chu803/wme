@@ -701,8 +701,13 @@ MASK_THRESHOLD_STEP: Final[int] = 1
 #   标准差差同步下降。只改**掩码内**，mask 外逐字节不变（铁律不破）。
 #   机理：LaMa 偶尔给出与周围略偏亮度/色调的填充；mean/std 仿射校正是单调的，
 #   不像全直方图 CDF 那样会 warp 分布/产生色带，对小填充区更稳健。
-#   关闭（env INPAINT_COLOR_MATCH=false）可回退旧行为（可逆杠杆）。
-INPAINT_COLOR_MATCH: Final[bool] = _env_bool("INPAINT_COLOR_MATCH", True)
+#   关闭（env WME_INPAINT_COLOR_MATCH=false）可回退旧行为（可逆杠杆；env 前缀为 WME_）。
+#   ⚠ 2026-10-17 默认改 False（保守）：e2e_real_probe 前后对比显示 mean/std 匹配虽压色差，
+#   但合成水印上拖累去痕率（grid 72.6%→49.8%、faint_tiled 14.6%→-15.1%）、collateral↑、ΔPSNR↓
+#   ——强制填充贴合直接邻环，水印下本是局部特征时被抹平、拉离真背景（真实 doubao 角标受益
+#   是因填充确有虚假色偏）。仅在确证填充有虚假色偏时按需开启；要默认开须先做更温和变体
+#   （仅校均值 / 偏移超阈才校 / 部分混合）并复跑 e2e 通过。
+INPAINT_COLOR_MATCH: Final[bool] = _env_bool("INPAINT_COLOR_MATCH", False)
 
 # 【颜色匹配参考环宽度】单位：像素，4~64，默认 16。
 #   「周围一圈」= dilate(二值掩码, RING) 且不在掩码内——紧贴水印的边缘上下文，
