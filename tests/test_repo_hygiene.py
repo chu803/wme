@@ -147,7 +147,7 @@ _ALLOWED_ROOT_FILES = {
     "api.py", "cli.py", "config.py", "conftest.py", "download_model.py",
     "job_manager.py", "main.py", "server.py",
     # 打包元数据
-    "pyproject.toml", "build.spec",
+    "pyproject.toml", "build.spec", "MANIFEST.in",  # MANIFEST.in: sdist 口径对齐 wheel（2026-10-17）
     # 依赖清单
     "requirements.txt", "requirements-dev.txt", "requirements-gpu.txt",
     "requirements-min.txt",
