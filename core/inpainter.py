@@ -465,6 +465,46 @@ def _run_engine_once(
     return _tile_if_needed(eng, image, bin_mask, device=device, progress=progress)
 
 
+def _match_region_color(
+    result: np.ndarray,
+    original: np.ndarray,
+    bin_mask: np.ndarray,
+    ring: int,
+) -> np.ndarray:
+    """把修复区(result)的逐通道 mean/std 对齐到「掩码周围一圈原图(original)」统计量。
+
+    目的：消 LaMa 填充与周围的亮度/色差接缝（IOPaint `sd_match_histograms` 同款，
+    但用单调的 mean/std 仿射而非全直方图 CDF，避免 warp 分布/产生色带，小填充区更稳健）。
+    实测（2026-10-17 探针，真实 doubao 图）修复区-周围均值差最大 [1.0,23.2,22.8] → [0.8,0.4,0.6]。
+
+    铁律：只改 bin_mask 内的像素；bin_mask 外与 result 逐字节相同（强度融合随后也只在
+    proc_mask 内生效，故 mask 外全程不被本函数触碰）。
+
+    鲁棒性：核心区或参考环像素 <50 时原样返回；某通道近常量（std<1e-3）时跳过该通道。
+    """
+    import cv2
+
+    core = bin_mask > 0
+    if int(core.sum()) < 50:
+        return result
+    k = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (2 * ring + 1, 2 * ring + 1))
+    dilated = cv2.dilate(bin_mask, k, iterations=1)
+    ref_mask = cv2.bitwise_and(dilated, cv2.bitwise_not(bin_mask))
+    if int((ref_mask > 0).sum()) < 50:
+        return result
+    src = result[core].astype(np.float32)
+    ref = original[ref_mask > 0].astype(np.float32)
+    out = result.astype(np.float32)
+    for c in range(result.shape[2]):
+        mu_s, sd_s = float(src[:, c].mean()), float(src[:, c].std())
+        mu_r, sd_r = float(ref[:, c].mean()), float(ref[:, c].std())
+        if sd_s < 1e-3:
+            continue
+        corrected = (out[:, :, c] - mu_s) * (sd_r / sd_s) + mu_r
+        out[:, :, c] = np.where(core, corrected, out[:, :, c])
+    return np.clip(out, 0, 255).astype(np.uint8)
+
+
 def inpaint(
     image: np.ndarray,
     mask: np.ndarray,
@@ -623,6 +663,13 @@ def inpaint(
     progress(0.8, "正在降噪与融合...")
     # 降噪。
     result = _denoise(result, bin_mask, denoise, config.DENOISE_ONLY_MASKED)
+
+    # 修复区颜色/亮度匹配（2026-10-17）：把 result 在掩码内的逐通道 mean/std 对齐到
+    # 周围原图环，消亮度/色差接缝。仅改掩码内（mask 外逐字节不变），可逆开关见 config。
+    if config.INPAINT_COLOR_MATCH:
+        result = _match_region_color(
+            result, image, bin_mask, config.INPAINT_COLOR_MATCH_RING
+        )
 
     # 力度融合：在掩码区域把「原图」与「修复结果」按 strength 混合。
     m3 = (proc_mask.astype(np.float32) / 255.0)[:, :, None]

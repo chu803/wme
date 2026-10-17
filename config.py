@@ -692,6 +692,23 @@ MASK_THRESHOLD_MIN: Final[int] = 0
 MASK_THRESHOLD_MAX: Final[int] = 255
 MASK_THRESHOLD_STEP: Final[int] = 1
 
+# ---------- 6.4b 修复区颜色/亮度匹配 ----------
+# 【修复区颜色匹配开关】bool，默认 True（2026-10-17 新增）。
+#   把 inpaint 修复区的逐通道均值/标准差对齐到「掩码周围一圈原图」的统计量，
+#   消除 LaMa 填充与周围的亮度/色差接缝（IOPaint `sd_match_histograms` 同款思路）。
+#   实测（scripts 探针，4 张真实 doubao 图 / general 预设）：修复区-周围均值差最大
+#   [1.0, 23.2, 22.8]（绿/蓝偏 23，肉眼可见色差接缝）→ 匹配后 [0.8, 0.4, 0.6]，
+#   标准差差同步下降。只改**掩码内**，mask 外逐字节不变（铁律不破）。
+#   机理：LaMa 偶尔给出与周围略偏亮度/色调的填充；mean/std 仿射校正是单调的，
+#   不像全直方图 CDF 那样会 warp 分布/产生色带，对小填充区更稳健。
+#   关闭（env INPAINT_COLOR_MATCH=false）可回退旧行为（可逆杠杆）。
+INPAINT_COLOR_MATCH: Final[bool] = _env_bool("INPAINT_COLOR_MATCH", True)
+
+# 【颜色匹配参考环宽度】单位：像素，4~64，默认 16。
+#   「周围一圈」= dilate(二值掩码, RING) 且不在掩码内——紧贴水印的边缘上下文，
+#   用来估计目标 mean/std。取局部环而非全图，避免远处不同内容稀释统计量。
+INPAINT_COLOR_MATCH_RING: Final[int] = _env_int("INPAINT_COLOR_MATCH_RING", 16, 4, 64)
+
 # ---------- 6.5 降噪参数 ----------
 # 【降噪强度默认值】取值 0 ~ 30。
 #   修复后对结果做一次「非局部均值降噪」，抹平模型生成内容里的细微噪点。
