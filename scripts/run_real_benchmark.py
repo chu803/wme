@@ -91,7 +91,7 @@ def _match_regions(preds: List[List[int]], truths: List[List[int]]) -> Tuple[int
     tp = len(ious)
     fp = len(preds) - tp
     fn = len(truths) - tp
-    return tp, fp, fn, ious
+    return tp, fp, fn, ious, used_p, used_t
 
 
 def _mask_iou(pred_mask: Optional[Any], truth_mask: Optional[Any]) -> float:
@@ -154,10 +154,12 @@ def evaluate_one(image_rgb: Any,
 
     h, w = image_rgb.shape[:2]
     truths = [list(map(int, wm["bbox"])) for wm in truth_entry.get("watermarks", [])]
+    truth_styles = [str(wm.get("style", "unknown")) for wm in truth_entry.get("watermarks", [])]
     truth_mask = _bbox_to_mask(truths, (h, w))
     try:
         res = detect_watermark_mask(image_rgb, preset=preset, use_ocr=use_ocr)
         preds = [list(map(int, (r.x, r.y, r.w, r.h))) for r in res.regions]
+        pred_kinds = [str(getattr(r, "kind", "unknown")) for r in res.regions]
         pred_mask = res.mask
     except Exception as e:
         return {
@@ -168,8 +170,9 @@ def evaluate_one(image_rgb: Any,
             "mask_inter_px": 0, "truth_px": 0,
             "mask_coverage": 0.0, "truth_coverage": 0.0, "coverage_ratio": None,
             "pred_count": 0, "truth_count": len(truths),
+            "recall_by_kind": {}, "precision_by_kind": {},
         }
-    tp, fp, fn, ious = _match_regions(preds, truths)
+    tp, fp, fn, ious, used_p, used_t = _match_regions(preds, truths)
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
     recall = tp / (tp + fn) if (tp + fn) > 0 else 0.0
     mask_iou = _mask_iou(pred_mask, truth_mask)
@@ -183,9 +186,36 @@ def evaluate_one(image_rgb: Any,
     truth_cov = (float((truth_mask > 0).sum() / truth_mask.size)
                  if truth_mask is not None else 0.0)
     ratio = round(cov / truth_cov, 2) if truth_cov > 0 else None
+    # 阶段 P1：per-kind（按水印 style）召回/精确率 —— 直接回答「grid_watermark /
+    # translucent / edge_text 等具体类是否被测到」，是 301/296 量化的关键视角。
+    # 区域级匹配已给出 used_p / used_t，此处按 truth style / pred kind 归并。
+    _rec: Dict[str, List[int]] = {}
+    for ti, s in enumerate(truth_styles):
+        bucket = _rec.setdefault(s, [0, 0])
+        bucket[1] += 1
+        if ti in used_t:
+            bucket[0] += 1
+    _prec: Dict[str, List[int]] = {}
+    for pi, k in enumerate(pred_kinds):
+        bucket = _prec.setdefault(k, [0, 0])
+        bucket[1] += 1
+        if pi in used_p:
+            bucket[0] += 1
+    recall_by_kind = {
+        s: {"matched": m, "total": t,
+            "recall_micro": round(m / t, 4) if t else 0.0}
+        for s, (m, t) in _rec.items()
+    }
+    precision_by_kind = {
+        k: {"matched": m, "total": t,
+            "precision_micro": round(m / t, 4) if t else 0.0}
+        for k, (m, t) in _prec.items()
+    }
     return {
         "preset": preset,
         "tp": tp, "fp": fp, "fn": fn,
+        "recall_by_kind": recall_by_kind,
+        "precision_by_kind": precision_by_kind,
         "precision": round(precision, 4),
         "recall": round(recall, 4),
         "mean_iou": round(sum(ious) / len(ious), 4) if ious else 0.0,
@@ -340,12 +370,45 @@ def _aggregate(rows: List[Dict[str, Any]], presets: List[str]) -> Dict[str, Any]
             "coverage_ratio_mean": round(sum(ratios) / len(ratios), 2) if ratios else 0.0,
             "coverage_ratio_n": len(ratios),
         }
+    # 阶段 P1：per-kind（按水印 style）聚合 —— 跨图按汇总 matched/total 算 micro，
+    # 直接暴露「某类水印召回多少」，让 301/296 从数据缺口变可量化（缺口图已不在 rows）。
+    per_kind: Dict[str, Any] = {}
+    for preset in presets:
+        _rec: Dict[str, List[int]] = {}
+        _prec: Dict[str, List[int]] = {}
+        n_imgs = 0
+        for r in rows:
+            res = r.get("results", {}).get(preset, {})
+            if "error" in res:
+                continue
+            n_imgs += 1
+            for s, v in (res.get("recall_by_kind") or {}).items():
+                b = _rec.setdefault(s, [0, 0])
+                b[0] += v["matched"]; b[1] += v["total"]
+            for k, v in (res.get("precision_by_kind") or {}).items():
+                b = _prec.setdefault(k, [0, 0])
+                b[0] += v["matched"]; b[1] += v["total"]
+        per_kind[preset] = {
+            "n_images": n_imgs,
+            "recall_by_kind": {
+                s: {"matched": m, "total": t,
+                    "recall_micro": round(m / t, 4) if t else 0.0}
+                for s, (m, t) in _rec.items()
+            },
+            "precision_by_kind": {
+                k: {"matched": m, "total": t,
+                    "precision_micro": round(m / t, 4) if t else 0.0}
+                for k, (m, t) in _prec.items()
+            },
+        }
+
     return {
         "timestamp": _dt.datetime.now(_dt.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
         "n_images": len(rows),
         "presets": presets,
         "per_image": rows,
         "per_preset_aggregate": agg,
+        "per_kind": per_kind,
     }
 
 
@@ -370,7 +433,26 @@ def _print_markdown(result: Dict[str, Any]) -> None:
     for r in result["per_image"]:
         cells = [f"{r['results'][p]['recall']:.3f}" if "error" not in r["results"][p] else "ERR"
                  for p in result["presets"]]
-        print(f"| {r['image_id']} | {r.get('ai_source', '?')} | " + " | ".join(cells) + " |")
+        print(f"| {r['image_id']} | {r.get('ai_source', '?')} | " + " | ".join(cells) + "|")
+
+    print("\n### 每类水印（per-kind，区域级 micro）")
+    printed = False
+    for preset, pk in result.get("per_kind", {}).items():
+        rbk = pk.get("recall_by_kind", {})
+        pbk = pk.get("precision_by_kind", {})
+        if not rbk and not pbk:
+            continue
+        printed = True
+        print(f"\n**{preset}**（n={pk.get('n_images', 0)}）")
+        print("| 水印类 | 召回 matched/total | 召回(micro) | 精确率 matched/total | 精确率(micro) |")
+        print("|---|---|---|---|---|")
+        for k in sorted(set(rbk) | set(pbk)):
+            r = rbk.get(k, {"matched": 0, "total": 0, "recall_micro": 0.0})
+            p = pbk.get(k, {"matched": 0, "total": 0, "precision_micro": 0.0})
+            print(f"| {k} | {r['matched']}/{r['total']} | {r['recall_micro']:.4f} | "
+                  f"{p['matched']}/{p['total']} | {p['precision_micro']:.4f} |")
+    if not printed:
+        print("\n（无 per-kind 数据）")
 
 
 def main() -> int:

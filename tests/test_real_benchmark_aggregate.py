@@ -123,3 +123,39 @@ def test_real_gate_uses_micro_not_macro(monkeypatch, tmp_path):
     assert g["precision"] == 0.5413
     assert g["recall"] == 0.5413
     assert g["precision"] != raw["per_preset_aggregate"]["general"]["precision_mean"]
+
+
+def test_aggregate_per_kind_splits_by_style():
+    # 阶段 P1：per-kind 聚合须按水印 style 拆分召回/精确率，
+    # 使 301/296 这类「具体类是否被测到」问题可量化。
+    a = _img_row(1, 0, 0)
+    a["results"]["general"]["recall_by_kind"] = {
+        "corner_logo": {"matched": 1, "total": 1, "recall_micro": 1.0}}
+    a["results"]["general"]["precision_by_kind"] = {
+        "corner_logo": {"matched": 1, "total": 1, "precision_micro": 1.0}}
+    b = _img_row(0, 1, 2)
+    b["results"]["general"]["recall_by_kind"] = {
+        "grid_watermark": {"matched": 0, "total": 2, "recall_micro": 0.0}}
+    b["results"]["general"]["precision_by_kind"] = {
+        "unknown": {"matched": 0, "total": 1, "precision_micro": 0.0}}
+    out = rrb._aggregate([a, b], ["general"])
+    pk = out["per_kind"]["general"]
+    assert pk["n_images"] == 2
+    assert pk["recall_by_kind"]["corner_logo"]["recall_micro"] == 1.0
+    assert pk["recall_by_kind"]["grid_watermark"]["recall_micro"] == 0.0
+    assert pk["recall_by_kind"]["grid_watermark"]["total"] == 2
+    assert pk["precision_by_kind"]["corner_logo"]["precision_micro"] == 1.0
+    assert pk["precision_by_kind"]["unknown"]["precision_micro"] == 0.0
+
+
+def test_aggregate_per_kind_ignores_error_rows():
+    a = {"image_id": "a", "results": {"general": {"error": "boom"}}}
+    b = _img_row(2, 0, 0)
+    b["results"]["general"]["recall_by_kind"] = {
+        "edge_text": {"matched": 2, "total": 2, "recall_micro": 1.0}}
+    b["results"]["general"]["precision_by_kind"] = {
+        "edge_text": {"matched": 2, "total": 2, "precision_micro": 1.0}}
+    out = rrb._aggregate([a, b], ["general"])
+    pk = out["per_kind"]["general"]
+    assert pk["n_images"] == 1
+    assert pk["recall_by_kind"]["edge_text"]["recall_micro"] == 1.0
