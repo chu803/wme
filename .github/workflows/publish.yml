@@ -8,12 +8,12 @@
 #  设计约定（与 ci.yml 对齐，避免两套步骤漂移）：
 #    · 门禁步骤复用 ci.yml 的「最小依赖 + 测试依赖 + 系统库 + run_all_checks.py」；
 #    · 构建用 `python -m build`（官方 PyPI 提供 setuptools>=77，不受本机清华镜像缺包影响）；
-#    · 发布用 `pypa/gh-action-pypi-publish`，凭据走 **PyPI Trusted Publisher（OIDC）**——免 token、免轮换。
+#    · 发布用 `pypa/gh-action-pypi-publish`，凭据走仓库 Secret `PYPI_API_TOKEN`。
 #
-#  需要你侧一次性配置（仅首次接入时）：
-#    · PyPI 项目页 `wme-watermark-eraser` → Publishing → 添加 Trusted Publisher，
-#      填 GitHub Owner/Name（本仓库）、Workflow name `publish.yml`、Environment 留空。
-#    · 之后 `id-token: write` 权限由 GitHub 自动签发一次性 OIDC 令牌，无需任何 Secret。
+#  需要你侧配置（一次性）：
+#    1. GitHub 仓库 Settings → Secrets → Actions 新增 `PYPI_API_TOKEN`（PyPI 账号的 API token）。
+#    2. （可选）改用 PyPI Trusted Publisher（OIDC，免 token）——需在 PyPI 项目页配置
+#       对应仓库/工作流，并把下方 password 整段删掉、改用 `id-token: write` 权限。
 #
 #  注意：本机 managed venv 未装 numpy/gradio 等全套运行期依赖，无法在此真跑
 #        `pip install .` 全量；本工作流在 GitHub 官方环境用 requirements-min/dev
@@ -29,11 +29,10 @@ on:
 jobs:
   verify-and-publish:
     runs-on: ubuntu-latest
-    # 显式授权：diagnostic 步建 issue 需 issues:write；OIDC Trusted Publisher 需 id-token:write。
+    # 显式授权：diagnostic 步建 issue 需 issues:write（若改 OIDC Trusted Publisher，换 id-token:write 并删下方 password）
     permissions:
       contents: read
       issues: write
-      id-token: write
 
     steps:
       - name: 拉取代码
@@ -93,9 +92,7 @@ jobs:
           path: dist/*
           if-no-files-found: error
 
-      - name: 发布到 PyPI（Trusted Publisher / OIDC，免 token）
+      - name: 发布到 PyPI
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
-          # 不传 password：启用 PyPI Trusted Publisher，由 GitHub 运行时签发一次性 OIDC 令牌。
-          # 首次需在 PyPI 项目页 Publishing 添加对应 GitHub 仓库/工作流的 Trusted Publisher。
-          verbose: true
+          password: ${{ secrets.PYPI_API_TOKEN }}
