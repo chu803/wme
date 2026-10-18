@@ -125,10 +125,10 @@
       "watermarks": [
         {
           "bbox": [
-            1980,
-            1315,
-            245,
-            187
+            1955,
+            1395,
+            375,
+            345
           ],
           "style": "logo_watermark",
           "note": "右下方形LOGO轮廓"
@@ -142,10 +142,10 @@
       "watermarks": [
         {
           "bbox": [
-            755,
-            380,
-            650,
-            975
+            530,
+            320,
+            850,
+            1060
           ],
           "style": "logo_watermark",
           "note": "中央六边形LOGO"
@@ -339,10 +339,10 @@
       "watermarks": [
         {
           "bbox": [
-            887,
-            646,
-            624,
-            690
+            860,
+            580,
+            460,
+            650
           ],
           "style": "logo_watermark",
           "note": "中央圆形LOGO"
