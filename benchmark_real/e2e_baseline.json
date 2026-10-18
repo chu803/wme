@@ -8,13 +8,13 @@
       "preset": "ai_faint_tiled",
       "n": 10,
       "n_total": 10,
-      "truth_cov": 0.05436,
-      "pred_cov": 0.06467,
-      "overdraw": 1.1869,
-      "removal": 0.0041,
-      "collateral": 1.8147,
-      "spill": 0.0085,
-      "gain_db": -12.6474
+      "truth_cov": 0.05435,
+      "pred_cov": 0.06221,
+      "overdraw": 1.1432,
+      "removal": 0.0325,
+      "collateral": 1.601,
+      "spill": 0.0083,
+      "gain_db": -11.7752
     },
     {
       "case": "corner_logo",
@@ -22,12 +22,12 @@
       "n": 10,
       "n_total": 10,
       "truth_cov": 0.02905,
-      "pred_cov": 0.02574,
-      "overdraw": 0.8859,
-      "removal": 0.3555,
-      "collateral": 1.0526,
-      "spill": 0.0073,
-      "gain_db": 0.8166
+      "pred_cov": 0.02489,
+      "overdraw": 0.8567,
+      "removal": 0.3744,
+      "collateral": 0.9625,
+      "spill": 0.0077,
+      "gain_db": 1.4792
     },
     {
       "case": "edge_text",
@@ -35,12 +35,12 @@
       "n": 10,
       "n_total": 10,
       "truth_cov": 0.00831,
-      "pred_cov": 0.03162,
-      "overdraw": 3.799,
-      "removal": 0.2415,
-      "collateral": 1.0236,
-      "spill": 0.0119,
-      "gain_db": -1.9543
+      "pred_cov": 0.02971,
+      "overdraw": 3.571,
+      "removal": 0.8549,
+      "collateral": 0.8026,
+      "spill": 0.0095,
+      "gain_db": 0.7343
     },
     {
       "case": "grid",
@@ -48,12 +48,12 @@
       "n": 10,
       "n_total": 10,
       "truth_cov": 0.01212,
-      "pred_cov": 0.0608,
-      "overdraw": 5.0148,
-      "removal": 0.5063,
-      "collateral": 1.5154,
-      "spill": 0.0067,
-      "gain_db": -9.4825
+      "pred_cov": 0.05955,
+      "overdraw": 4.9119,
+      "removal": 0.5169,
+      "collateral": 1.4227,
+      "spill": 0.0064,
+      "gain_db": -8.9883
     }
   ],
   "note": "e2e 修复侧基线；红线 E2E_LIMITS 由本快照标定。用 --update-baseline 刷新（刷新前必须确认新值是有意为之）。"

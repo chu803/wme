@@ -333,4 +333,12 @@ P1 的 4 处 `logo_watermark` 真值（logo_A/B/C + mixed_b）为 0/4。
   corner/edge 仅再 +0.0011，且与既有「其他通路刻意不参与」的设计冲突，**不纳入**。
 - **守卫**：`tests/test_fragment_merge.py` 增 2 例（OCR 默认合并 / corner 仍不合并），
   全文件 **12 例绿**。
-- `real_gate --strict-scope`：见 commit 与记忆（应通过：覆盖率不变、precision 上升）。
+- **门禁实测**：`real_gate --strict-scope` **RG_RC=0**（precision 0.0801→0.0936、
+  mean_iou 0.6638→0.6751，其余逐位不变）。
+- **意外红利（e2e 实测，产品级）**：多行 OCR 框合并后，其并集 bbox 把**行间空隙**也纳入掩码 ⇒
+  `edge_text` **去痕率 24.15% → 85.49%（+254%）**、`collateral 1.0236 → 0.8026（−21.6%）**；
+  `faint_tiled` removal 0.41% → 3.25%。一次「精度修复」顺带拿到了**去痕提升**。
+- 已按铁律「改进必须刷新基线，否则回退不可见」重锚 `e2e_baseline.json`
+  （10 图 / lama / 640，`limit=10`）；刷新后 e2e 门禁仍通过，回退到旧值会被漂移层判红。
+  ⚠ 刷新必须带 `--gate`（强制 `limit=10`）；只加 `--update-baseline` 会用默认 4 图覆盖基线，
+  样本量不同导致漂移层失真（本轮已踩过并恢复）。
