@@ -1218,6 +1218,300 @@
       "sha256": "9a8d485b15afc2efd009059d727ffa36787bb6aa2f7d42d0b48c9024b3ac6964",
       "added_at": "2026-10-13T11:31:55Z",
       "source": "local"
+    },
+    {
+      "id": "edge_text_a",
+      "filename": "edge_text_A.jpg",
+      "path": "images/edge_text_A.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "ba0373fbe40f5272d630fa6302cae2ed536e5101f76b67307860541b942e2785",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "edge_text_b",
+      "filename": "edge_text_B.jpg",
+      "path": "images/edge_text_B.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "b68edd7d76bf8ad475ab44b5238f19062d4186357859986abb8ed42701d8d890",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "edge_text_c",
+      "filename": "edge_text_C.jpg",
+      "path": "images/edge_text_C.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "fce3607ea4db480d898bb6787aa0a81333212d3ac96d48f6dde2a300fdde46fa",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "gradient_watermark_a",
+      "filename": "gradient_watermark_A.jpg",
+      "path": "images/gradient_watermark_A.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "fce01ae8a5c7e572a7efe8b9a5eaed2aea3a728137c98b01b308176539781af7",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "gradient_watermark_b",
+      "filename": "gradient_watermark_B.jpg",
+      "path": "images/gradient_watermark_B.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "3a0924392e2e379eb61edd7445b948f5d1da2223144c7d90962ff42f1f27b7e9",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "gradient_watermark_c",
+      "filename": "gradient_watermark_C.jpg",
+      "path": "images/gradient_watermark_C.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "3965d12b4092cc872970e9dddd393a441ae91b8419b19bc5fbc34448c81aecc3",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "grid_watermark_a",
+      "filename": "grid_watermark_A.jpg",
+      "path": "images/grid_watermark_A.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "3d486c57ba54902f0a05d6d489aa0845b9ba2efdc01112dd26950d8cd33ce7c1",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "grid_watermark_b",
+      "filename": "grid_watermark_B.jpg",
+      "path": "images/grid_watermark_B.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "2cb87e4280816d35dd3dfe918703d41010d45512aafe3bd5d7d66260afeb88ad",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "grid_watermark_c",
+      "filename": "grid_watermark_C.jpg",
+      "path": "images/grid_watermark_C.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "2214b8bad6601e56d9142d1f702602db1011c8c24a9bd13bbd1e9ee69e2f26aa",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "logo_watermark_a",
+      "filename": "logo_watermark_A.jpg",
+      "path": "images/logo_watermark_A.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "e0a120a33910d92d0b683559f6f031d9368a0e3ea9c00339014a334fe2906872",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "logo_watermark_b",
+      "filename": "logo_watermark_B.jpg",
+      "path": "images/logo_watermark_B.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "5ff8988ce4cc4fac595a37fc88f7840e306428f379484772a3c36b8016db9fdf",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "logo_watermark_c",
+      "filename": "logo_watermark_C.jpg",
+      "path": "images/logo_watermark_C.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "75696226fe6908f69aefc5945a4c985809cd7b22ee1bb2a917ed44fe26983082",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "mixed_a",
+      "filename": "mixed_A.jpg",
+      "path": "images/mixed_A.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "2546e1b0a63318f7b09f051498eb09f11a7b19e78a09f48193a8d0e687d708c4",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "mixed_b",
+      "filename": "mixed_B.jpg",
+      "path": "images/mixed_B.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "2c2c3ad8131259ff3659445ab823194aa8e682e5bf5e8f42d6ab4163dacfe713",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "mixed_c",
+      "filename": "mixed_C.jpg",
+      "path": "images/mixed_C.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "93314d2148e7059a2c00184bba4cd6ab0e87d0a3ef9da12981a5e88ff751bfea",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "overlay_a",
+      "filename": "overlay_A.jpg",
+      "path": "images/overlay_A.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "8519e041c3336f7946a6137cac5613999dd3d77a115e137c661288e8a31f656f",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "overlay_b",
+      "filename": "overlay_B.jpg",
+      "path": "images/overlay_B.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "b9b0d4eb50cd5a462bb47b4146916b4d737c5c7eb7007e92fe48c5bb30926ebd",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "overlay_c",
+      "filename": "overlay_C.jpg",
+      "path": "images/overlay_C.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "a9d03344edf367e31587454c9bd41fec36b67bc66684fc22f82bdd5cd3f1a8d7",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "translucent_a",
+      "filename": "translucent_A.jpg",
+      "path": "images/translucent_A.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "7dcb2bacd348e25b68eb5357ac8b8f37737e61f9ed08f11a3e9636dd0b1feac4",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "translucent_b",
+      "filename": "translucent_B.jpg",
+      "path": "images/translucent_B.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "76266ea19360325e1864105347861d24381c5478a7796b80afff524a677c0ee0",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
+    },
+    {
+      "id": "translucent_c",
+      "filename": "translucent_C.jpg",
+      "path": "images/translucent_C.jpg",
+      "ai_source": "other",
+      "watermark_style_hint": "unknown",
+      "original_size": [
+        2364,
+        1773
+      ],
+      "sha256": "6860aa924af180b5c3d509d6ac318e3771953be8c6aaaafbd3d5ea9a035461d4",
+      "added_at": "2026-10-18T07:03:40Z",
+      "source": "local"
     }
   ]
 }

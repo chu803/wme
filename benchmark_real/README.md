@@ -91,7 +91,34 @@ ai_source 枚举
 - 逐类门禁：`python scripts/run_real_benchmark.py --presets general,ai_tiled,ai_signature,ai_corner,ai_text_heavy,ai_faint_tiled,ai_grid,ai_gradient,ai_logo,ai_multi`
 
 ### 4. 用途
-新真值直接喂入 `real_gate` + `quality_baseline.json`：
+新真值的目标是喂入 `real_gate` + `quality_baseline.json`：
 - 加固 mask_recall 最薄红线（余量仅 ~24%）；
 - 把 is_grid 真实误触发（JPEG 8px 块）、半透明边界从「数据缺口」变「可量化、可收敛」，
   使 296 / 301 能真正收口而非挂着。
+- ⚠ 首轮实测发现「全图类不可直接并入」，见 §5。
+
+### 5. 首轮入库结果与 bbox 局限（2026-10-18 实测）
+- 已入库 21 张（7 类 × 3 版），真值落 `ground_truth_p1.json`（`labeled_by="manual:visual"`，
+  21 条 / 26 个标注），**未并入主 `ground_truth.json`**（原因见下）。
+- per-kind（general 预设，区域级 micro）：
+
+  | 水印类 | 召回 | 精确率 |
+  |---|---|---|
+  | corner_logo | 48/55 = 0.87 | 5/7 = 0.71 |
+  | edge_text | 3/5 = 0.60 | 1/49 = 0.02 |
+  | gradient_watermark | 1/4 = 0.25 | — |
+  | grid_watermark | 0/4 = 0.00 | — |
+  | logo_watermark | 0/4 = 0.00 | — |
+  | overlay | 0/3 = 0.00 | — |
+  | translucent | 0/4 = 0.00 | 5/538 = 0.01 |
+
+- **关键局限（方法论）**：benchmark 的 bbox-IoU（≥0.3）匹配是为**局部水印**（角标/边缘/LOGO/水印条）
+  设计的；grid/gradient/translucent 是**全图覆盖**，用全图 bbox 作真值时任何局部预测的 IoU 都 < 0.3
+  ⇒ 召回机械性为 0。
+- **实测并轨影响**：把 21 条并入主 general 聚合 → mask_recall **0.5960 → 0.0376**（< 红线 0.45）、
+  mask_iou 0.3217 → 0.2429（< 0.35）；recall 0.9057 → 0.6582、precision 0.0801 → 0.0615。
+  ⇒ **不可直接并入**（会打穿已标定红线，属未经授权的红线松动）。
+- 因此这批数据当前是**独立诊断集**，用于回答「检测器对各类是否开火 / 火在哪」；
+  不作为承诺面红线基线。要让全图类可量化，需换口径（掩码级 / 覆盖率 / 全图召回）或
+  修检测器使全图平铺水印输出覆盖整幅的掩码——属下一阶段的显式决策。
+- 复现：`ground_truth_p1.json` + `manifest.json`（`images/` 不入库，需自备图）。
