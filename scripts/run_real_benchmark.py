@@ -155,6 +155,12 @@ def evaluate_one(image_rgb: Any,
     h, w = image_rgb.shape[:2]
     truths = [list(map(int, wm["bbox"])) for wm in truth_entry.get("watermarks", [])]
     truth_styles = [str(wm.get("style", "unknown")) for wm in truth_entry.get("watermarks", [])]
+    # 阶段 P1-2：按 style 分组的真值 bbox，用于 per-kind **掩码级**召回。
+    truth_bbox_by_style: Dict[str, List[List[int]]] = {}
+    for wm in truth_entry.get("watermarks", []):
+        truth_bbox_by_style.setdefault(
+            str(wm.get("style", "unknown")), []
+        ).append(list(map(int, wm["bbox"])))
     truth_mask = _bbox_to_mask(truths, (h, w))
     try:
         res = detect_watermark_mask(image_rgb, preset=preset, use_ocr=use_ocr)
@@ -171,6 +177,7 @@ def evaluate_one(image_rgb: Any,
             "mask_coverage": 0.0, "truth_coverage": 0.0, "coverage_ratio": None,
             "pred_count": 0, "truth_count": len(truths),
             "recall_by_kind": {}, "precision_by_kind": {},
+            "mask_recall_by_kind": {},
         }
     tp, fp, fn, ious, used_p, used_t = _match_regions(preds, truths)
     precision = tp / (tp + fp) if (tp + fp) > 0 else 0.0
@@ -186,6 +193,22 @@ def evaluate_one(image_rgb: Any,
     truth_cov = (float((truth_mask > 0).sum() / truth_mask.size)
                  if truth_mask is not None else 0.0)
     ratio = round(cov / truth_cov, 2) if truth_cov > 0 else None
+    # 阶段 P1-2：per-kind **掩码级**召回。mask_recall 是 de-trace 的物理上限
+    # （掩码没盖住的水印像素，修复算法去不掉），但全局值会被各类的**面积权重**掩盖
+    # ——角标几千像素 vs 平铺整幅，同一张图里大类会淹没小类。按 style 拆开才能定位
+    # 「哪一类在拖后腿」。
+    mask_recall_by_kind: Dict[str, Dict[str, float]] = {}
+    if pred_mask is not None:
+        import numpy as _np
+        _p = (_np.asarray(pred_mask) > 0)
+        for _style, _boxes in truth_bbox_by_style.items():
+            _t = (_bbox_to_mask(_boxes, (h, w)) > 0)
+            _tpx = int(_t.sum())
+            _ipx = int(_np.logical_and(_p, _t).sum()) if _tpx > 0 else 0
+            mask_recall_by_kind[_style] = {
+                "inter_px": _ipx, "truth_px": _tpx,
+                "mask_recall": round(_ipx / _tpx, 4) if _tpx else 0.0,
+            }
     # 阶段 P1：per-kind（按水印 style）召回/精确率 —— 直接回答「grid_watermark /
     # translucent / edge_text 等具体类是否被测到」，是 301/296 量化的关键视角。
     # 区域级匹配已给出 used_p / used_t，此处按 truth style / pred kind 归并。
@@ -216,6 +239,7 @@ def evaluate_one(image_rgb: Any,
         "tp": tp, "fp": fp, "fn": fn,
         "recall_by_kind": recall_by_kind,
         "precision_by_kind": precision_by_kind,
+        "mask_recall_by_kind": mask_recall_by_kind,
         "precision": round(precision, 4),
         "recall": round(recall, 4),
         "mean_iou": round(sum(ious) / len(ious), 4) if ious else 0.0,
@@ -376,6 +400,7 @@ def _aggregate(rows: List[Dict[str, Any]], presets: List[str]) -> Dict[str, Any]
     for preset in presets:
         _rec: Dict[str, List[int]] = {}
         _prec: Dict[str, List[int]] = {}
+        _mrec: Dict[str, List[int]] = {}   # style -> [inter_px, truth_px]
         n_imgs = 0
         for r in rows:
             res = r.get("results", {}).get(preset, {})
@@ -388,6 +413,9 @@ def _aggregate(rows: List[Dict[str, Any]], presets: List[str]) -> Dict[str, Any]
             for k, v in (res.get("precision_by_kind") or {}).items():
                 b = _prec.setdefault(k, [0, 0])
                 b[0] += v["matched"]; b[1] += v["total"]
+            for s, v in (res.get("mask_recall_by_kind") or {}).items():
+                b = _mrec.setdefault(s, [0, 0])
+                b[0] += int(v.get("inter_px", 0)); b[1] += int(v.get("truth_px", 0))
         per_kind[preset] = {
             "n_images": n_imgs,
             "recall_by_kind": {
@@ -399,6 +427,12 @@ def _aggregate(rows: List[Dict[str, Any]], presets: List[str]) -> Dict[str, Any]
                 k: {"matched": m, "total": t,
                     "precision_micro": round(m / t, 4) if t else 0.0}
                 for k, (m, t) in _prec.items()
+            },
+            # 阶段 P1-2：per-kind 掩码级召回（micro = Σ交集 / Σ真值像素）。
+            "mask_recall_by_kind": {
+                s: {"inter_px": i, "truth_px": t,
+                    "mask_recall": round(i / t, 4) if t else 0.0}
+                for s, (i, t) in _mrec.items()
             },
         }
 
@@ -435,22 +469,25 @@ def _print_markdown(result: Dict[str, Any]) -> None:
                  for p in result["presets"]]
         print(f"| {r['image_id']} | {r.get('ai_source', '?')} | " + " | ".join(cells) + "|")
 
-    print("\n### 每类水印（per-kind，区域级 micro）")
+    print("\n### 每类水印（per-kind，micro：区域 + 掩码）")
     printed = False
     for preset, pk in result.get("per_kind", {}).items():
         rbk = pk.get("recall_by_kind", {})
         pbk = pk.get("precision_by_kind", {})
-        if not rbk and not pbk:
+        mbk = pk.get("mask_recall_by_kind", {})
+        if not rbk and not pbk and not mbk:
             continue
         printed = True
         print(f"\n**{preset}**（n={pk.get('n_images', 0)}）")
-        print("| 水印类 | 召回 matched/total | 召回(micro) | 精确率 matched/total | 精确率(micro) |")
-        print("|---|---|---|---|---|")
-        for k in sorted(set(rbk) | set(pbk)):
+        print("| 水印类 | 区域召回 matched/total | 区域召回 | 精确率 | **mask召回 px** | **mask_recall** |")
+        print("|---|---|---|---|---|---|")
+        for k in sorted(set(rbk) | set(pbk) | set(mbk)):
             r = rbk.get(k, {"matched": 0, "total": 0, "recall_micro": 0.0})
             p = pbk.get(k, {"matched": 0, "total": 0, "precision_micro": 0.0})
+            m = mbk.get(k, {"inter_px": 0, "truth_px": 0, "mask_recall": 0.0})
             print(f"| {k} | {r['matched']}/{r['total']} | {r['recall_micro']:.4f} | "
-                  f"{p['matched']}/{p['total']} | {p['precision_micro']:.4f} |")
+                  f"{p['matched']}/{p['total']}={p['precision_micro']:.4f} | "
+                  f"{m['inter_px']}/{m['truth_px']} | **{m['mask_recall']:.4f}** |")
     if not printed:
         print("\n（无 per-kind 数据）")
 

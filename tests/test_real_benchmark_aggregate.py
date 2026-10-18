@@ -159,3 +159,18 @@ def test_aggregate_per_kind_ignores_error_rows():
     pk = out["per_kind"]["general"]
     assert pk["n_images"] == 1
     assert pk["recall_by_kind"]["edge_text"]["recall_micro"] == 1.0
+
+
+def test_aggregate_per_kind_mask_recall_micro():
+    # 阶段 P1-2：per-kind **掩码级**召回 = Σ交集 / Σ真值像素（跨图 micro）。
+    a = _img_row(1, 0, 0)
+    a["results"]["general"]["mask_recall_by_kind"] = {
+        "corner_logo": {"inter_px": 900, "truth_px": 1000, "mask_recall": 0.9}}
+    b = _img_row(0, 1, 2)
+    b["results"]["general"]["mask_recall_by_kind"] = {
+        "corner_logo": {"inter_px": 0, "truth_px": 1000, "mask_recall": 0.0}}
+    out = rrb._aggregate([a, b], ["general"])
+    mk = out["per_kind"]["general"]["mask_recall_by_kind"]["corner_logo"]
+    assert mk["inter_px"] == 900
+    assert mk["truth_px"] == 2000
+    assert abs(mk["mask_recall"] - 0.45) < 1e-9

@@ -35,6 +35,9 @@ class _FakeResult:
     def __init__(self, regions, shape):
         self.regions = regions
         self.mask = np.zeros(shape[:2], dtype=np.uint8)
+        # 阶段 P1-2：假掩码按区域 bbox 填充，使 per-kind **掩码级**召回可被断言。
+        for r in regions:
+            self.mask[r.y:r.y + r.h, r.x:r.x + r.w] = 255
 
 
 def _make_image(path, color=(128, 128, 128)):
@@ -125,6 +128,12 @@ def test_per_kind_end_to_end_multiclass(tmp_path, monkeypatch):
     for tbl in (pk["recall_by_kind"], pk["precision_by_kind"]):
         for v in tbl.values():
             assert v["matched"] <= v["total"]
+
+    # 阶段 P1-2：per-kind **掩码级**召回（假掩码 = 区域 bbox 填充）
+    assert pk["mask_recall_by_kind"]["corner_logo"]["mask_recall"] == 1.0      # 1/1
+    assert pk["mask_recall_by_kind"]["grid_watermark"]["mask_recall"] == 0.5   # 1/2（img_miss 零掩码）
+    assert pk["mask_recall_by_kind"]["gradient_watermark"]["mask_recall"] == 1.0
+    assert pk["mask_recall_by_kind"]["translucent"]["mask_recall"] == 0.0      # 错类区与 truth 不重叠
 
 
 def test_per_kind_skips_gap_images(tmp_path, monkeypatch):

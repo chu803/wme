@@ -176,3 +176,26 @@ P1 的 4 处 `logo_watermark` 真值（logo_A/B/C + mixed_b）为 0/4。
 
 **本轮决策**：不提交任何「抬 max_area / 降 solidity」的假修复（均被闸或 FP 否决）；
 先修正真值（本轮已做），细线通路作为独立特性待后续立项。
+
+### 8. per-kind 掩码级召回（2026-10-18，定位 mask 瓶颈）
+- **实现**：per-kind 报告从「区域级」扩展为「区域 + 掩码」双口径
+  （`evaluate_one.mask_recall_by_kind` → `_aggregate.per_kind.mask_recall_by_kind` → Markdown 表）。
+- **工具正确性验证**：主 57 图（全 `corner_logo`）上 per-kind mask_recall =
+  `848616/1423828` = **0.5960**，与头条 `mask_recall` **完全一致** ✓。
+- **P1 21 图诊断（关键结构性发现）**：
+
+  | 预设 | 水印类 | 区域召回 | mask_recall |
+  |---|---|---|---|
+  | ai_grid | grid_watermark | **4/4** | **0.0584** |
+  | ai_grid | translucent | **4/4** | **0.0429** |
+  | general | edge_text | 3/5 | 0.0939 |
+  | general | corner_logo | 0/2 | 0.0364 |
+
+  ⇒ **全图类的区域召回 1.0 而 mask_recall 仅 ~5%**：因为全图类真值 bbox 就是整幅
+  （truth 16.7M px），而掩码只盖真实水印像素（网格点 / 文字笔画）。
+  **这不是检测缺陷，是 bbox 真值的固有口径问题** —— 全图类不应以 mask_recall 评判，
+  应以**区域召回 + 覆盖率**为准。这也**验证了 §6「只扩 region、不填 mask」的决策**：
+  填满 mask 只会把覆盖率和修复风险推高，并不能提升「认出全幅水印」的能力。
+- **真正可行动的掩码缺口在局部类**：corner（mixed 中 0/2，mask_recall 0.036）、
+  edge_text（3/5，0.09–0.12）、logo（0/4，0.005–0.02）、overlay（0–1/3，0.004–0.01）。
+  这些才是「掩码没盖住水印 → 修复残留」的真正来源。
