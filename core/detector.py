@@ -2167,7 +2167,12 @@ def detect_grid_watermark(
     acf_peak, period_y, period_x = _periodic_strength(signed_norm)
 
     def _ok(p: int, ax_len: int) -> bool:
-        return p > 0 and 6 <= p <= 0.6 * ax_len
+        # 最小周期取 config.DETECT_GRID_MIN_PERIOD（默认 16，2026-10-18 从 6 抬升）：
+        # JPEG 的 8×8 DCT 块会在残差场产生强 8px 伪周期（doubao 图 10/10 误触发，
+        # ACF 0.19~0.57 远超 0.09 阈）；合成网格实测周期=56（56 的倍数），JPEG q90
+        # 重编码不改变该周期（lag8 峰始终远小于 lag56 峰）⇒ 抬到 16 杀 JPEG 伪周期
+        # 且不漏真实网格（探针 3 底图×3 seed 正样本 9/9 不受影响）。
+        return p > 0 and config.DETECT_GRID_MIN_PERIOD <= p <= 0.6 * ax_len
 
     # 峰值足够强 + 周期尺度合理（不可能是 1~2 px 的噪声，也不能超过图幅大半）
     # → 判定为网格。

@@ -1620,6 +1620,16 @@ DETECT_GRID_MIN_STRENGTH: Final[float] = _env_float("DETECT_GRID_MIN_STRENGTH", 
 #   调高：只在周期性极强时判为网格（更保守）；调低：更敏感，误报回升。
 DETECT_GRID_MIN_ACF: Final[float] = _env_float("DETECT_GRID_MIN_ACF", 0.09, 0.0, 1.0)
 
+# 【网格周期最小像素】整数 4~128（2026-10-18 新增，默认 16；原硬编码 6）。
+#   ACF 检出周期小于该值不判为网格。标定依据（scripts 探针，3 底图×多 seed）：
+#     · 合成网格水印（点阵 step=56）周期恒为 56（或其倍数），JPEG q90 重编码不变
+#       （lag8 峰始终远小于 lag56 峰，8px 块峰埋没不了真网格峰）；
+#     · doubao JPEG 图 5/6 误触发周期=8——正是 JPEG 8×8 DCT 块在残差场的伪周期
+#       （ACF 0.19~0.57，远超 0.09 阈，故抬 ACF 阈值无用，须在周期尺度上排除）。
+#   16 距真实网格 56 有 3.5× 余量、距 JPEG 块 8 有 2× 间距；残留的 63px「内容真
+#   周期」（如沙纹）非 JPEG 块，属 ACF 阈值/覆盖率联合判据问题，另行收敛。
+DETECT_GRID_MIN_PERIOD: Final[int] = _env_int("DETECT_GRID_MIN_PERIOD", 16, 4, 128)
+
 # 【网格检测最小覆盖占比】浮点 0~0.6（阶段 23 新增，默认 0.003）。
 #   网格标记像素占整图比例需高于该值；太稀疏的「疑似网格」更可能是噪点，丢弃。
 DETECT_GRID_MIN_COVERAGE: Final[float] = _env_float("DETECT_GRID_MIN_COVERAGE", 0.003, 0.0, 0.6)
