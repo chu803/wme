@@ -1,7 +1,42 @@
 # 更新日志 / CHANGELOG
 
 > 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 118 份）。
-> 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.0`。
+> 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.1`。
+
+## [1.0.1] - 2026-10-18
+
+> PyPI `1.0.0` 已于 2026-10-15 发布（Publish #3 全绿）且 **PyPI 不允许覆盖同版本**，故 1.0.0 之后的
+> 修复与性能收口统一走本版，不再重发 1.0.0。
+> 溯源（诚实边界）：PyPI 上的 `1.0.0` 产物由提交 `06b3d13` 构建，而 tag `v1.0.0` 指向 `0be2209`
+> （其后的 25 个提交，含本版全部修复）——**两者不重合**；需复现 PyPI 1.0.0 请 `git checkout 06b3d13`。
+> 不把 tag 回指、也不删远端 tag：回指会再触发一次必然失败（重复上传同版本）的 Publish 运行，属纯噪声。
+> 1.0.1 起 tag 与产物一致。
+
+### 性能（裁剪到水印包围盒修复：默认开启，2048² 约 3.6x）
+- `INFER_CROP_TO_MASK`（默认 `True`）：推理裁剪到水印外接框（含 padding）修复后回贴；2048² 实测 **7.3s→2.1s**。
+- **安全边界（实测）**：mask 外像素与全图推理**逐字节一致**；`crop_quality_probe` 覆盖 58 张 ≥2048² 图，干净区 **58/58 通过**，速度中位 1.51x。
+- **诚实边界**：mask 内存在 LaMa 的尺寸相关行为差异，属**非无损**权衡；`fp16`（毁图）、`resize`（有损）、固定网格分块（实测 0.9x 更慢）三条替代路径均已排除。
+
+### 修复（`is_grid` 误触发：JPEG 8×8 DCT 块伪周期）
+- 根因：真实 JPEG 图残差场在 lag 8px 出现强自相关（0.19~0.57 vs 阈 0.09），`_ok` 最小周期硬编码 6 放过了它（真实网格周期=56）。
+- 修：新增 `config.DETECT_GRID_MIN_PERIOD`（默认 16，范围 4~128，`WME_` 前缀可覆盖），`_ok` 改读该杠杆。
+- 效果：真实 doubao 图 is_grid 误触发 **10/10 → 1/10**；`real_gate --strict-scope` 下 `ai_grid` 覆盖面积 mean **8.88%→2.43%**、区域数 **747→42.8**、红线余量 **29%→80%**；`general` 七项红线**逐位不变**；合成网格 seed=7 零漏检。守卫 `tests/test_grid_min_period.py`（含注入反证）。
+
+### 优化（预设推荐：右下角标 NCC 模板匹配）
+- `core/preset_recommender._corner_watermark_signal`：以 9 张真值图 ROI 边缘图构成模板库（base64 内嵌、自包含），边缘图 NCC 匹配（`RECOMMEND_CORNER_WATERMARK_NCC_MIN=0.30`）把右下/中右角标图导向 `ai_logo`，避免其进入高危 OCR 空跑。
+- 实测：右下角标召回 **48%→76%**（24/50→38/50），留出集 54%（31/57）；自然图零误命中（精确率 100%）。fail-closed 可逆：`RECOMMEND_CORNER_WATERMARK_ENABLED` / `_NCC_MIN` / `_MIN_EDGE`。
+
+### 修复（#450 深度复审抓到的真缺陷）
+- 极小图空 ROI 崩溃：3 处空 ROI / gallery 索引路径加守卫（消除 `TypeError`）。
+- 预设打分区 8 键契约过时（新增 `corner_watermark`）：同步 `utils/recommend_view._FEATURE_KEYS` 与 `utils/i18n.py` 双语键序。
+
+### 打包
+- 新增 `MANIFEST.in`：sdist 口径与 wheel 对齐（prune `tests/` `scripts/` `benchmark*/` 等），并由 `tests/test_repo_hygiene.py` 静态守卫锁定。
+
+### 记录
+- 纠正 `EVIDENCE_AND` 的过度断言：真实图探针显示它反使 `ai_grid` 覆盖率翻倍（双刃剑——合成 gradient 防洪、真实非网格图增碎片），故**不删通路**；grid 测试夹具改 gradient 并撤销 xfail。
+- `INPAINT_COLOR_MATCH` 新增但**默认关闭**：e2e 前后对比显示开启拖累去痕率（保守回退，保留开关供实验）。
+- 新增 `docs/302-资产重建清单.md`：`models/big-lama.pt` 不入库（阶段 205 瘦身），固化下载源/大小校验/断点续传/备份建议。
 
 ## [Unreleased]
 
