@@ -1,0 +1,31 @@
+{
+  "version": 2,
+  "source": "doubao_4panel_zip_20261018",
+  "note": "6 张四宫格 -> 24 面板。v2：改用底边带目视定位（v1 的 y 估算偏差 150-300px 已作废）。只标注底边可定位的角标/边缘字与平铺类；中央 LOGO 未标（不参与）。",
+  "entries": [
+    {"image_id": "real_b2_01tl", "watermarks": [{"bbox": [280, 872, 230, 48], "style": "edge_text"}]},
+    {"image_id": "real_b2_01br", "watermarks": [{"bbox": [795, 810, 220, 95], "style": "corner_logo"}]},
+    {"image_id": "real_b2_02tl", "watermarks": [{"bbox": [520, 968, 360, 48], "style": "corner_logo"}]},
+    {"image_id": "real_b2_02tr", "watermarks": [{"bbox": [0, 0, 1024, 1024], "style": "translucent"}]},
+    {"image_id": "real_b2_02bl", "watermarks": [{"bbox": [530, 968, 350, 48], "style": "corner_logo"}]},
+    {"image_id": "real_b2_02br", "watermarks": [{"bbox": [760, 835, 250, 78], "style": "corner_logo"}]},
+    {"image_id": "real_b2_03tr", "watermarks": [{"bbox": [0, 0, 1024, 1024], "style": "overlay"}]},
+    {"image_id": "real_b2_03bl", "watermarks": [{"bbox": [680, 802, 230, 85], "style": "corner_logo"}]},
+    {"image_id": "real_b2_03br", "watermarks": [
+      {"bbox": [0, 0, 1024, 1024], "style": "translucent"},
+      {"bbox": [800, 852, 210, 62], "style": "corner_logo"}]},
+    {"image_id": "real_b2_04tl", "watermarks": [{"bbox": [0, 0, 1024, 1024], "style": "translucent"}]},
+    {"image_id": "real_b2_04bl", "watermarks": [{"bbox": [440, 905, 190, 42], "style": "edge_text"}]},
+    {"image_id": "real_b2_04br", "watermarks": [
+      {"bbox": [0, 0, 1024, 1024], "style": "translucent"},
+      {"bbox": [800, 850, 210, 65], "style": "corner_logo"}]},
+    {"image_id": "real_b2_05bl", "watermarks": [{"bbox": [690, 853, 205, 48], "style": "corner_logo"}]},
+    {"image_id": "real_b2_05br", "watermarks": [
+      {"bbox": [0, 0, 1024, 1024], "style": "translucent"},
+      {"bbox": [800, 850, 210, 65], "style": "corner_logo"}]},
+    {"image_id": "real_b2_06tl", "watermarks": [{"bbox": [345, 938, 230, 42], "style": "edge_text"}]},
+    {"image_id": "real_b2_06br", "watermarks": [
+      {"bbox": [0, 0, 1024, 1024], "style": "translucent"},
+      {"bbox": [800, 850, 210, 65], "style": "corner_logo"}]}
+  ]
+}
