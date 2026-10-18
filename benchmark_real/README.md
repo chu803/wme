@@ -55,3 +55,43 @@ images/ 与 results/ 不入库（前者是用户素材，后者可由脚本重�
 ai_source 枚举
 --------------
   midjourney / stable_diffusion / dalle / firefly / lepton / v0 / other
+
+## 豆包出图采集清单（真实真值扩容 · P1 · 2026-10-18）
+
+现状缺口：`ground_truth.json` 57 条 **全部是 corner_logo**，其余 KIND 零覆盖。
+这正是 is_grid 真实误触发（docs/301）、半透明通路(296) 无法收敛的根因——
+对「非角标」类水印**没有真实真值可量化**。本清单用于补齐各类风格真值。
+
+### 1. 出图（你在豆包侧做）
+对下面每种风格生成 **3–5 张**（首轮试点 ~20–30 张即可），要求：
+- 基底内容多样化（风景 / 人像 / 产品 / 插画 / 抽象），别只用同一类；
+- 分辨率尽量高（>=1024），水印本身清晰可辨；
+- 文件名带风格前缀便于自查：`edge_text_01.png` / `grid_02.png` / `logo_01.png`
+  / `gradient_01.png` / `translucent_01.png` / `overlay_01.png` / `mixed_01.png`
+  （corner_logo 已有 57 张，不必再补，除非想增基底多样性）。
+
+豆包提示词模板（{基底} 按风格替换）：
+- edge_text：生成一张{写实风景/赛博城市夜景}，画面**底部边缘带一行小字版权水印**（如「AI生成 / 仅供展示」），字体小但要清晰可读
+- grid_watermark：生成一张{插画/概念图}，叠加**细密点阵网格水印**（半透明、铺满全图，类似 DALL·E 风格）
+- logo_watermark：生成一张{产品海报/封面}，中央或角落带一个**实体 LOGO 轮廓水印**（半透明）
+- gradient_watermark：生成一张{抽象艺术图}，叠加**一层半透明全局渐变水印**（从一角到对角）
+- translucent：生成一张{人像/风景}，整体叠加**半透明文字水印**（透明度约 25%–40%，覆盖画面大面积）
+- overlay：生成一张{插画}，**整图叠加半透明水印条/水印图案**（Firefly 风格，轻量半透明）
+- mixed：生成一张图，同时含**角标 + 边缘小字 + 半透明叠加**三种水印
+
+### 2. 投递
+把生成的图放进 `benchmark_real/images/`（任意文件名，前缀仅便于自查）。
+
+### 3. 标注 + 评分（白露接管）
+- 登记清单：`python scripts/collect_real_assets.py scan`
+- 检测器预填：`python scripts/build_real_ground_truth.py auto`（仅供参考，多半只覆盖角标）
+- 白露逐张 Read 图像，手工标注 `watermarks[].bbox[x,y,w,h] + style(kind) + note`，
+  覆盖全部水印（含非角标），写回 `ground_truth.json`，`labeled_by` 置 `manual:visual`
+- 结构校验：`python scripts/build_real_ground_truth.py validate`
+- 逐类门禁：`python scripts/run_real_benchmark.py --presets general,ai_tiled,ai_signature,ai_corner,ai_text_heavy,ai_faint_tiled,ai_grid,ai_gradient,ai_logo,ai_multi`
+
+### 4. 用途
+新真值直接喂入 `real_gate` + `quality_baseline.json`：
+- 加固 mask_recall 最薄红线（余量仅 ~24%）；
+- 把 is_grid 真实误触发（JPEG 8px 块）、半透明边界从「数据缺口」变「可量化、可收敛」，
+  使 296 / 301 能真正收口而非挂着。
