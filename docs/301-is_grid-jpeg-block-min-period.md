@@ -56,6 +56,16 @@ max 14.96% / 平均 747 个区域，红线 ≤0.125）。doubao JPEG 图（真�
    ai_grid 未承诺预设按面积监控兜底即可）。
 2. **63px 内容真周期**（03_沙漠日落，沙纹）：非 JPEG 块，最小周期治不了；
    若要继续收敛需 ACF 阈值 / 周期-覆盖率联合判据（缺真实网格真值，暂缓）。
+3. **剩余过检分解量化（2026-10-18 探针，10 张 doubao，ai_grid 等价参数）**：
+   grid 通路 **0.00%**（min_period 修复完全生效）；主体为 translucent **3.57%**
+   （max 14.06%）+ edge **2.20%**（max 6.42%）+ corner 0.33%。
+4. **sensitivity 边界测定（结论：不可降，0.6 是必要值）**：ai_grid 预设 sensitivity=0.6
+   高于 general 默认 0.50——曾疑为历史不一致，试降 0.5 实测：translucent 覆盖
+   3.57%→2.57%（−28%）但 **textured/grid 召回 84.9% < 85% 红线破线**
+   （test_preset_recommend_accuracy）。⇒ 0.6 是紧贴召回红线的必要值，与 general
+   的不一致是**有意设计**（保 textured 弱信号网格召回），已回退。剩余过检要收敛须
+   换思路（预设级 translucent 单独标定 / 通路面积过滤），且 ai_grid 未承诺、红线
+   余量已 80%，优先级低。
 
 ## 7. 结论与边界
 
