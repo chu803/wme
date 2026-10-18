@@ -1,0 +1,191 @@
+[
+  {
+    "id": "real_c3_overlay_B",
+    "source": "overlay_B_山间溪流Firefly风格花纹.jpg",
+    "style": "overlay",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_gradient_C",
+    "source": "gradient_watermark_C_现代建筑蓝紫渐变.jpg",
+    "style": "gradient",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_logo_A",
+    "source": "logo_watermark_A_香水瓶圆形LOGO.jpg",
+    "style": "logo",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_edge_A",
+    "source": "edge_text_A_海景日落底部文字.jpg",
+    "style": "edge",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_translucent_B",
+    "source": "translucent_B_湖面PREVIEW_ONLY倾斜文字.jpg",
+    "style": "translucent",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_edge_B",
+    "source": "edge_text_B_赛博朋克夜景底部文字.jpg",
+    "style": "edge",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_edge_C",
+    "source": "edge_text_C_咖啡杯底部版权文字.jpg",
+    "style": "edge",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_translucent_C",
+    "source": "translucent_C_春日花园仅供预览中文.jpg",
+    "style": "translucent",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_gradient_B",
+    "source": "gradient_watermark_B_草原暖色渐变.jpg",
+    "style": "gradient",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_mixed_A",
+    "source": "mixed_A_秋日森林三重混合水印.jpg",
+    "style": "mixed",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_mixed_C",
+    "source": "mixed_C_魔法森林三重混合水印.jpg",
+    "style": "mixed",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_logo_C",
+    "source": "logo_watermark_C_雪山六边形LOGO.jpg",
+    "style": "logo",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_grid_C",
+    "source": "grid_watermark_C_暗色科技圆点阵列.jpg",
+    "style": "grid",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_mixed_B",
+    "source": "mixed_B_商务人像三重混合水印.jpg",
+    "style": "mixed",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_grid_B",
+    "source": "grid_watermark_B_抽象几何斜向网格线.jpg",
+    "style": "grid",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_overlay_C",
+    "source": "overlay_C_科技芯片水印条加图标.jpg",
+    "style": "overlay",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_grid_A",
+    "source": "grid_watermark_A_山峦湖泊点阵网格.jpg",
+    "style": "grid",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_overlay_A",
+    "source": "overlay_A_窗边场景横向水印条.jpg",
+    "style": "overlay",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_logo_B",
+    "source": "logo_watermark_B_杂志人像方形LOGO.jpg",
+    "style": "logo",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_translucent_A",
+    "source": "translucent_A_人像SAMPLE平铺文字.jpg",
+    "style": "translucent",
+    "size": [
+      2364,
+      1773
+    ]
+  },
+  {
+    "id": "real_c3_gradient_A",
+    "source": "gradient_watermark_A_流体艺术青紫渐变.jpg",
+    "style": "gradient",
+    "size": [
+      2364,
+      1773
+    ]
+  }
+]

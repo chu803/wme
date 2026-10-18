@@ -1,0 +1,24 @@
+{
+  "version": 1,
+  "source": "12照片_zip_20261018",
+  "note": "21 张真实风格图（2364x1773），覆盖 7 类。全图类标全图；edge/logo 按底边带与中央条带目视定位。overlay_A 与 mixed_A/B/C 暂不标（避免误标），不参与评分。",
+  "entries": [
+    {"image_id": "real_c3_gradient_A", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "gradient_watermark"}]},
+    {"image_id": "real_c3_gradient_B", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "gradient_watermark"}]},
+    {"image_id": "real_c3_gradient_C", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "gradient_watermark"}]},
+    {"image_id": "real_c3_grid_A", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "grid_watermark"}]},
+    {"image_id": "real_c3_grid_B", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "grid_watermark"}]},
+    {"image_id": "real_c3_grid_C", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "grid_watermark"}]},
+    {"image_id": "real_c3_translucent_A", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "translucent"}]},
+    {"image_id": "real_c3_translucent_B", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "translucent"}]},
+    {"image_id": "real_c3_translucent_C", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "translucent"}]},
+    {"image_id": "real_c3_overlay_B", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "overlay"}]},
+    {"image_id": "real_c3_overlay_C", "watermarks": [{"bbox": [0, 0, 2364, 1773], "style": "overlay"}]},
+    {"image_id": "real_c3_edge_A", "watermarks": [{"bbox": [55, 1660, 390, 65], "style": "edge_text"}]},
+    {"image_id": "real_c3_edge_B", "watermarks": [{"bbox": [37, 1690, 332, 60], "style": "edge_text"}]},
+    {"image_id": "real_c3_edge_C", "watermarks": [{"bbox": [1045, 1668, 336, 55], "style": "edge_text"}]},
+    {"image_id": "real_c3_logo_A", "watermarks": [{"bbox": [485, 127, 930, 1140], "style": "logo_watermark"}]},
+    {"image_id": "real_c3_logo_B", "watermarks": [{"bbox": [1617, 1330, 177, 177], "style": "logo_watermark"}]},
+    {"image_id": "real_c3_logo_C", "watermarks": [{"bbox": [823, 359, 760, 907], "style": "logo_watermark"}]}
+  ]
+}
