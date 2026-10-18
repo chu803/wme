@@ -2503,9 +2503,14 @@ def detect_logo_watermark(
 #      随 max(h, w) / 640 线性缩放——碎片间距与水印物理尺寸同向缩放。
 # ==============================================================================
 
-# 默认参与聚合的区域类别：F2 的碎片产生于 translucent 通路。
-# 其他通路（网格有独立周期语义、渐变整图标记、OCR 框是逐行文字）刻意不参与。
-_FRAGMENT_MERGE_KINDS = (KIND_TRANSLUCENT,)
+# 默认参与聚合的区域类别（阶段 P1-3 从「仅 translucent」扩到 OCR）。
+#   · translucent —— F2 的「AI生成」角标碎片（阶段 82 原始动机）；
+#   · ocr_text    —— 逐行 OCR 框。**阶段 P1-3 实测（53 图 A/B）**：纳入聚合后
+#     掩码按成员像素并集重建、前后逐位相同，故 mask_recall/recall/mask_iou/coverage
+#     **全部不变**；但多行 OCR 框被收成一个区域 ⇒ 区域数下降 ⇒ **precision
+#     0.0801 → 0.0936（+16.9%）**。这是「零代价精度增益」，无任何指标倒退。
+#   网格（独立周期语义）与渐变（整图标记）仍刻意不参与。
+_FRAGMENT_MERGE_KINDS = (KIND_TRANSLUCENT, KIND_OCR_TEXT)
 
 
 def _rect_gap(

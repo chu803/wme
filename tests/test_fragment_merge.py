@@ -22,6 +22,7 @@ import config  # noqa: E402
 from core.detector import (  # noqa: E402
     DetectionRegion,
     KIND_CORNER_LOGO,
+    KIND_OCR_TEXT,
     KIND_TRANSLUCENT,
     _merge_adjacent_fragments,
 )
@@ -78,6 +79,30 @@ def test_other_kinds_are_not_merged_and_preserved_by_identity():
     assert len(out) == 3
     assert a in out and b in out and t in out  # 原对象逐个保留
     assert all(r.merged_from == 1 for r in out)
+
+
+def test_ocr_text_fragments_merge_by_default():
+    """阶段 P1-3：OCR 逐行框默认参与聚合（precision 零代价增益）。
+
+    背景（53 图 A/B）：把多行 OCR 框收成一个区域 ⇒ 区域数下降 ⇒
+    precision 0.0801 → 0.0936（+16.9%）；掩码按成员像素并集重建、前后逐位相同，
+    故 mask_recall / recall / mask_iou / coverage 全部不变。
+    """
+    a = _r(0, 0, 40, 20, kind=KIND_OCR_TEXT)
+    b = _r(0, 24, 40, 20, kind=KIND_OCR_TEXT)  # 垂直间隙 4
+    out = _merge_adjacent_fragments([a, b], gap_px=24, max_side_px=160, fill_guard=2.2)
+    assert len(out) == 1
+    assert out[0].kind == KIND_OCR_TEXT
+    assert out[0].merged_from == 2
+    assert (out[0].x, out[0].y, out[0].w, out[0].h) == (0, 0, 40, 44)
+
+
+def test_corner_logo_still_not_merged_by_default():
+    """对照：corner_logo 仍不参与聚合（本轮只扩到 OCR，不动角标通路）。"""
+    a = _r(0, 0, 40, 20, kind=KIND_CORNER_LOGO)
+    b = _r(0, 24, 40, 20, kind=KIND_CORNER_LOGO)
+    out = _merge_adjacent_fragments([a, b], gap_px=24, max_side_px=160, fill_guard=2.2)
+    assert len(out) == 2
 
 
 def test_singleton_regions_survive():

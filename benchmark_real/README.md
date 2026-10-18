@@ -251,3 +251,21 @@ P1 的 4 处 `logo_watermark` 真值（logo_A/B/C + mixed_b）为 0/4。
 （候选：把「同 kind 碎片聚合」从仅 `translucent` 扩到 `corner/edge`；
 或对 corner/edge 区域做受控外扩），**而不是再加检测通路**。
 该杠杆会牵动 precision/coverage，必须先 A/B + `real_gate` 才能定。
+
+### 11. 零代价精度增益：OCR 框纳入碎片聚合（2026-10-18）
+- **动机**：§10 归因发现检测侧缺口主体是「框太小/碎片化」。
+- **A/B（53 图，general，OCR 与基线同口径）**：
+
+  | 变体 | mask_recall | region_recall | precision | mask_iou | mask_cov | cov_ratio |
+  |---|---|---|---|---|---|---|
+  | baseline（仅 translucent）| 0.5960 | 0.9057 | 0.0801 | 0.3217 | 0.0129 | 2.30 |
+  | **translucent + ocr_text** | 0.5960 | 0.9057 | **0.0936** | 0.3217 | 0.0129 | 2.30 |
+  | + corner/edge | 0.5960 | 0.9057 | 0.0947 | 0.3217 | 0.0129 | 2.30 |
+
+- **机制**：聚合只按「成员像素并集」重建掩码（聚合前后**逐位相同**），故召回 / 覆盖 /
+  掩码 IoU **全部不变**；但多行 OCR 框被收成一个区域 ⇒ 区域数下降 ⇒ **precision +16.9%**。
+- **实施（最小集合）**：`_FRAGMENT_MERGE_KINDS = (KIND_TRANSLUCENT, KIND_OCR_TEXT)`。
+  corner/edge 仅再 +0.0011，且与既有「其他通路刻意不参与」的设计冲突，**不纳入**。
+- **守卫**：`tests/test_fragment_merge.py` 增 2 例（OCR 默认合并 / corner 仍不合并），
+  全文件 **12 例绿**。
+- `real_gate --strict-scope`：见 commit 与记忆（应通过：覆盖率不变、precision 上升）。
