@@ -1,0 +1,10 @@
+{
+  "version": 1,
+  "note": "incoming 批次清单（run_all 的 path 相对于 benchmark_real/）",
+  "images": [
+    {"id": "real_tl", "path": "incoming/real_tl.png"},
+    {"id": "real_tr", "path": "incoming/real_tr.png"},
+    {"id": "real_bl", "path": "incoming/real_bl.png"},
+    {"id": "real_br", "path": "incoming/real_br.png"}
+  ]
+}

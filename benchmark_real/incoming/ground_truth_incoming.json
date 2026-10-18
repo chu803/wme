@@ -1,0 +1,32 @@
+{
+  "version": 1,
+  "source": "doubao_4panel_20261018",
+  "note": "用户豆包四宫格拼图切分（2048x2048 -> 4x1024x1024）。bbox 由程序化暗块/白字定位 + 目视核对；样本仅 4 图，结论为方向性，不作红线。",
+  "entries": [
+    {
+      "image_id": "real_tl",
+      "watermarks": [
+        {"bbox": [715, 875, 272, 112], "style": "corner_logo", "note": "AI Photo 圆角深色底板 + 白字"}
+      ]
+    },
+    {
+      "image_id": "real_tr",
+      "watermarks": [
+        {"bbox": [0, 0, 1024, 1024], "style": "translucent", "note": "全图平铺 AI Generated 文字"}
+      ]
+    },
+    {
+      "image_id": "real_bl",
+      "watermarks": [
+        {"bbox": [0, 0, 1024, 1024], "style": "translucent", "note": "全图平铺 AI Generated 文字"}
+      ]
+    },
+    {
+      "image_id": "real_br",
+      "watermarks": [
+        {"bbox": [0, 0, 1024, 1024], "style": "translucent", "note": "整图半透明纹理叠加"},
+        {"bbox": [593, 881, 384, 93], "style": "corner_logo", "note": "右下 豆包AI生成 白字"}
+      ]
+    }
+  ]
+}
