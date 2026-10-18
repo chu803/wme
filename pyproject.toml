@@ -40,14 +40,27 @@ license-files = ["LICENSE"]
 authors = [{ name = "AI Watermark Eraser Workbench" }]
 keywords = ["watermark", "inpainting", "lama", "opencv", "gradio", "offline"]
 classifiers = [
+    "Development Status :: 5 - Production/Stable",
+    "Intended Audience :: End Users/Desktop",
+    "Intended Audience :: Developers",
+    "License :: Other/Proprietary License",
+    "Natural Language :: Chinese (Simplified)",
     "Programming Language :: Python :: 3.11",
     "Programming Language :: Python :: 3.12",
     "Programming Language :: Python :: 3.13",
     "Topic :: Multimedia :: Graphics",
     "Topic :: Scientific/Engineering :: Image Processing",
+    "Topic :: Utilities",
     "Environment :: Console",
     "Operating System :: OS Independent",
 ]
+
+# PyPI 项目页「Project links」：提升包可发现性与信任度（生态档 D→C 起手式）。
+[project.urls]
+Homepage = "https://github.com/chu803/wme"
+Repository = "https://github.com/chu803/wme"
+Documentation = "https://github.com/chu803/wme#readme"
+Changelog = "https://github.com/chu803/wme/blob/main/CHANGELOG.md"
 
 # 控制台入口（阶段 296 补齐，服务「发布 v1.0」）。
 # 命名属发布范围决策：wme=UI 主入口 / wme-cli=批量命令行 / wme-api=REST 服务。
