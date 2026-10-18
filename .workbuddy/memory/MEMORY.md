@@ -52,11 +52,12 @@ mask_recall **0.5960** / precision 0.0801 / recall 0.9057 / mean_iou 0.6638 / ma
 只读端点 capabilities/models/models.active/models.verify 已补齐；推理端点绝不豁免（fail-closed）。异步作业 + worker 池 `API_ASYNC_MAX_WORKERS` 默认 2（实测 4 反降）。**仅 `POST /api/models/active` 不开放**。
 - **安全层（299）**：`services/api_security.py` 纯标准库 token + 令牌桶；`API_AUTH_ENABLED`(false 默认，零行为变更)/`API_TOKEN`/`API_RATE_LIMIT_PER_MIN`(60)/`API_RATE_BURST`(10)；安全模式 POST 与作业下载需 token，只读 GET 豁免鉴权仍限流；`start_server` fail-closed。守卫 `test_api_security299.py` 12 例。
 
-## 发布与版本（当前 v1.0.1）
-- 远端 `github.com/chu803/wme`（`main` 已推）；CI `ci.yml` → `run_all_checks.py`；发布 `.github/workflows/publish.yml`（tag `v*` → 门禁 → build → PyPI，Secret `PYPI_API_TOKEN`）。**push 须用户本机执行**（沙箱写被阻断）。
+## 发布与版本（当前 v1.0.2）
+- 远端 `github.com/chu803/wme`（`main` 已推）；CI `ci.yml` → `run_all_checks.py`；发布 `.github/workflows/publish.yml`（tag `v*` → 门禁 → build → PyPI，**当前走 `PYPI_API_TOKEN` Secret**，与 Publish #3/#5 同款已验证可发版）。**push 须用户本机执行**（沙箱写被阻断）。OIDC/Trusted Publisher 因用户 PyPI 网页登录受阻（新设备确认邮件循环 20+ 分钟）**暂缓**，待其能正常登录 PyPI 再切（届时 publish.yml 改 `id-token:write` + 删 password，且需在 PyPI 项目页配 Trusted Publisher）。
 - **PyPI `wme-watermark-eraser 1.0.0` 已于 2026-10-15 10:55 发布**（Publish #3 绿，源提交 `06b3d13`）；PyPI 不允许覆盖同版本。
 - **1.0.1（2026-10-18，`c98dd32`）**：版本升 1.0.1（`config.APP_VERSION` 真值源 + pyproject + main.py + core/services/ui/utils `__version__`）；CHANGELOG 记 1.0.0 后的收口（裁剪修复默认开、is_grid 抗 JPEG 块、角标 NCC、#450 空 ROI 修复、MANIFEST.in）；`v1.0.1` tag。
 - **溯源偏差（诚实记录）**：tag `v1.0.0` 指向 `0be2209`，PyPI 1.0.0 产物由 `06b3d13` 构建，两者不重合；不回指 tag（回指会再触发必失败的 Publish 运行）。需复现 1.0.0 就 checkout `06b3d13`。
+- **1.0.2（2026-10-18，`ef64fd7`）**：元数据收口（`[project.urls]` + 分类器 7→13 条）+ 版本升 1.0.2；发布管线沿用 `PYPI_API_TOKEN`（OIDC 因账号登录受阻回退）。⚠️ **打 tag 必先同步升版本号**：v1.0.2 首次误指向 1.0.1 代码（`4d6acdb`），致 Publish #6 在 PyPI 重复上传失败；已 `git tag -f v1.0.2` 重指 `ef64fd7` 并 force-push。✅ **Publish #7 成功上架 PyPI**（2026-10-18T05:00Z，wheel 721663B + sdist 857147B），13 条分类器已生效、`info.version=1.0.2` 经 PyPI JSON 核实。
 - 历史重写（205）：`models/big-lama.pt` 已移出全部历史 ⇒ 单点故障，重建 SOP 见 `docs/302-资产重建清单.md`（下载源/205,669,692B 校验/循环续传/备份建议）；`benchmark_real/images` ≈280MB 已授权入库（不走 LFS）。
 - Docker（C5）：本机无 docker CLI，镜像从未真 build（仅静态契约 + 一致性门禁）；`Dockerfile.gpu` P0 已修 python/torch 错配。
 

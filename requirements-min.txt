@@ -19,11 +19,13 @@
 # ==============================================================================
 
 # 【图像处理核心库】—— OpenCV 降级修复 + 自动检测（边缘/形态学/MSER）
-opencv-python==4.10.0.84
-numpy==1.26.4
-Pillow==10.4.0
-scikit-image==0.24.0
-scipy==1.14.1
+#   opencv 用 headless 版（无 GUI 依赖，体积更小，与 Gradio 服务端环境一致）；
+#   numpy 升到 2.x —— 阶段 297 验证 numpy 2.5.1 + opencv 5.0.0.93 组合稳定。
+opencv-python-headless==5.0.0.93
+numpy==2.5.1
+Pillow==12.3.0
+scikit-image==0.26.0
+scipy==1.18.1
 
 # 【Web 界面】—— 与完整版一致，界面功能不受最小依赖影响
 gradio>=6.0
@@ -41,9 +43,9 @@ py-cpuinfo==9.0.0
 # 【日志、配置与工程化工具】
 colorama==0.4.6
 python-dotenv==1.0.1
-pydantic==2.9.2
+pydantic==2.13.4
 
 # 注意：本清单刻意不含 torch / torchvision / opencv-contrib-python / easyocr /
 # pyinstaller。如需要这些能力，请改用 requirements.txt（完整版）或按对应说明补充。
 # 另：PDF 文档处理需额外安装 pymupdf（可选增强，未装则仅 PDF 入口不可用，
-# 图片与视频功能不受影响）；视频处理依赖上方已包含的 opencv-python。
+# 图片与视频功能不受影响）；视频处理依赖上方已包含的 opencv-python-headless。

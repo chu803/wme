@@ -71,30 +71,36 @@ torch==2.9.1
 # ------------------------------------------------------------------------------
 # 【第二组】图像处理核心库 —— 掩码生成、备选修复算法、格式读写
 # ------------------------------------------------------------------------------
-# opencv-python：OpenCV 主库。用途有三：
+# opencv-python-headless：OpenCV 主库（无 GUI / 不依赖 Qt，更适合 Gradio 服务端
+#                与 CLI / 沙箱环境，安装体积更小）。用途有三：
 #                1. 备选轻量修复方案（cv2.inpaint 的 TELEA / NS 算法）
 #                2. 智能水印自动检测（边缘检测、形态学、MSER 文字区域探测）
 #                3. 掩码后处理（膨胀、腐蚀、高斯羽化）
-opencv-python==4.10.0.84
+#                阶段 297：沙箱 canonical venv 实测即 opencv-python-headless 5.0.0.93，
+#                与 GUI 版 cv2 API 完全一致；本项目零 GUI 依赖，故换位 headless 使
+#                「声明 = 实际运行环境」一致。
+opencv-python-headless==5.0.0.93
 
 # opencv-contrib-python：OpenCV 扩展模块，提供 xphoto 高级修复算法与
 #                        更完善的文本检测器，作为自动检测模块的增强能力。
-opencv-contrib-python==4.10.0.84
+opencv-contrib-python==5.0.0.93
 
 # numpy：所有图像在内存中的通用载体（H×W×C 数组），全项目基础依赖。
-#        锁定 1.26.x 是因为 numpy 2.x 与部分 opencv/torch 组合仍存在 ABI 冲突。
-numpy==1.26.4
+#        阶段 297：此前钉 1.26.x 是顾虑 numpy 2.x 与 opencv/torch 的 ABI 冲突；
+#        现沙箱实测 numpy 2.5.1 + opencv 5.0.0.93 + torch 2.9.1+cu128 全链路
+#        （real_gate / 全量 pytest / GPU 推理）均稳定通过，故升级到 2.x。
+numpy==2.5.1
 
 # Pillow：图片文件读写与格式转换（PNG/JPG/WebP），负责 EXIF 方向校正、
 #         PNG 透明通道保留、输出画质（quality）控制。
-Pillow==10.4.0
+Pillow==12.3.0
 
 # scikit-image：提供高质量的形态学重建、局部方差计算、结构相似度（SSIM）评估，
 #               用于半透明水印检测与修复质量自评。
-scikit-image==0.24.0
+scikit-image==0.26.0
 
 # scipy：科学计算基础库，提供距离变换、卷积滤波、连通域分析等底层算子。
-scipy==1.14.1
+scipy==1.18.1
 
 
 # ------------------------------------------------------------------------------
@@ -154,7 +160,7 @@ colorama==0.4.6
 python-dotenv==1.0.1
 
 # pydantic：配置项的类型校验，防止用户在配置文件里填入非法数值导致程序崩溃。
-pydantic==2.9.2
+pydantic==2.13.4
 
 
 # ------------------------------------------------------------------------------
@@ -172,7 +178,7 @@ pyinstaller-hooks-contrib==2024.8
 # 【可选增强依赖】—— 不装也能完整运行，装了可提升自动水印检测的准确率
 # ------------------------------------------------------------------------------
 # 如需启用，请手动执行：
-#     pip install easyocr==1.7.1 -i https://pypi.tuna.tsinghua.edu.cn/simple
+#     pip install easyocr==1.7.2 -i https://pypi.tuna.tsinghua.edu.cn/simple
 #
 # easyocr：基于深度学习的文字检测识别库，可显著提升「角落文字 LOGO」
 #          与「边缘小字水印」的自动定位精度。
