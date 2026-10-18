@@ -1,7 +1,19 @@
 # 更新日志 / CHANGELOG
 
 > 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 118 份）。
-> 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.1`。
+> 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.2`。
+
+## [1.0.2] - 2026-10-18
+
+> 1.0.1 已于同日上架 PyPI；本版为**元数据与发布口径**收口，代码逻辑与 1.0.1 一致（无功能变更）。
+
+### 打包 / 元数据（PyPI 包页可发现性）
+- `pyproject.toml` 新增 `[project.urls]`（Homepage / Repository / Documentation / Changelog → `github.com/chu803/wme`）。
+- 分类器 7 → 13 条：补 `Development Status :: 5 - Production/Stable`、`Intended Audience :: End Users/Desktop`、`Intended Audience :: Developers`、`License :: Other/Proprietary License`、`Natural Language :: Chinese (Simplified)`、`Topic :: Utilities`。
+- 版本号同步升至 `1.0.2`（`config.APP_VERSION` 真值源 + `pyproject.toml` + `main.py` + `core/services/ui/utils/tests` 的 `__version__`），`tests/test_packaging_meta.py` 断言一致。
+
+### 发布管线
+- 尝试迁移 PyPI Trusted Publisher（OIDC）后因账号网页登录受阻回退，**沿用已验证的 `PYPI_API_TOKEN`**（Publish #3/#5 同款）；OIDC 待可正常登录 PyPI 后再切。
 
 ## [1.0.1] - 2026-10-18
 
