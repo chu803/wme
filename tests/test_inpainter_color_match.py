@@ -71,3 +71,19 @@ def test_color_match_robust_on_tiny_core():
 def test_config_flags_present_and_reversible():
     assert isinstance(config.INPAINT_COLOR_MATCH, bool)
     assert 4 <= config.INPAINT_COLOR_MATCH_RING <= 64
+    assert 0 <= config.INPAINT_COLOR_MATCH_MIN_OFFSET <= 60
+
+
+def test_color_match_gated_by_min_offset():
+    """阈值门控：偏移 < min_offset 的通道不校正；超过则校（温和版核心）。"""
+    _, result_small, mask = _synth(offset=3)   # 偏移 3 < 默认阈值 6
+    base_small, _, _ = _synth(offset=3)
+    out = _match_region_color(result_small, base_small, mask,
+                              config.INPAINT_COLOR_MATCH_RING,
+                              config.INPAINT_COLOR_MATCH_MIN_OFFSET)
+    assert np.array_equal(out, result_small), "偏移不足阈值时应原样返回（门控须生效）"
+    base_big, result_big, mask_big = _synth(offset=60)
+    out2 = _match_region_color(result_big, base_big, mask_big,
+                               config.INPAINT_COLOR_MATCH_RING,
+                               config.INPAINT_COLOR_MATCH_MIN_OFFSET)
+    assert not np.array_equal(out2, result_big), "偏移超阈值应被校正"

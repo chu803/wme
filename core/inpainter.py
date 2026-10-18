@@ -470,17 +470,19 @@ def _match_region_color(
     original: np.ndarray,
     bin_mask: np.ndarray,
     ring: int,
+    min_offset: int = 0,
 ) -> np.ndarray:
-    """把修复区(result)的逐通道 mean/std 对齐到「掩码周围一圈原图(original)」统计量。
+    """把修复区(result)的逐通道**均值**对齐到「掩码周围一圈原图(original)」——阈值门控 + 仅校均值。
 
-    目的：消 LaMa 填充与周围的亮度/色差接缝（IOPaint `sd_match_histograms` 同款，
-    但用单调的 mean/std 仿射而非全直方图 CDF，避免 warp 分布/产生色带，小填充区更稳健）。
-    实测（2026-10-17 探针，真实 doubao 图）修复区-周围均值差最大 [1.0,23.2,22.8] → [0.8,0.4,0.6]。
+    目的：消 LaMa 填充与周围的亮度/色差接缝。2026-10-17 演进：
+      · 初版 mean+std 仿射 ⇒ e2e 前后对比显示**拖累去痕率**（std 缩放把填充细节压平，
+        且强制贴合直接邻环会抹掉水印下的局部特征）⇒ 默认关。
+      · 本「温和版」：① **阈值门控**——逐通道均值偏移 |mu_s-mu_r| < min_offset 的通道不动
+        （填充本就够准，避免矫枉过正）；② **仅校均值**（平移，不改 std）——保填充内部结构。
 
-    铁律：只改 bin_mask 内的像素；bin_mask 外与 result 逐字节相同（强度融合随后也只在
-    proc_mask 内生效，故 mask 外全程不被本函数触碰）。
+    铁律：只改 bin_mask 内的像素；bin_mask 外与 result 逐字节相同。
 
-    鲁棒性：核心区或参考环像素 <50 时原样返回；某通道近常量（std<1e-3）时跳过该通道。
+    鲁棒性：核心区或参考环像素 <50 时原样返回。
     """
     import cv2
 
@@ -496,12 +498,11 @@ def _match_region_color(
     ref = original[ref_mask > 0].astype(np.float32)
     out = result.astype(np.float32)
     for c in range(result.shape[2]):
-        mu_s, sd_s = float(src[:, c].mean()), float(src[:, c].std())
-        mu_r, sd_r = float(ref[:, c].mean()), float(ref[:, c].std())
-        if sd_s < 1e-3:
+        mu_s = float(src[:, c].mean())
+        mu_r = float(ref[:, c].mean())
+        if abs(mu_s - mu_r) < min_offset:
             continue
-        corrected = (out[:, :, c] - mu_s) * (sd_r / sd_s) + mu_r
-        out[:, :, c] = np.where(core, corrected, out[:, :, c])
+        out[:, :, c] = np.where(core, out[:, :, c] + (mu_r - mu_s), out[:, :, c])
     return np.clip(out, 0, 255).astype(np.uint8)
 
 
@@ -668,7 +669,8 @@ def inpaint(
     # 周围原图环，消亮度/色差接缝。仅改掩码内（mask 外逐字节不变），可逆开关见 config。
     if config.INPAINT_COLOR_MATCH:
         result = _match_region_color(
-            result, image, bin_mask, config.INPAINT_COLOR_MATCH_RING
+            result, image, bin_mask, config.INPAINT_COLOR_MATCH_RING,
+            config.INPAINT_COLOR_MATCH_MIN_OFFSET,
         )
 
     # 力度融合：在掩码区域把「原图」与「修复结果」按 strength 混合。

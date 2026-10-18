@@ -713,6 +713,10 @@ INPAINT_COLOR_MATCH: Final[bool] = _env_bool("INPAINT_COLOR_MATCH", False)
 #   「周围一圈」= dilate(二值掩码, RING) 且不在掩码内——紧贴水印的边缘上下文，
 #   用来估计目标 mean/std。取局部环而非全图，避免远处不同内容稀释统计量。
 INPAINT_COLOR_MATCH_RING: Final[int] = _env_int("INPAINT_COLOR_MATCH_RING", 16, 4, 64)
+# 【颜色匹配最小偏移阈值】逐通道均值偏移 |填充-周围| < 此值的通道不校正（0~60，默认 6）。
+#   阈值门控是「温和版」核心：填充本就准（偏移小）时不碰，避免 mean/std 匹配的矫枉过正
+#   （2026-10-17 e2e 回归根因之一）。仅对明显色偏（>阈值）的通道做均值平移。
+INPAINT_COLOR_MATCH_MIN_OFFSET: Final[int] = _env_int("INPAINT_COLOR_MATCH_MIN_OFFSET", 6, 0, 60)
 
 # ---------- 6.5 降噪参数 ----------
 # 【降噪强度默认值】取值 0 ~ 30。
