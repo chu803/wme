@@ -242,6 +242,10 @@ class DetectionRegion:
     # （不在掩码内），因此合并过滤阶段对这类区域改用 anchors 逐点判活。
     merged_from: int = 1
     anchors: Optional[List[Tuple[int, int]]] = None
+    # 阶段 P1：全幅平铺水印的「全帧区域」标记 —— bbox 覆盖整幅（供门禁区域匹配 /
+    # 产品提示「水印铺满全图」），但掩码默认仍为稀疏水印像素（避免整图重绘毁图）。
+    # 合并过滤阶段对该类区域豁免「中心点须在掩码内」与面积上下限。
+    full_frame: bool = False
 
     def as_tuple(self) -> Tuple[int, int, int, int]:
         """返回 (x, y, w, h) 元组，方便外部绘制。"""
@@ -2627,6 +2631,52 @@ def _merge_adjacent_fragments(
     return out
 
 
+def _consolidate_fullframe(
+    regions: List[DetectionRegion],
+    w: int,
+    h: int,
+    kinds: Tuple[str, ...],
+    spread_ratio: float,
+    min_regions: int,
+) -> Optional[DetectionRegion]:
+    """全幅平铺水印的「全帧区域」合成（阶段 P1）。
+
+    当**同类**区域已铺满全幅（联合包围盒宽、高**均** ≥ spread_ratio，且数量 ≥ min_regions）
+    时，返回一个 bbox=(0,0,w,h) 的全幅区域（kind=出现最多的该类）；否则返回 None。
+
+    设计要点
+    --------
+    - **只扩 region、不填 mask**：全幅 region 让门禁的区域级匹配能认作「铺满全幅」
+      （bbox-IoU 与全图真值一致），而掩码仍保留策略算出的**稀疏水印像素**——
+      产品侧只重绘真实水印、不整图重绘。需要 mask 也铺满时由
+      `DETECT_FULLFRAME_FILL_MASK` 显式开启（供 mask_recall 实验，代价是整图重绘）。
+    - 仅对手动开启的平铺预设生效（`DETECT_FULLFRAME_CONSOLIDATE`），general 恒关，
+      避免把普通照片里散布的误报凑成整幅。
+    """
+    eligible = [r for r in regions if r.kind in kinds]
+    if len(eligible) < max(1, int(min_regions)):
+        return None
+    if w <= 0 or h <= 0:
+        return None
+    x0 = min(r.x for r in eligible)
+    y0 = min(r.y for r in eligible)
+    x1 = max(r.x + r.w for r in eligible)
+    y1 = max(r.y + r.h for r in eligible)
+    if (x1 - x0) / float(w) < spread_ratio or (y1 - y0) / float(h) < spread_ratio:
+        return None
+    # 主导类：出现次数最多的 eligible kind（平局取先出现者，dict 保序）。
+    counts: Dict[str, int] = {}
+    for r in eligible:
+        counts[r.kind] = counts.get(r.kind, 0) + 1
+    dominant = max(counts.items(), key=lambda kv: kv[1])[0]
+    return DetectionRegion(
+        x=0, y=0, w=int(w), h=int(h),
+        kind=dominant,
+        confidence=max(r.confidence for r in eligible),
+        full_frame=True,
+    )
+
+
 def detect_watermark_mask(
     image: np.ndarray,
     *,
@@ -2637,6 +2687,7 @@ def detect_watermark_mask(
     enable_grid: bool = config.DETECT_GRID_ENABLED,
     enable_gradient: bool = config.DETECT_GRADIENT_ENABLED,
     enable_logo: bool = config.DETECT_LOGO_ENABLED,
+    enable_fullframe: Optional[bool] = None,
     corner_ratio: float = config.DETECT_CORNER_RATIO,
     edge_band_ratio: float = config.DETECT_EDGE_BAND_RATIO,
     min_area_ratio: float = config.DETECT_MIN_AREA_RATIO,
@@ -2710,6 +2761,8 @@ def detect_watermark_mask(
                 enable_gradient = bool(_pk["enable_gradient"])
             if "enable_logo" in _pk:
                 enable_logo = bool(_pk["enable_logo"])
+            if "enable_fullframe" in _pk:
+                enable_fullframe = bool(_pk["enable_fullframe"])
             if "enhance_tiled" in _pk:
                 enhance_tiled = bool(_pk["enhance_tiled"])
             if "search_bottom" in _pk:
@@ -2718,6 +2771,10 @@ def detect_watermark_mask(
                 use_ocr = bool(_pk["use_ocr"])
         else:
             log.warning("未知检测预设 %s，已忽略，使用默认参数。", preset)
+
+    # 阶段 P1：全幅平铺合并默认值（预设未显式设置时回落到 config）。
+    if enable_fullframe is None:
+        enable_fullframe = bool(config.DETECT_FULLFRAME_CONSOLIDATE)
 
     _prog(0.0, "准备图像……")
     try:
@@ -2969,6 +3026,29 @@ def detect_watermark_mask(
             all_regions, mask_parts, h, w, corner_ratio, search_bottom, preset=preset
         )
 
+    # ---------- 阶段 P1：全幅平铺水印 → 全帧区域 ----------
+    # 背景：benchmark 的 bbox-IoU(≥0.3) 匹配是为局部水印设计的；grid / tiled-translucent
+    # 铺满整幅时检测器只吐小单元，区域级召回机械性为 0（见 benchmark_real/README §5）。
+    # 处置：同类区域已铺满全幅时，追加一个 bbox=(0,0,W,H) 的全帧区域。
+    #   ① 只扩 region、不填 mask（产品安全，见 _consolidate_fullframe docstring）；
+    #   ② 仅在显式开启的平铺预设生效（general 恒关）；
+    #   ③ FILL_MASK=True 时掩码也铺满（供 mask_recall 实验，代价是整图重绘）。
+    if enable_fullframe:
+        try:
+            _ff = _consolidate_fullframe(
+                all_regions, w, h,
+                config.DETECT_FULLFRAME_KINDS,
+                float(config.DETECT_FULLFRAME_SPREAD_RATIO),
+                int(config.DETECT_FULLFRAME_MIN_REGIONS),
+            )
+            if _ff is not None:
+                all_regions.append(_ff)
+                if config.DETECT_FULLFRAME_FILL_MASK:
+                    mask_parts.append(np.full((h, w), 255, dtype=np.uint8))
+                log.debug("全幅平铺：合成全帧区域 kind=%s（%dx%d）。", _ff.kind, w, h)
+        except Exception as exc:
+            log.warning("全幅平铺区域合成失败，已跳过：%s", exc)
+
     # ---------- 合并 + 形态学收口 ----------
     _prog(0.85, "合并检测结果……")
     if not all_regions:
@@ -3005,6 +3085,12 @@ def detect_watermark_mask(
         # 特例：全局渐变水印（KIND_GRADIENT）整图标记，不受 max_area 约束。
         kept_regions: List[DetectionRegion] = []
         for r in all_regions:
+            # 阶段 P1：全帧区域（全幅平铺）豁免「中心点须在掩码内」与面积上下限——
+            # 它的 bbox 覆盖整幅、中心点可能落在无水印像素上；其语义是「空间范围」，
+            # 面积判据对它无意义。
+            if getattr(r, "full_frame", False):
+                kept_regions.append(r)
+                continue
             cx, cy = r.x + r.w // 2, r.y + r.h // 2
             # 中心必须落在掩码内，否则该区域已被吞并/丢弃。
             if not (0 <= cy < h and 0 <= cx < w and mask[cy, cx] > 0):
@@ -3039,6 +3125,12 @@ def detect_watermark_mask(
         # 又丢弃被其他策略大块吞并的误报区域（如边缘检测在网格图上误标的整圈边框）。
         final_mask = np.zeros((h, w), dtype=np.uint8)
         for r in kept_regions:
+            # 阶段 P1：全帧区域是「区域级报告」——FILL_MASK=False 时**不得参与掩码裁剪**。
+            # 否则它的全图 bbox 会把本该被小区域 bbox 裁掉的稀疏掩码像素全部保留，
+            # 造成面积漂移（实测 ai_faint_tiled mean +24.6% / p90 +39.9%，触 real_gate 漂移守卫）。
+            # FILL_MASK=True 时才参与（此时 mask_parts 已并入整幅掩码，裁剪到全图即铺满）。
+            if getattr(r, "full_frame", False) and not config.DETECT_FULLFRAME_FILL_MASK:
+                continue
             y0, x0 = max(0, r.y), max(0, r.x)
             y1, x1 = min(h, r.y + r.h), min(w, r.x + r.w)
             if y1 > y0 and x1 > x0:
@@ -3131,9 +3223,13 @@ def detect_watermark_mask(
     #
     # 例外：全局渐变水印（KIND_GRADIENT）按设计整图标记，是用户在预设里主动选择的
     # （ai_gradient），此时不做裁剪，否则该预设会被这道闸彻底清空。
-    if all_regions and area_total > 0 and not any(
-        r.kind == KIND_GRADIENT for r in all_regions
-    ):
+    # 阶段 P1：FILL_MASK=True 时全帧区域会把掩码铺满整幅，必须像渐变一样豁免本闸，
+    # 否则「铺满整幅」会被覆盖率闸按 15% 裁掉（自相矛盾）。
+    _cap_exempt = any(r.kind == KIND_GRADIENT for r in all_regions) or (
+        config.DETECT_FULLFRAME_FILL_MASK
+        and any(getattr(r, "full_frame", False) for r in all_regions)
+    )
+    if all_regions and area_total > 0 and not _cap_exempt:
         cap_px = int(area_total * config.DETECT_MAX_COVERAGE_RATIO)
         covered = int(np.count_nonzero(mask > 0))
         if covered > cap_px:
@@ -3143,9 +3239,17 @@ def detect_watermark_mask(
                 covered / area_total * 100.0,
                 config.DETECT_MAX_COVERAGE_RATIO * 100.0,
             )
-            rest = sorted(all_regions, key=lambda r: r.w * r.h)
+            # 阶段 P1：全帧区域不贡献掩码（FILL_MASK=False 时已从最终裁剪中排除），
+            # 故从面积裁剪循环中剔除、但保留在结果里 —— 否则覆盖率闸会把它当「最大区域」
+            # 处理，一张图触发闸门就会把区域级报告弄丢。
+            rest = sorted(
+                [r for r in all_regions if not getattr(r, "full_frame", False)],
+                key=lambda r: r.w * r.h,
+            )
             union = np.zeros((h, w), dtype=np.uint8)
-            kept: List[DetectionRegion] = []
+            kept: List[DetectionRegion] = [
+                r for r in all_regions if getattr(r, "full_frame", False)
+            ]
             total = 0
             for r in rest:
                 y0, x0 = max(0, r.y), max(0, r.x)

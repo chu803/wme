@@ -97,6 +97,8 @@ class DetectionPreset:
     enhance_tiled: Optional[bool] = None
     search_bottom: Optional[bool] = None
     use_ocr: Optional[bool] = None
+    # 阶段 P1：全幅平铺水印是否合成「全帧区域」（仅平铺类预设开启，general 保持 None）。
+    fullframe: Optional[bool] = None
 
     def resolve(self, base_sensitivity: float) -> Dict[str, object]:
         """
@@ -148,6 +150,8 @@ class DetectionPreset:
             kw["search_bottom"] = bool(self.search_bottom)
         if self.use_ocr is not None:
             kw["use_ocr"] = bool(self.use_ocr)
+        if self.fullframe is not None:
+            kw["enable_fullframe"] = bool(self.fullframe)
         return kw
 
 
@@ -181,6 +185,7 @@ _BUILTIN_PRESETS: Tuple[DetectionPreset, ...] = (
         enhance_tiled=True,
         search_bottom=False,
         use_ocr=None,
+        fullframe=True,
     ),
     DetectionPreset(
         name="ai_signature",
@@ -229,6 +234,7 @@ _BUILTIN_PRESETS: Tuple[DetectionPreset, ...] = (
         enhance_tiled=True,
         search_bottom=False,
         use_ocr=None,
+        fullframe=True,
     ),
     DetectionPreset(
         name="ai_grid",
@@ -242,6 +248,7 @@ _BUILTIN_PRESETS: Tuple[DetectionPreset, ...] = (
         search_bottom=False,
         use_ocr=None,
         enable_grid=True,
+        fullframe=True,
     ),
     DetectionPreset(
         name="ai_gradient",

@@ -1483,6 +1483,42 @@ DETECT_FRAGMENT_MERGE_FILL: Final[float] = _env_float(
     "DETECT_FRAGMENT_MERGE_FILL", 2.2, 1.0, 8.0
 )
 
+# 【全幅平铺水印：全帧区域合并】布尔（阶段 P1 新增，**默认 False = 保守 opt-in**）。
+#   背景：benchmark 的 bbox-IoU(≥0.3) 匹配是为**局部水印**设计的；grid / tiled-translucent
+#   铺满整幅时，检测器只吐小单元（IoU 恒 <0.3），门禁无法认作「全幅水印」（区域召回机械性为 0）。
+#   本开关在「各策略产出区域之后、合并过滤之前」：若**同类区域已铺满全幅**
+#   （联合包围盒宽、高均 ≥ DETECT_FULLFRAME_SPREAD_RATIO 且数量 ≥ MIN_REGIONS），
+#   追加一个 bbox=(0,0,W,H) 的**全幅区域**（kind=该主导类）。
+#   ⚠ **掩码默认不铺满**（仅 region 覆盖整幅）：产品侧只重绘真实水印像素，
+#   整图重绘会毁图；需要 mask 也铺满（供 mask_recall 实验）时置 FILL_MASK=True。
+#   仅由 ai_grid / ai_tiled / ai_faint_tiled 预设开启；general 恒关（防误伤普通照片）。
+DETECT_FULLFRAME_CONSOLIDATE: Final[bool] = _env_bool(
+    "DETECT_FULLFRAME_CONSOLIDATE", False
+)
+
+# 【全幅平铺：联合包围盒覆盖阈值】0.3~1.0。宽、高**均**达到该比例才判「铺满全幅」。
+DETECT_FULLFRAME_SPREAD_RATIO: Final[float] = _env_float(
+    "DETECT_FULLFRAME_SPREAD_RATIO", 0.75, 0.3, 1.0
+)
+
+# 【全幅平铺：最少区域数】低于该数不判「平铺」（防 2~3 个大误报凑成整幅）。2~200。
+DETECT_FULLFRAME_MIN_REGIONS: Final[int] = _env_int(
+    "DETECT_FULLFRAME_MIN_REGIONS", 6, 2, 200
+)
+
+# 【全幅平铺：掩码是否也铺满】布尔（默认 False）。True 时全幅区域写入整幅掩码
+#   （供 mask_recall 实验；代价是整图重绘，产品上慎用）。
+DETECT_FULLFRAME_FILL_MASK: Final[bool] = _env_bool(
+    "DETECT_FULLFRAME_FILL_MASK", False
+)
+
+# 【全幅平铺：可参与合并的区域类别】元组。取值与 core.detector.KIND_* 一致。
+#   grid = 网格点阵；translucent = 平铺半透明文字（含 overlay 整图平铺）。
+DETECT_FULLFRAME_KINDS: Final[tuple[str, ...]] = (
+    "grid_watermark",
+    "translucent",
+)
+
 # 【是否启用 EasyOCR 增强检测】
 #   EasyOCR 是可选依赖。装了它，文字类水印的定位精度会明显提升。
 #   若未安装，程序自动降级为纯 OpenCV 的 MSER 文字区域检测，不会报错。

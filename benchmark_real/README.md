@@ -121,4 +121,25 @@ ai_source 枚举
 - 因此这批数据当前是**独立诊断集**，用于回答「检测器对各类是否开火 / 火在哪」；
   不作为承诺面红线基线。要让全图类可量化，需换口径（掩码级 / 覆盖率 / 全图召回）或
   修检测器使全图平铺水印输出覆盖整幅的掩码——属下一阶段的显式决策。
-- 复现：`ground_truth_p1.json` + `manifest.json`（`images/` 不入库，需自备图）。
+- 复现：`ground_truth_p1.json` + `manifest.json`（21 张 P1 图已入库 `images/`，与既有 88 张 tracked 惯例一致）。
+
+### 6. 检测器修复：全幅平铺 → 全帧区域（2026-10-18，用户选「改检测器」）
+- **实现**（`core/detector.py::_consolidate_fullframe` + config 四个杠杆）：
+  同类区域（`grid_watermark` / `translucent`）已铺满全幅时（联合包围盒宽高**均** ≥
+  `DETECT_FULLFRAME_SPREAD_RATIO` 且数量 ≥ `MIN_REGIONS`），追加一个 bbox=(0,0,W,H)、
+  `full_frame=True` 的**全帧 region**。
+- **关键取舍**：**只扩 region、不填 mask** —— 门禁的区域级匹配因此能认作「铺满全幅」，
+  掩码仍只含真实水印像素，产品侧不会整图重绘毁图。需要 mask 也铺满时置
+  `DETECT_FULLFRAME_FILL_MASK=True`（供 mask_recall 实验，代价是整图重绘）。
+- **按预设限定**：仅 `ai_grid` / `ai_tiled` / `ai_faint_tiled` 开启；`general` 恒关（防误伤普通照片）。
+- **A/B 实测**（21 张真值图，同一组检测参数，仅切 fullframe 开关）：
+  | 水印类 | OFF | ON |
+  |---|---|---|
+  | grid_watermark | 0/4 = 0.00 | **3/4 = 0.75** |
+  | translucent | 0/4 = 0.00 | **4/4 = 1.00** |
+  | overlay | 0/3 = 0.00 | 1/3 = 0.33 |
+  | gradient | 0/4 = 0.00 | 1/4 = 0.25 |
+  （overlay/gradient 的部分匹配是**跨类全幅几何匹配**：全帧区域与任何全图真值 IoU=1.0，
+  与 kind 无关——属已知口径 caveat，非本修复缺陷。）
+- **零回归**：`general` 在 53 张真值图上逐位不变
+  （0.5960 / 0.9057 / 0.3217 / 0.0129 / 0.6638 / 0.0801）；既有 90 例探测器/预设守卫全绿。
