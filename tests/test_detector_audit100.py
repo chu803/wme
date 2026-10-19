@@ -88,9 +88,14 @@ _REAL_BASELINE = os.path.join(_ROOT, "benchmark_real", "quality_baseline.json")
 #: ⚠ **阶段 S2（2026-10-17）再锚**：`DETECT_TRANSLUCENT_SENSITIVITY` 0.55→0.50 保守收紧过检，
 #:   重锚后 precision/mask_iou/mask_coverage/coverage_ratio 如上（与基线文件逐位一致）；
 #:   本表为「快照==当前默认配置实测」，随基线刷新同步（经验 81 合法连带损伤）。
+#: ⚠ **阶段 P0-3（2026-10-19）再锚**：`DETECT_PLATE_COMPLETE_FROM_SIGNAL` 默认 False→True
+#:   （豆包牌体补全先验；干净图 15 张实测 0 误报，见 scripts/clean_bench_probe.py）。
+#:   重锚后：precision **0.093** / mask_iou **0.3325** / mask_coverage **0.0162** /
+#:   coverage_ratio **2.83**；mask_recall 同步 0.5960→**0.7700**（红线 0.45 不动）。
+#:   红线夹逼不变式仍满足：0.0162<0.020≤0.0324、2.83<3.50≤5.66、0.20≤0.3325<0.6650。
 #: 本表语义是「快照 == 当前默认配置的实测」，故每次刷新基线都要同步（经验 81 的合法连带损伤）。
-MSER_OFF = {"precision": 0.0801, "mask_iou": 0.3217,
-            "mask_coverage": 0.0129, "coverage_ratio": 2.30}
+MSER_OFF = {"precision": 0.093, "mask_iou": 0.3325,
+            "mask_coverage": 0.0162, "coverage_ratio": 2.83}
 #: 把开关开回去后的实测（真实图跑 `WME_DETECT_CORNER_MSER_ENABLED=1` 得到；阶段 100 口径）。
 MSER_ON = {"precision": 0.0392, "mask_iou": 0.0699,
            "mask_coverage": 0.1266, "coverage_ratio": 13.00}

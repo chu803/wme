@@ -1291,6 +1291,28 @@ def _corner_patches(
     return patches
 
 
+def _region_overlap(a: DetectionRegion, b: DetectionRegion) -> bool:
+    """两个区域的「宽松重叠」判据：任一方中心点落在另一方 bbox 内，或 IoU > 0.05。
+
+    用于 `DETECT_TRANSLUCENT_REQUIRE_OCR` 的 OCR 同意规则（translucent 区域须与
+    OCR 文字框重叠）。比纯 IoU 宽松：OCR 框通常只覆盖文字行，而 translucent 区域
+    可能略大或略偏，纯 IoU 会把本该保留的真实水印区域误杀。
+    """
+    ax, ay, aw, ah = a.x, a.y, a.w, a.h
+    bx, by, bw, bh = b.x, b.y, b.w, b.h
+    acx, acy = ax + aw / 2.0, ay + ah / 2.0
+    bcx, bcy = bx + bw / 2.0, by + bh / 2.0
+    if bx <= acx <= bx + bw and by <= acy <= by + bh:
+        return True
+    if ax <= bcx <= ax + aw and ay <= bcy <= ay + ah:
+        return True
+    ix = max(0.0, min(ax + aw, bx + bw) - max(ax, bx))
+    iy = max(0.0, min(ay + ah, by + bh) - max(ay, by))
+    inter = ix * iy
+    union = float(aw * ah) + float(bw * bh) - inter
+    return union > 0 and (inter / union) > 0.05
+
+
 def _apply_plate_completion_prior(
     all_regions: "List[DetectionRegion]",
     mask_parts: "List[np.ndarray]",
@@ -3088,8 +3110,23 @@ def detect_watermark_mask(
         # 的连通域面积——否则小区域（如网格单元）会被其他策略产生的大连通域
         # 「吞并」，再因超过 max_area 被整体丢弃（阶段 22 修复）。
         # 特例：全局渐变水印（KIND_GRADIENT）整图标记，不受 max_area 约束。
+        # 阶段 P0-2：OCR 同意规则的门控与 OCR 文字框集合。
+        # 门控 = 杠杆开启 + 预设启用 OCR + 非平铺预设；**与「图上有无 OCR 框」无关**
+        # ——无 OCR 框时 any(...) 为 False，translucent 全数剔除，这正是纯图清误报的来源。
+        _ocr_agree = bool(
+            config.DETECT_TRANSLUCENT_REQUIRE_OCR and use_ocr and not enhance_tiled
+        )
+        _ocr_boxes = (
+            [q for q in all_regions if q.kind == KIND_OCR_TEXT] if _ocr_agree else []
+        )
         kept_regions: List[DetectionRegion] = []
         for r in all_regions:
+            # 阶段 P0-2：translucent 区域须与 OCR 文字框重叠，否则视为误报剔除。
+            # 依据 37 张豆包金标准：纯图误报 67/77 是 translucent 且置信度为常量
+            # （无法分离），而真实水印都有 OCR 命中、纯图 OCR 命中 0 个。
+            if _ocr_agree and r.kind == KIND_TRANSLUCENT:
+                if not any(_region_overlap(r, o) for o in _ocr_boxes):
+                    continue
             # 阶段 P1：全帧区域（全幅平铺）豁免「中心点须在掩码内」与面积上下限——
             # 它的 bbox 覆盖整幅、中心点可能落在无水印像素上；其语义是「空间范围」，
             # 面积判据对它无意义。

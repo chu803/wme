@@ -70,9 +70,16 @@ _REAL_BASELINE = os.path.join(_ROOT, "benchmark_real", "quality_baseline.json")
 #:   红线（0.020 / 3.50× / 0.20）**未动**，夹逼不变式仍满足：
 #:   max 型 0.0137<0.020≤0.0274、2.47<3.50≤4.94；min 型 0.1562≤0.20<0.3124。
 #:   注：过检绝对值上升同属「新图内容更易触发通路」的**构成效应**，非检测器回退。
-CONVERGED = {"mask_coverage": 0.0129, "coverage_ratio": 2.30, "mask_iou": 0.3217}
+CONVERGED = {"mask_coverage": 0.0162, "coverage_ratio": 2.83, "mask_iou": 0.3325}
 #: ⚠ 阶段 S2（2026-10-17）随 `DETECT_TRANSLUCENT_SENSITIVITY` 0.55→0.50 重锚同步
 #: （与 benchmark_real/quality_baseline.json 逐位一致；经验 81 合法连带损伤）。
+#: ⚠ **阶段 P0-3（2026-10-19）再锚**：`DETECT_PLATE_COMPLETE_FROM_SIGNAL` 默认 False→True
+#:   （豆包牌体补全先验）。依据：15 张豆包真实无水印图 `clean_bench_probe` 实测
+#:   **0/15 误发整牌**（基线/归因/总误报率全 0），12 张真实角标图右下区面积 +62%。
+#:   重锚后 mask_coverage/coverage_ratio/mask_iou = **0.0162 / 2.83 / 0.3325**，
+#:   mask_recall 0.5960→**0.7700**（+30%）；红线（0.020 / 3.50× / 0.20）**未动**，
+#:   夹逼不变式仍满足：0.0162<0.020≤0.0324、2.83<3.50≤5.66、0.20≤0.3325<0.6650。
+#:   代价：覆盖余量由 35%→19%、倍率余量 34%→19%（mask_recall 头条 +30% 换来的）。
 #: 逐级回退锚点：99 级（只做了覆盖率闸）与 86 级（两个都没做）。
 #: 全部落在新红线（0.045 / 4.35× / 0.10）外侧：mask_coverage 与 ratio 越高越坏
 #: （0.1266/0.1618 > 0.045、13.00/16.62 > 4.35），mask_iou 越低越坏

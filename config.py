@@ -895,6 +895,34 @@ DETECT_TRANSLUCENT_SENSITIVITY: Final[float] = _env_float(
     "DETECT_TRANSLUCENT_SENSITIVITY", 0.475, 0.0, 1.0
 )
 
+# 【半透明区域是否须与 OCR 文字框重叠】（阶段 P0-2，2026-10-18）
+#   规则：`translucent` 区域若与任何 `ocr_text` 区域不重叠，则从 kept_regions 中剔除。
+#
+#   依据（豆包真实水印 37 张金标准，2048²）：
+#     · 纯图误报 67/77 是 translucent，其置信度是常量 ~0.401、**无法与真实水印区域分离**；
+#     · 真实水印（角标/平铺）都能被 OCR 命中，而**纯图 OCR 命中 0 个** ⇒ OCR 是干净判据。
+#   模拟 A/B（不改代码，37 张）：
+#       纯图误报区域 73 → 9（**−88%**）；右下区误报 8 → 1（−88%）；
+#       纯图区域面积 2.43% → 0.46%（−81%）
+#       角标：OCR 命中 10/12 不变、覆盖 1.27% → 1.08%（−15%）
+#       平铺：big 11/10 与覆盖 114% **均不变**（平铺文字 OCR 能点火）
+#
+#   作用域（重要）：仅当**预设启用 OCR** 且 **enhance_tiled=False** 时生效。
+#   ai_tiled / ai_faint_tiled / ai_grid / ai_multi 四个平铺/网格预设**不适用**
+#   ——其水印 OCR 可能不点火，误杀会直接清空那些预设的能力面。
+#   `general` 的 enhance_tiled 取 config 默认（False），故通用预设适用。
+#
+#   代价（诚实声明）：**无文字的纯半透明叠加水印**将不再被 general/ai_logo 等预设检出
+#   （规则会因无 OCR 框而剔除全部 translucent）。按项目铁律「宁可漏检，不可滥杀」
+#   （阶段 49）该取舍对「文字类水印」成立，但会牺牲「无文字叠加」这一类能力面。
+#
+#   **默认 OFF（opt-in）**：阶段 P0-3 已先用「豆包牌体补全先验」闭环主要真实场景
+#   （干净图 0/15 误报 + 角标右下区面积 +62%），本条作为**进一步压误报的可选杠杆**保留：
+#   需要「最大化干净图精度」的场景（如批量处理）可显式开启；需要检出无文字半透明叠加时保持关闭。
+DETECT_TRANSLUCENT_REQUIRE_OCR: Final[bool] = _env_bool(
+    "DETECT_TRANSLUCENT_REQUIRE_OCR", False
+)
+
 # 【是否启用角落 LOGO 检测】
 #   原理：绝大多数水印位于图片四角或正中，先按位置划定重点搜索区，
 #         再在区内做文字/图形检测，可大幅降低误判。
@@ -1082,8 +1110,16 @@ DETECT_PLATE_LIFT_DELTA: Final[int] = _env_int("DETECT_PLATE_LIFT_DELTA", 10, 1,
 #   ⚠ **已知精度留白**：当前基准 10 张全为带水印豆包图、**无干净图**，故「干净图上误发整牌」
 #     的误报率**不可测量**。默认关闭，启用即承担该留白；待补齐干净图基准再标定红线。
 #   ⚠ 该先验是**生成器感知（豆包特异性）**的，非通用水印判据；落点为独立可逆杠杆。
+#
+#   **阶段 P0-3（2026-10-19）留白已闭环**：用户提供 15 张豆包真实无水印底图
+#   （`benchmark_real/clean/`，金标准负样本），`clean_bench_probe` 实测（preset=general，
+#   use_ocr=False，含锚定守卫 0.50）：
+#       基线误报率（OFF）= 0/15；179 归因误报率（ON−OFF）= 0/15；总误报率（ON）= 0/15
+#   ⇒ 干净图上**零误发整牌**，与阶段 182 的分离面（真实 ≥0.54 vs 干净 ≤0.46）一致。
+#   故默认值由 False 翻为 **True**；`clean_bench_probe`（--gate-on prior，阈值 0）已可作为
+#   常驻门禁守护该杠杆。若日后换用其他生成器的图，须重跑该探针再决定是否保持开启。
 DETECT_PLATE_COMPLETE_FROM_SIGNAL: Final[bool] = _env_bool(
-    "DETECT_PLATE_COMPLETE_FROM_SIGNAL", False
+    "DETECT_PLATE_COMPLETE_FROM_SIGNAL", True
 )
 
 # 【牌体补全先验：牌内证据锚定阈值】浮点 0.0~1.0，默认 0.50（阶段 182 新增）。

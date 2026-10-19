@@ -1,141 +1,81 @@
 {
   "version": 1,
-  "_note": "阶段 180 干净图集（与 benchmark_real/manifest.json 同构）。所有条目 clean:true 且真值 watermarks:[]，用于测量「补全先验在干净图上误发整牌」的误报率。当前为合成压力样本（syn_*），待替换为真实照片（用户在豆包/图库生成无 AI 水印的写实图，右下角可含招牌/文字/Logo 以压力测试）。",
+  "note": "豆包真实无水印底图（金标准负样本），来源 豆包生成_37张.zip",
   "images": [
     {
-      "id": "syn_01_plain",
-      "filename": "syn_01_plain.png",
-      "path": "images/syn_01_plain.png",
-      "ai_source": "synthetic",
-      "watermark_style_hint": "none",
-      "clean": true,
-      "original_size": [
-        1024,
-        1024
-      ],
-      "sha256": "",
-      "added_at": "2026-10-01T00:00:00Z",
-      "source": "synthetic"
+      "id": "clean_01",
+      "path": "clean_01.jpg",
+      "clean": true
     },
     {
-      "id": "syn_02_corner_text",
-      "filename": "syn_02_corner_text.png",
-      "path": "images/syn_02_corner_text.png",
-      "ai_source": "synthetic",
-      "watermark_style_hint": "none",
-      "clean": true,
-      "original_size": [
-        1024,
-        1024
-      ],
-      "sha256": "",
-      "added_at": "2026-10-01T00:00:00Z",
-      "source": "synthetic"
+      "id": "clean_02",
+      "path": "clean_02.jpg",
+      "clean": true
     },
     {
-      "id": "syn_03_corner_logo",
-      "filename": "syn_03_corner_logo.png",
-      "path": "images/syn_03_corner_logo.png",
-      "ai_source": "synthetic",
-      "watermark_style_hint": "none",
-      "clean": true,
-      "original_size": [
-        1024,
-        1024
-      ],
-      "sha256": "",
-      "added_at": "2026-10-01T00:00:00Z",
-      "source": "synthetic"
+      "id": "clean_03",
+      "path": "clean_03.jpg",
+      "clean": true
     },
     {
-      "id": "syn_04_corner_translucent",
-      "filename": "syn_04_corner_translucent.png",
-      "path": "images/syn_04_corner_translucent.png",
-      "ai_source": "synthetic",
-      "watermark_style_hint": "none",
-      "clean": true,
-      "original_size": [
-        1024,
-        1024
-      ],
-      "sha256": "",
-      "added_at": "2026-10-01T00:00:00Z",
-      "source": "synthetic"
+      "id": "clean_04",
+      "path": "clean_04.jpg",
+      "clean": true
     },
     {
-      "id": "syn_05_natural",
-      "filename": "syn_05_natural.png",
-      "path": "images/syn_05_natural.png",
-      "ai_source": "synthetic",
-      "watermark_style_hint": "none",
-      "clean": true,
-      "original_size": [
-        1024,
-        1024
-      ],
-      "sha256": "",
-      "added_at": "2026-10-01T00:00:00Z",
-      "source": "synthetic"
+      "id": "clean_05",
+      "path": "clean_05.jpg",
+      "clean": true
     },
     {
-      "id": "real_a1",
-      "filename": "a1;.png",
-      "path": "images/a1;.png",
-      "ai_source": "other",
-      "watermark_style_hint": "none",
-      "clean": true,
-      "original_size": [
-        2720,
-        1520
-      ],
-      "sha256": "157270e0e42078e099792cf25a767e1e649d77454de01f462775afca7659b0e9",
-      "added_at": "2026-10-04T15:05:00Z",
-      "source": "local"
+      "id": "clean_06",
+      "path": "clean_06.jpg",
+      "clean": true
     },
     {
-      "id": "real_a2",
-      "filename": "a2;.png",
-      "path": "images/a2;.png",
-      "ai_source": "other",
-      "watermark_style_hint": "none",
-      "clean": true,
-      "original_size": [
-        2720,
-        1520
-      ],
-      "sha256": "919d1b38d70f59b61217569edfed753449c44aa772139631e8641f655a39513d",
-      "added_at": "2026-10-04T15:05:00Z",
-      "source": "local"
+      "id": "clean_07",
+      "path": "clean_07.jpg",
+      "clean": true
     },
     {
-      "id": "real_a3",
-      "filename": "a3;.png",
-      "path": "images/a3;.png",
-      "ai_source": "other",
-      "watermark_style_hint": "none",
-      "clean": true,
-      "original_size": [
-        2720,
-        1520
-      ],
-      "sha256": "daf9d6256916b609ad565c0770f8bdd608654ecf357e6701a1d528fd59361dd2",
-      "added_at": "2026-10-04T15:05:00Z",
-      "source": "local"
+      "id": "clean_08",
+      "path": "clean_08.jpg",
+      "clean": true
     },
     {
-      "id": "real_a4",
-      "filename": "a4;.png",
-      "path": "images/a4;.png",
-      "ai_source": "other",
-      "watermark_style_hint": "none",
-      "clean": true,
-      "original_size": [
-        2720,
-        1520
-      ],
-      "sha256": "a6aef47b07c6e790e94eb3584904b375bb1ea5a971fcc71e2709d5a30ed204cc",
-      "added_at": "2026-10-04T15:05:00Z",
-      "source": "local"
+      "id": "clean_09",
+      "path": "clean_09.jpg",
+      "clean": true
+    },
+    {
+      "id": "clean_10",
+      "path": "clean_10.jpg",
+      "clean": true
+    },
+    {
+      "id": "clean_11",
+      "path": "clean_11.jpg",
+      "clean": true
+    },
+    {
+      "id": "clean_12",
+      "path": "clean_12.jpg",
+      "clean": true
+    },
+    {
+      "id": "clean_13",
+      "path": "clean_13.jpg",
+      "clean": true
+    },
+    {
+      "id": "clean_14",
+      "path": "clean_14.jpg",
+      "clean": true
+    },
+    {
+      "id": "clean_15",
+      "path": "clean_15.jpg",
+      "clean": true
     }
   ]
 }

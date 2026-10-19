@@ -1,60 +1,66 @@
 {
   "version": 1,
-  "_note": "干净图真值：全部 watermarks:[]（无 AI 水印）。与 manifest 的 clean:true 配对，供 clean_bench_probe.py 测量补全先验误报率。合成样本仅作管线验证。",
+  "note": "干净图：无水印真值",
   "entries": [
     {
-      "image_id": "syn_01_plain",
-      "watermarks": [],
-      "labeled_at": "2026-10-01T00:00:00Z",
-      "labeled_by": "synthetic:clean"
+      "image_id": "clean_01",
+      "watermarks": []
     },
     {
-      "image_id": "syn_02_corner_text",
-      "watermarks": [],
-      "labeled_at": "2026-10-01T00:00:00Z",
-      "labeled_by": "synthetic:clean"
+      "image_id": "clean_02",
+      "watermarks": []
     },
     {
-      "image_id": "syn_03_corner_logo",
-      "watermarks": [],
-      "labeled_at": "2026-10-01T00:00:00Z",
-      "labeled_by": "synthetic:clean"
+      "image_id": "clean_03",
+      "watermarks": []
     },
     {
-      "image_id": "syn_04_corner_translucent",
-      "watermarks": [],
-      "labeled_at": "2026-10-01T00:00:00Z",
-      "labeled_by": "synthetic:clean"
+      "image_id": "clean_04",
+      "watermarks": []
     },
     {
-      "image_id": "syn_05_natural",
-      "watermarks": [],
-      "labeled_at": "2026-10-01T00:00:00Z",
-      "labeled_by": "synthetic:clean"
+      "image_id": "clean_05",
+      "watermarks": []
     },
     {
-      "image_id": "real_a1",
-      "watermarks": [],
-      "labeled_at": "2026-10-04T15:05:00Z",
-      "labeled_by": "manual:clean"
+      "image_id": "clean_06",
+      "watermarks": []
     },
     {
-      "image_id": "real_a2",
-      "watermarks": [],
-      "labeled_at": "2026-10-04T15:05:00Z",
-      "labeled_by": "manual:clean"
+      "image_id": "clean_07",
+      "watermarks": []
     },
     {
-      "image_id": "real_a3",
-      "watermarks": [],
-      "labeled_at": "2026-10-04T15:05:00Z",
-      "labeled_by": "manual:clean"
+      "image_id": "clean_08",
+      "watermarks": []
     },
     {
-      "image_id": "real_a4",
-      "watermarks": [],
-      "labeled_at": "2026-10-04T15:05:00Z",
-      "labeled_by": "manual:clean"
+      "image_id": "clean_09",
+      "watermarks": []
+    },
+    {
+      "image_id": "clean_10",
+      "watermarks": []
+    },
+    {
+      "image_id": "clean_11",
+      "watermarks": []
+    },
+    {
+      "image_id": "clean_12",
+      "watermarks": []
+    },
+    {
+      "image_id": "clean_13",
+      "watermarks": []
+    },
+    {
+      "image_id": "clean_14",
+      "watermarks": []
+    },
+    {
+      "image_id": "clean_15",
+      "watermarks": []
     }
   ]
 }
