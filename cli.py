@@ -58,6 +58,7 @@ if _ROOT not in _sys.path:
     _sys.path.insert(0, _ROOT)
 
 import config
+from utils.console_encoding import force_utf8_stdio
 from services.auto_pipeline import process_file
 from services.quality_service import evaluate_quality, QualityReport
 from server import start_server
@@ -482,6 +483,10 @@ def _print_result(rd: dict, args: argparse.Namespace,
 
 def main(argv: list[str] | None = None) -> int:
     """CLI 主入口，返回进程退出码（0=正常）。"""
+    # 阶段 314：先加固输出编码，再碰 argparse（-h 与报错也会走 stdout/stderr，
+    # 且结果汇总行带 ✅/❌——GBK 重定向下会「活干完了却被读成失败」）。
+    force_utf8_stdio()
+
     # argparse 对 -h 会自己退出，这里仅做解析。
     args = _build_arg_parser().parse_args(argv)
 

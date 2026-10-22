@@ -29,6 +29,8 @@ import sys
 import time
 
 import config
+from utils.console_encoding import force_utf8_stdio
+from utils.path_helper import non_ascii_path_warning
 from utils.logger import get_logger, print_banner
 
 log = get_logger("main")
@@ -81,6 +83,14 @@ def run_environment_check() -> bool:
             print(f"  [WARN] {p}")
     else:
         print("  [OK] 配置项校验通过")
+
+    # 2.2b 安装路径编码（阶段 314）：非 ASCII 路径会让 PyTorch 打不开模型权重，
+    #      报「文件不存在」但文件其实在——必须在启动时就说清楚，否则用户无从排查。
+    path_warn = non_ascii_path_warning(config.PROJECT_ROOT)
+    if path_warn:
+        print(f"  [WARN] {path_warn}")
+    else:
+        print("  [OK] 安装路径为纯 ASCII")
 
     # 2.3 关键依赖探测（cv2 必需；torch 用于 LaMa）。
     deps_ok = True
@@ -400,6 +410,10 @@ def main() -> int:
     返回值：
         进程退出码（0 正常）。
     """
+    # 阶段 314：编码加固必须是 main() 的第一条语句——本文件会 print ✅/⚠️，
+    # GBK 控制台 + 重定向时会在启动横幅处就崩（见 utils/console_encoding.py）。
+    force_utf8_stdio()
+
     # 横幅与合规声明永远最先输出。
     print_startup_banner()
 

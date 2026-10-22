@@ -402,6 +402,18 @@ coverage_ratio 余量 13%→**24%**（与 MEMORY「薄项在 over-detection 侧�
 
 - `313-OCR救援窄口径化-面积门禁回归与真实图重锚.md`
 
+### 314 · 产品入口输出编码加固 + 非 ASCII 路径告警（2026-10-22）
+
+功能实测审计（13 项逐条真跑）暴露两处**产品自身**缺陷：
+① `main/cli/server` 会 print `✅/❌/⚠️`，GBK 重定向下在**任务完成后**崩溃、退出码 1
+（阶段 170 的元守卫只扫 `scripts/`，产品入口在射程外）；修复 = 实现迁至
+`utils/console_encoding.py`（分发包不含 scripts/）+ 三个入口首语句加固。
+② 安装路径含中文时 libtorch 用 ANSI 打开文件失败（WinError 127，报「文件不存在」但文件在），
+一次拖垮 46 个用例；修复 = `non_ascii_path_warning()` + 启动自检 2.2b + ModelLoadError 附带提示。
+新增 13 例守卫（含 GBK 管道行为级反例）；`test_real_gate` 的守卫改为按函数对象断言（防实现搬家误红）。
+
+- `314-入口编码加固与非ASCII路径告警.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`

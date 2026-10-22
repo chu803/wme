@@ -67,6 +67,7 @@ if _ROOT not in _sys.path:
 
 import config
 import api
+from utils.console_encoding import force_utf8_stdio
 import job_manager as JM  # 阶段 255：异步作业模型（PDF/视频/模型下载）
 from services import api_security as SEC  # 阶段 299：token 鉴权 + 限流（安全模式）
 from utils.logger import get_logger
@@ -704,6 +705,9 @@ GET  /api/jobs/xxxx/file   -> 下载生成后的 PDF/视频</pre>
 # 模块自检：启动到随机端口，探活 + 单图处理后关闭
 # ==============================================================================
 if __name__ == "__main__":
+    # 阶段 314：自检输出含「用例N通过」，重定向到 GBK 文件时不得因编码中断。
+    force_utf8_stdio()
+
     import numpy as np
     import cv2
     import urllib.request

@@ -71,6 +71,38 @@ def get_model_path() -> Path:
     return config.MODEL_PATH
 
 
+def non_ascii_path_warning(path: str | Path) -> str | None:
+    """检查路径是否含非 ASCII 字符；含则返回给用户看的告警文本，否则 None。
+
+    为什么需要（阶段 314 实测踩坑）
+    ----------------------------
+    Windows 上 libtorch 用 **ANSI 代码页** 打开文件：安装路径含中文时，
+    `torch.jit.load(models/big-lama.pt)` 报
+    `OSError: [WinError 127] ... fopen: No such file or directory` —— **文件明明存在**。
+    该异常发生在模型加载深处，症状与「权重缺失/损坏」无法区分：一次实测拖垮 46 个用例，
+    排查成本极高。故在入口自检与模型加载失败处**显式**提示路径编码。
+
+    参数说明：
+        path : 待检查的路径（字符串或 Path）。
+
+    返回值：
+        含非 ASCII 字符 ⇒ 面向用户的告警文本；纯 ASCII ⇒ None。
+    """
+    text = str(path)
+    if not any(ord(ch) > 127 for ch in text):
+        return None
+    # 取**第一段连续非 ASCII**（保持原顺序），比「去重排序」更易读：
+    # D:\工具\水印 而不是「具工印水」。
+    runs = re.findall(r"[^\x00-\x7f]+", text)
+    sample = (runs[0][:8] if runs else "")
+    return (
+        f"安装路径包含非 ASCII 字符「{sample}」：{text}\n"
+        f"  Windows 上 PyTorch 用 ANSI 编码打开文件，含中文/日文等字符的路径会让模型加载"
+        f"失败（WinError 127，报「文件不存在」，但文件其实在）。\n"
+        f"  建议把项目移到纯英文路径（例如 D:\\watermark-workbench）后重试。"
+    )
+
+
 def get_output_dir(sub_folder: str | None = None) -> Path:
     """
     获取输出目录，可选地在输出目录下再建一层子目录。

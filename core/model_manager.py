@@ -64,6 +64,7 @@ from utils.exceptions import (
     ModelNotFoundError,
 )
 from utils.logger import get_logger
+from utils.path_helper import non_ascii_path_warning
 
 log = get_logger("core.model_manager")
 
@@ -573,9 +574,13 @@ def load_model(
     except ModelCorruptedError:
         raise
     except Exception as exc:
+        # 阶段 314：非 ASCII 路径的失败长得像「文件缺失」（WinError 127），
+        # 若不点明，用户会去重下权重而不是改路径。
+        _path_hint = non_ascii_path_warning(model_path)
         raise ModelLoadError(
             f"模型 {slot.name} 加载失败：{exc}\n"
             f"可能原因：PyTorch 版本过低、模型文件损坏、或设备不可用。"
+            + (f"\n{_path_hint}" if _path_hint else "")
         ) from exc
 
 

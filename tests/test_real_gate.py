@@ -410,9 +410,13 @@ def test_main_reconfigures_streams_to_utf8():
     assert "force_utf8_stdio" in src, (
         "real_gate.main 未做输出编码加固 —— 管道输出含 ⚠ 时会抛 UnicodeEncodeError，"
         "退出码 1 会被误读成「门禁未通过」")
-    _ce = os.path.join(os.path.dirname(rg.__file__), "console_encoding.py")
-    with open(_ce, encoding="utf-8") as f:
-        ce = f.read()
+    # 阶段 314：实现由 scripts/console_encoding.py 迁到 utils/console_encoding.py
+    #   （分发包的 packages.find 刻意不含 scripts/，产品入口必须从 utils 导入）。
+    #   故按**函数对象**取源码，不再钉文件路径——实现搬家不应让守卫误红。
+    import inspect
+
+    from utils.console_encoding import force_utf8_stdio as _shared
+    ce = inspect.getsource(_shared)
     assert 'reconfigure(encoding="utf-8"' in ce, "共用件未把流切到 UTF-8"
     assert 'errors="replace"' in ce, "共用件应带 errors='replace' 兜底，绝不因编码中断判定"
 
