@@ -80,6 +80,13 @@ mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 
   E 输出命名不一致（图 `X_cleaned_HHMMSS.png` vs 媒体 `X_已去水印.pdf`）；
   F JPEG 输入默认输出 PNG，单图体积 ×4.65、整批 ×1.35。
   ✅ 同期缺陷「批量有失败仍退 0」已在 316 修复（`cli._batch_exit_code` 0/1/2 + 4 例守卫）。
+- **317 修复侧真值基线**（`scripts/removal_truth_probe.py`，15 张真实无水印照片 × 4 种水印，像素级真值）：
+  gain 中位 edge_text **0.939** / corner_logo 0.532 / faint_tiled **−0.117** / grid **−0.172**；
+  误伤 33.8%–72.7% **与预设无关**；仅 16/60 gain>0.7。**第一版无红线，此数字即历史基线。**
+  新开放项（比 A–F 更靠产品命门）：G `ai_grid` 通路在真实纹理上检回 0.001~0.204（11 例正确推荐仍全负）；
+  H `ai_faint_tiled` 在真实照片上 **0/15 可达**；I 真值集 57 标注 style **100% corner_logo**，
+  角标仅 5/15 被推成 `ai_logo`（主打场景推荐器未学会，现靠 text_heavy 误打误着）。
+  G/H/I 均牵检测与红线，属"先出判决再定重锚"流程。
 
 ## 复盘教训（非显然项）
 - **语言是跨进程持久全局状态**（290 治本 / 304 投毒态实证收口）：i18n 落盘 `cache/i18n_state.json` 污染后续 pytest；`conftest.pytest_configure` 指向会话临时目录治本；304 用「投毒真实文件 en-US → 拉起全新 pytest 子进程 → 断言 `get_language()==zh-CN`」做投毒态重跑证伪，反例闭合确认毒确实写入；并加守卫 `tests/test_i18n_state_leak_guard.py` + 注入式反证 `scripts/_i18n_leak_inject_proof.py`（`WME_I18N_NO_REDIRECT=1` 复现修复前，守卫必 FAIL）。**已收口**，正常跑零副作用。

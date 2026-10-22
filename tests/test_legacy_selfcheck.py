@@ -143,6 +143,9 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/real_asset_preflight.py": "S 真实资产入库预检",
     "scripts/real_benchmark_decision.py": "S 真实基准决策",
     "scripts/real_gate.py": "S 真实图质量门禁",
+    # 阶段 317：真照片 × 自带合成水印跑**检测+修复全链**（15 图×4 类 ≈10 分钟），
+    # 且第一版是纯诊断（无基线不画红线，同 media_gate 的理由）⇒ 归 S 类豁免。
+    "scripts/removal_truth_probe.py": "S 修复侧真值探针（真跑全链，慢，纯诊断）",
     "scripts/run_benchmark.py": "S 合成基准跑分",
     "scripts/run_real_benchmark.py": "S 真实基准跑分",
     "scripts/scale_robustness.py": "S 尺度鲁棒性诊断",
