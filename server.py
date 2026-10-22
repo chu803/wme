@@ -48,7 +48,12 @@
 
 from __future__ import annotations
 
-import os as _os
+# 阶段 314：必须在其它业务模块导入之前加固（导入期日志也要走 UTF-8）。
+from utils.console_encoding import force_utf8_stdio  # noqa: E402
+
+force_utf8_stdio()
+
+import os as _os  # noqa: E402
 import sys as _sys
 import json
 import base64
@@ -67,7 +72,6 @@ if _ROOT not in _sys.path:
 
 import config
 import api
-from utils.console_encoding import force_utf8_stdio
 import job_manager as JM  # 阶段 255：异步作业模型（PDF/视频/模型下载）
 from services import api_security as SEC  # 阶段 299：token 鉴权 + 限流（安全模式）
 from utils.logger import get_logger
@@ -705,9 +709,6 @@ GET  /api/jobs/xxxx/file   -> 下载生成后的 PDF/视频</pre>
 # 模块自检：启动到随机端口，探活 + 单图处理后关闭
 # ==============================================================================
 if __name__ == "__main__":
-    # 阶段 314：自检输出含「用例N通过」，重定向到 GBK 文件时不得因编码中断。
-    force_utf8_stdio()
-
     import numpy as np
     import cv2
     import urllib.request

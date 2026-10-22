@@ -39,8 +39,10 @@ python -c "print('✅ 完成')" > out.txt 2>&1; echo $?   # EXIT=1
    理由：`pyproject.toml` 的 `packages.find` 刻意不含 `scripts/`（不随分发包发布），
    入口若从 scripts 导入，`pip install` 后必 `ImportError`。
    `scripts/console_encoding.py` 保留为一行转出，30 个门禁脚本的导入路径不变。
-2. `main.main()` / `cli.main()` / `server.py __main__` 的**第一条语句**调用
+2. 三个入口在 **`from __future__` 之后、其它业务模块导入之前**调用
    `force_utf8_stdio()`（`errors="replace"` 兜底，绝不因编码中断判定）。
+   ⚠ 实测教训：最初只放在 `main()` 里，重定向文件仍混着两种编码——插件注册日志发生在
+   **模块导入期**（早于 `main()`），那几行走的还是 GBK。加固必须早于业务模块导入。
 
 ## 三、缺陷二：非 ASCII 安装路径 ⇒ 模型加载报「文件不存在」
 

@@ -63,6 +63,25 @@ def test_entry_point_hardens_encoding(entry):
     assert "force_utf8_stdio()" in src, f"{entry} 导入了但没有调用"
 
 
+@pytest.mark.parametrize("entry", ["main.py", "cli.py", "server.py"])
+def test_entry_hardens_before_business_imports(entry):
+    """加固必须早于业务模块导入——导入期日志也要走 UTF-8。
+
+    实测教训：最初只把调用放在 `main()` 里，重定向文件仍混着两种编码——
+    插件注册日志发生在**模块导入期**，早于 `main()` ⇒ 那几行仍是 GBK。
+    """
+    src = open(os.path.join(_ROOT, entry), encoding="utf-8").read()
+    call = src.find("force_utf8_stdio()")
+    assert call != -1, f"{entry} 未调用加固"
+    for marker in ("import config", "from services", "from core", "import api"):
+        idx = src.find(marker)
+        if idx != -1:
+            assert call < idx, (
+                f"{entry} 的编码加固晚于 `{marker}`（第 {idx} 字符）——"
+                f"导入期日志会按 GBK 输出，重定向文件将混合两种编码"
+            )
+
+
 def test_cli_survives_gbk_redirect(tmp_path):
     """行为级反例：GBK 管道下 `cli.py --list-models` 必须 EXIT=0 且无 UnicodeEncodeError。
 

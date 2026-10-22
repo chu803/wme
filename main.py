@@ -23,13 +23,18 @@
 
 from __future__ import annotations
 
-import argparse
+# 阶段 314：必须在**其它业务模块导入之前**加固——插件注册等日志在导入期就会输出，
+# 只加固 main() 会让重定向文件里混着 GBK 与 UTF-8 两种编码（实测）。
+from utils.console_encoding import force_utf8_stdio  # noqa: E402
+
+force_utf8_stdio()
+
+import argparse  # noqa: E402
 import os
 import sys
 import time
 
 import config
-from utils.console_encoding import force_utf8_stdio
 from utils.path_helper import non_ascii_path_warning
 from utils.logger import get_logger, print_banner
 
@@ -410,10 +415,6 @@ def main() -> int:
     返回值：
         进程退出码（0 正常）。
     """
-    # 阶段 314：编码加固必须是 main() 的第一条语句——本文件会 print ✅/⚠️，
-    # GBK 控制台 + 重定向时会在启动横幅处就崩（见 utils/console_encoding.py）。
-    force_utf8_stdio()
-
     # 横幅与合规声明永远最先输出。
     print_startup_banner()
 
