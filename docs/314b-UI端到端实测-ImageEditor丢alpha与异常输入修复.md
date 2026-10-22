@@ -85,8 +85,14 @@ PDF 的 `fitz.open` 异常落在通用分支，直接 `f"{type}: {exc}"`。
   为 35.05% ⇒ 属既有设计（设置页有「降噪强度」「锐化强度」滑杆），**本阶段不改**。
   但它意味着「一键修复」默认会轻微改动全图——若产品后续要「只动水印区」，需要把后处理
   作用域收窄到掩码周边，属独立阶段。
-- UI 交互只覆盖了「智能自动检测」页的黄金路径；单图手涂、批量、文档/视频、历史、设置、
-  模型管理六个页签仍是**结构级**验证（渲染完整、控件在位），未做点击级回归。
+- UI 交互只在「智能自动检测」页走通了完整点击路径。**「单图处理（手动涂抹）」的画笔未能被自动化真实驱动**：
+  以合成 pointer/mouse 事件在画布上划线后，服务端回报「未检测到任何涂抹/框选区域」⇒ 笔迹根本没进编辑器，
+  所以**手涂路径没有做点击级 E2E**。改用**数据层等价验证**补位：新增
+  `test_user_brush_layer_survives_alpha_loss`（浏览器画出的图层是「透明底 + 不透明笔迹」，
+  丢 alpha 后底为黑 ⇒ 掩码恰等于笔迹面积），钉住「手涂天然安全、预填才踩坑」这一区别。
+- 批量处理队列 / 文档与视频 / 历史记录 / 设置与导出 / 模型管理 五个页签仍是**结构级**验证
+  （渲染完整、控件在位）；其背后的 `batch_remove` / `remove_watermark_pdf` / `remove_watermark_video`
+  已在 API 层实测通过，但**页签内的事件接线没有逐一点过**。
 - 浏览器自动化需把隐藏的 `input[type=file]` 临时可见后才能 `setInputFiles`；
   这是测试手段，不涉及产品改动。
 
@@ -95,6 +101,6 @@ PDF 的 `fitz.open` 异常落在通用分支，直接 `f"{type}: {exc}"`。
 - `ui/tab_auto.py`（`_mask_to_rgba_layer` 黑底 + 仅掩码上色）
 - `core/image_utils.py`（空文件 / 解码抛错 → `CorruptedImageError`）
 - `services/pdf_service.py`（`fitz.open` 失败 → 中文可读错误）
-- `tests/test_mask_editor_alpha_loss.py`（新，5 例：模拟丢 alpha 的往返形态）
+- `tests/test_mask_editor_alpha_loss.py`（新，6 例：模拟丢 alpha 的往返形态，含预填与手涂两类图层）
 - `tests/test_bad_input_readability.py`（新，4 例）
 - `tests/test_cpu_load_probe.py`（并发采样 + 低负载跳过）

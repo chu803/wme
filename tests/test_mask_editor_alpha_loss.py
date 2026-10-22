@@ -80,3 +80,25 @@ def test_no_full_canvas_fill_at_real_sizes(size):
         target_size=(h, w),
     )
     assert count_mask_pixels(built) == 100
+
+
+def test_user_brush_layer_survives_alpha_loss():
+    """**用户手涂路径**同等安全：浏览器画出来的图层是「透明底 + 不透明笔迹」，
+    丢 alpha 后底为黑、笔迹为画笔色 ⇒ 掩码只含笔迹。
+
+    与预填图层的区别正在这里：预填当年是「整层刷色 + 靠 alpha 区分」，丢 alpha 即全图误判；
+    用户笔迹由浏览器绘制，透明区本来就是 0 值，压成 RGB 后仍为黑 ⇒ 天然安全。
+    本用例把这条区别钉死，避免有人把预填「改回全刷色」时连带认为手涂也没问题。
+    """
+    h, w = 200, 300
+    layer = np.zeros((h, w, 4), np.uint8)                    # 透明底
+    layer[50:70, 100:160] = (255, 59, 48, 255)              # 一段笔迹（20×60）
+    rgb = layer[:, :, :3].copy()                             # 浏览器往返：丢 alpha
+    built = build_mask_from_editor(
+        {"background": None, "layers": [rgb], "composite": None},
+        brush_threshold=10,
+        target_size=(h, w),
+    )
+    assert count_mask_pixels(built) == 1200, (
+        f"手涂掩码应等于笔迹面积 1200px，实得 {count_mask_pixels(built)}"
+    )
