@@ -144,3 +144,79 @@ def test_lever_skipped_for_tiled_preset(translucent_only, monkeypatch):
     res = detect_watermark_mask(np.zeros((128, 128, 3), dtype=np.uint8),
                                 preset="ai_tiled", use_ocr=True)
     assert len(_translucent(res)) == 2
+
+
+# ---------------------------------------------------------------------------
+# ③ P0-4：OCR 文字框自播种掩码（DETECT_OCR_BOX_TRUST）
+# ---------------------------------------------------------------------------
+
+def test_ocr_box_trust_rescues_empty_refine(monkeypatch):
+    """P0-4 反例：证据 refine 把 OCR 框裁空时，杠杆 ON 必须仍保留该区域。
+
+    根因（真实豆包成对图 pair_04「海边礁石」）：OCR 已读到角标文字，但框内残差证据弱
+    ⇒ refine 裁空 ⇒ kept_regions 丢弃 ⇒ 整图返空掩码（静默漏检）。
+    本测试把 refine 打成"全空"以复现该条件。
+    """
+    import core.detector as det
+    img = np.full((128, 128, 3), 128, dtype=np.uint8)
+    monkeypatch.setattr(det, "_ocr_available", lambda: True)
+    monkeypatch.setattr(det, "_ocr_boxes_in_patch",
+                        lambda *a, **k: [(80, 80, 30, 16)])
+    monkeypatch.setattr(
+        det, "_refine_regions_to_mask",
+        lambda regions, ev, h, w, pad: (np.zeros((h, w), np.uint8), len(regions)),
+    )
+    # 强制走 refine 通路（均匀图的证据场会触发「退化 → 整框填充」回退，
+    # 那样即便杠杆 OFF 区域也能活，就复现不了 pair_04 的条件）。
+    monkeypatch.setattr(det, "_evidence_is_degenerate", lambda ev: False)
+
+    monkeypatch.setattr(config, "DETECT_OCR_BOX_TRUST", False)
+    res_off = detect_watermark_mask(img, use_ocr=True)
+    assert not [r for r in res_off.regions if r.kind == det.KIND_OCR_TEXT], (
+        "杠杆 OFF 时应复现 pair_04：OCR 框被 refine 裁空后丢弃"
+    )
+
+    monkeypatch.setattr(config, "DETECT_OCR_BOX_TRUST", True)
+    res_on = detect_watermark_mask(img, use_ocr=True)
+    kept = [r for r in res_on.regions if r.kind == det.KIND_OCR_TEXT]
+    assert kept and any((r.x, r.y) == (80, 80) for r in kept), (
+        f"杠杆 ON 时应自播种 OCR 文字框，实得 {[(r.kind, r.x, r.y) for r in res_on.regions]}"
+    )
+    assert int(np.asarray(res_on.mask).max()) > 0, "OCR 框应贡献非空掩码"
+
+
+def test_ocr_box_trust_narrow_scope_keeps_refined_shape(monkeypatch):
+    """窄口径守卫：refine **非空**时不得整框填充 OCR 框（只保留证据形状）。
+
+    反例来源（实测）：P0-4 初版按「单框中心无证据」逐框救援，在 benchmark_prompted
+    上一次填满 23 个文字框（占画面 9%）⇒ ai_text_heavy 覆盖率 +48%、p90 +51%，
+    触发面积漂移门禁。收窄为「整图返空才救援」后本用例锁死该语义：
+    refine 给出框内一小块证据 ⇒ 掩码面积必须 < 整框面积。
+    """
+    img = np.full((128, 128, 3), 128, dtype=np.uint8)
+    monkeypatch.setattr(det, "_ocr_available", lambda: True)
+    monkeypatch.setattr(det, "_ocr_boxes_in_patch", lambda *a, **k: [(80, 80, 30, 16)])
+    monkeypatch.setattr(
+        det, "_refine_regions_to_mask",
+        lambda regions, ev, h, w, pad: (
+            np.pad(np.full((4, 4), 255, np.uint8), ((82, h - 86), (82, w - 86))), 0,
+        ),
+    )
+    monkeypatch.setattr(det, "_evidence_is_degenerate", lambda ev: False)
+    monkeypatch.setattr(config, "DETECT_OCR_BOX_TRUST", True)
+
+    res = detect_watermark_mask(img, use_ocr=True)
+    mask = np.asarray(res.mask)
+    box = mask[80:96, 80:110]
+    filled = int((box > 0).sum())
+    # 证据块不含框中心 ⇒ 下游 kept_regions 会丢弃该区域（阶段 103 既有语义），
+    # 允许 0；关键是**不得整框填满**（宽口径会得到 30×16=480）。
+    assert filled < 30 * 16, (
+        f"窄口径下 OCR 框被整框填满（{filled}px / 480px）"
+        f"——疑似退回「逐框整填」宽口径"
+    )
+
+
+def test_ocr_box_trust_default_on():
+    """杠杆默认开启（P0-4 落地值）。"""
+    assert config.DETECT_OCR_BOX_TRUST is True

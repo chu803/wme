@@ -170,6 +170,10 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/overdetection_probe.py": "S 阶段450+ 检测过检收敛探针（S2 长期目标：按 kind 分解过检来源 + merge_dilate 扫描；读 benchmark_real 真值/图集，缺资产时 EXIT=2 跳过；诊断用，不参与子进程自检）",
     "scripts/a4_gradient_proof.py": "S ai_gradient 真渐变证伪实验脚本（诊断用；需真实图输入，默认无输入 rc=2，不登记为运行时自检）",
     "scripts/clean_artifacts.py": "S 仓库产物清理脚本（运维用；默认 dry-run 只读，非运行时模块自检）",
+    # --- 阶段 305/307 补登记：GPU 实测探针（新增时漏登记 ⇒ 本守卫常红）---
+    "scripts/_gpu_probe_1219.py": "S GPU 实测临时探针（一次性诊断，跑真实推理；不属于运行时自检）",
+    "scripts/_gpu_probe2_1219.py": "S GPU 实测临时探针（同上，一次性诊断）",
+    "scripts/gpu_perf_probe.py": "S GPU 性能探针（≥2048px 最重子集 + 冷启动，分钟级 + GPU；语义同 perf_probe）",
 }
 
 

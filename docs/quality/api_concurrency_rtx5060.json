@@ -1,0 +1,53 @@
+{
+  "tool": "d1_concurrency_probe",
+  "stage": "full",
+  "engine": "lama",
+  "source": "benchmark",
+  "n_images": 12,
+  "device": "cuda",
+  "gpu_name": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "gpu_peak_mem_mb": 6543.2,
+  "requests_per_sweep": 12,
+  "sweep": [
+    {
+      "workers": 1,
+      "requests": 12,
+      "wall_s": 90.9023,
+      "throughput_img_per_s": 0.132,
+      "latency_p50_s": 7.9891,
+      "latency_p95_s": 12.5944,
+      "latency_max_s": 14.752,
+      "latency_mean_s": 7.5748
+    },
+    {
+      "workers": 2,
+      "requests": 12,
+      "wall_s": 46.754,
+      "throughput_img_per_s": 0.2567,
+      "latency_p50_s": 7.444,
+      "latency_p95_s": 10.1634,
+      "latency_max_s": 18.9235,
+      "latency_mean_s": 7.7267
+    },
+    {
+      "workers": 4,
+      "requests": 12,
+      "wall_s": 36.2859,
+      "throughput_img_per_s": 0.3307,
+      "latency_p50_s": 11.085,
+      "latency_p95_s": 14.8709,
+      "latency_max_s": 21.4029,
+      "latency_mean_s": 10.7417
+    },
+    {
+      "workers": 8,
+      "requests": 12,
+      "wall_s": 41.7941,
+      "throughput_img_per_s": 0.2871,
+      "latency_p50_s": 22.2266,
+      "latency_p95_s": 40.1,
+      "latency_max_s": 41.7807,
+      "latency_mean_s": 22.7976
+    }
+  ]
+}

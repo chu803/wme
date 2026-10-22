@@ -70,6 +70,12 @@ def pytest_configure(config):
     except Exception:  # noqa: BLE001 —— 依赖缺失时不影响用例
         return
     try:
+        # 测试重现实开关（仅 inject-proof 用，正常跑恒为 unset，零行为变更）：
+        # 设 WME_I18N_NO_REDIRECT=1 即跳过重定向，复现「修复前跨进程泄漏」，
+        # 此时 test_i18n_state_leak_guard 必 FAIL —— 证守卫能捕获修复缺失。
+        if os.environ.get("WME_I18N_NO_REDIRECT"):
+            config._wme_i18n_state_patched = False
+            return
         d = tempfile.mkdtemp(prefix="wme_i18n_state_")
         i18n._STATE_FILE = os.path.join(d, "i18n_state.json")
         config._wme_i18n_state_patched = True

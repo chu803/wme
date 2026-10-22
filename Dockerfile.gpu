@@ -1,4 +1,8 @@
-# syntax=docker/dockerfile:1
+# 阶段 310：移除 `# syntax=docker/dockerfile:1`。
+#   原因：该指令会让 BuildKit 先从 Docker Hub 拉 `docker/dockerfile:1` 前端镜像；
+#   国内直连 registry-1.docker.io 超时，build 在解析阶段即失败。
+#   本项目 Dockerfile 只用标准指令（FROM/ARG/RUN/COPY --chown/--from/ENV/EXPOSE/
+#   HEALTHCHECK/USER/ENTRYPOINT），Docker 内置前端完全够用，无需外拉。
 # ==============================================================================
 #  AI 智能水印擦除工作台 —— GPU 版 Docker 构建文件（可选）
 #  阶段 198 · D1 产品化（GPU/API）· D1-Stage 3：把 Docker GPU 配方从注释落地为
@@ -6,10 +10,17 @@
 #  启用 CUDA 推理的镜像，配合 `python main.py --api` 或网页界面服务。
 #
 #  与默认 Dockerfile 的区别：
-#    1. 基础镜像换成 `nvidia/cuda:12.8.1-runtime-ubuntu22.04`（自带 CUDA 运行库，
+#    1. 基础镜像换成 `nvidia/cuda:12.8.1-runtime-ubuntu24.04`（自带 CUDA 运行库，
 #       推理只需运行时库，不需要 nvcc 等开发库）。**12.8 是 RTX 50 系（Blackwell /
 #       sm_120）的下限**——阶段 207 修正：原先的 12.1.1 + cu121 组合只覆盖到 sm_90，
 #       在 50 系卡上会因缺少对应 kernel 而不可用。
+#       ⚠ 阶段 312：**ubuntu22.04→ubuntu24.04、Python 3.11→3.12**。硬约束来自
+#       `requirements.txt` 钉的 `numpy==2.5.1`：numpy 2.5.x 只发布 **cp312+** wheel
+#       （`data-requires-python=">=3.12"`，清华源上 cp311 计数为 0）⇒ 3.11 镜像
+#       解析到 numpy 即 `No matching distribution found`（真 build 第 2 轮实证）。
+#       **依赖契约是真值源，让部署目标满足契约**，而不是反向降 numpy 钉子——
+#       否则开发机（Py 3.13 + numpy 2.5.1）与镜像会出现第三套依赖（184/187/250 教训）。
+#       CUDA 仍为 12.8 ⇒ `docker_consistency_check.py` 的 E2 判定不受影响。
 #    2. torch 从 `requirements-gpu.txt` 安装（CUDA 版）——这是启用显卡加速的关键；
 #       默认 Dockerfile 装的是 CPU 版 torch。
 #       ⚠ **单一真值来源**（阶段 207）：版本与 CUDA 源都由 `requirements-gpu.txt` 决定，
@@ -21,48 +32,80 @@
 #    运行（网页）：docker run --gpus all -p 7860:7860 -p 7861:7861 \
 #                   -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu
 #    运行（仅REST）：docker run --gpus all -p 7861:7861 \
-#                   -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu python main.py --api
+#                   -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu python3.12 main.py --api
 #
 #  前置：宿主机需装好 NVIDIA 驱动 + 安装 nvidia-container-toolkit，否则 --gpus 无效。
 #  说明：本文件只保证「镜像内 torch 为 CUDA 版 + 设备自动选择逻辑（config.DEVICE_MODE
 #        默认 auto）会在检测到 CUDA 时启用显卡」；具体加速倍数取决于机型与图尺寸。
 # ==============================================================================
 
-ARG PYTHON_VERSION=3.11
+# 阶段 312：3.11 → 3.12（requirements.txt 的 numpy==2.5.1 仅提供 cp312+ wheel）。
+ARG PYTHON_VERSION=3.12
 
 # ------------------------------ Stage 1 · builder -----------------------------
 # 用 nvidia/cuda runtime 基础镜像，既带 CUDA 运行库，又是 ubuntu，可装 python。
 # CUDA 12.8：RTX 50 系（Blackwell / sm_120）所需下限（阶段 207 修正，原为 12.1.1）。
-FROM nvidia/cuda:12.8.1-runtime-ubuntu22.04 AS builder
+# ubuntu24.04：阶段 312 由 ubuntu22.04 升级，取其 python3.12（见上方 numpy 说明）。
+FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04 AS builder
 
 # 构建期：装 python + 编译工具链（部分依赖可能需就地编译）。
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3.11 python3-pip python3.11-venv build-essential \
+# ⚠ 阶段 311·第 4 次修正（真 build 第 1 轮失败后）。此前两次误判的因果链：
+#   ①以为 `python3-pip` 会给 3.11 装 pip ⇒ 不会（那是 3.10 的 pip）；
+#   ②改用 `python3.11 -m ensurepip` ⇒ 也不行：Debian/Ubuntu 给**系统 python** 打了
+#     补丁，`ensurepip is disabled in Debian/Ubuntu for the system python`
+#     直接拒绝执行；而发行版**没有 python3.11-pip 包**。
+#   ⇒ 给 3.11 装 pip 的**唯一**发行版支持路径是 **venv**（`python3.11-venv` 包的
+#     存在意义正是这个：venv 内部允许 ensurepip，系统 python 不允许）。
+#   ⚠ 顺带切 apt 源到清华：实测 archive.ubuntu.com 仅 ~100KB/s，
+#     runtime 阶段 861 秒还没下完。
+#   ⚠ ubuntu 24.04 起 apt 源改用 **deb822** 格式（/etc/apt/sources.list.d/ubuntu.sources），
+#     22.04 的 /etc/apt/sources.list 已不存在 ⇒ 用 glob 同时覆盖两种布局；
+#     每项单独 `|| true`，改写失败就退回原源，绝不阻断构建。
+RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do \
+        [ -f "$f" ] && sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.tuna.tsinghua.edu.cn/ubuntu|g; s|http://security.ubuntu.com/ubuntu|http://mirrors.tuna.tsinghua.edu.cn/ubuntu|g' "$f" || true; \
+    done \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        python3.12 python3.12-venv build-essential \
     && rm -rf /var/lib/apt/lists/* \
-    && python3.11 -m pip install --no-cache-dir --upgrade pip setuptools wheel
+    && python3.12 -m venv /opt/venv \
+    && /opt/venv/bin/python -m pip install --no-cache-dir --upgrade pip setuptools wheel
 
 # 先复制依赖清单（两份：完整依赖 + GPU 补充清单）。
 COPY requirements.txt requirements-gpu.txt /tmp/
 
 # 安装全部依赖到独立前缀 /install（runtime 阶段整体拷贝）。
 # 第 1 步：按默认清单装（其中 torch 是 CPU 版，下一步会被 CUDA 版覆盖）。
-RUN python3.11 -m pip install --no-cache-dir --prefix=/install \
-         -r /tmp/requirements.txt
+#   ⚠ 国内加速：默认 PyPI 在部分网络下偏慢，显式走清华镜像（与 Dockerfile CPU 版一致）。
+#   torch 的 cu128 wheel 由第 2 步从官方 CDN 拉（清华未同步 2.9.1，见 requirements-gpu.txt）。
+#   用 builder 阶段建的 venv 的 pip（系统 python 的 ensurepip 被发行版禁用，见上方）。
+RUN /opt/venv/bin/python -m pip install --no-cache-dir --prefix=/install \
+         -r /tmp/requirements.txt -i https://pypi.tuna.tsinghua.edu.cn/simple
 
 # 第 2 步：用 CUDA 版 torch 覆盖。**版本与 CUDA 源均取自 requirements-gpu.txt**
 #   —— 本文件不硬编码，避免与清单漂移（单一真值来源）。
 #   ⚠️ 这步是 GPU 镜像的「灵魂」：torch 必须是 CUDA 版，否则 DEVICE_MODE=auto
 #      检测到 CUDA 也加载不了 GPU 权重（torch.cuda.is_available() 直接 False）。
-#   `--no-deps`：避免把 CPU 版 torch 的依赖再拉一遍。
-RUN python3.11 -m pip install --no-cache-dir --prefix=/install \
-        --no-deps -r /tmp/requirements-gpu.txt
+#   ⚠ 阶段 311：**不能**用 `--no-deps`。torch cu128 wheel 的依赖
+#      `nvidia-cudnn-cu12 / nvidia-cublas-cu12 / nvidia-cufft-cu12 / ...` 必须一起装——
+#      否则 `import torch` 会因找不到 libcudnn.so.9 等直接崩。而本基础镜像
+#      `nvidia/cuda:12.8.1-runtime` 只含 CUDA 运行时、**不含 cuDNN**（那是 cudnn-runtime
+#      变体的事），所以必须靠 pip 把 nvidia 依赖包装进 site-packages，torch 靠自身 RPATH 自取。
+#      `--extra-index-url` 走清华镜像拉 nvidia-* 包（快）；torch 本体仍走 pytorch CDN。
+RUN /opt/venv/bin/python -m pip install --no-cache-dir --prefix=/install \
+        -r /tmp/requirements-gpu.txt \
+        --extra-index-url https://pypi.tuna.tsinghua.edu.cn/simple
 
 # ------------------------------ Stage 2 · runtime -----------------------------
-FROM nvidia/cuda:12.8.1-runtime-ubuntu22.04 AS runtime
+FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04 AS runtime
 
-# 运行期系统库（OpenCV / Gradio 所需）+ python3.11 + ffmpeg（视频处理）。
-RUN apt-get update && apt-get install -y --no-install-recommends \
-        python3.11 \
+# 运行期系统库（OpenCV / Gradio 所需）+ python3.12 + ffmpeg（视频处理）。
+#   apt 源同样切清华（与 builder 阶段一致；实测 archive.ubuntu.com 仅 ~100KB/s）。
+#   同样用 glob 覆盖 24.04 的 deb822 布局，逐项 `|| true` 防阻断。
+RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do \
+        [ -f "$f" ] && sed -i 's|http://archive.ubuntu.com/ubuntu|http://mirrors.tuna.tsinghua.edu.cn/ubuntu|g; s|http://security.ubuntu.com/ubuntu|http://mirrors.tuna.tsinghua.edu.cn/ubuntu|g' "$f" || true; \
+    done \
+    && apt-get update && apt-get install -y --no-install-recommends \
+        python3.12 \
         libgl1 \
         libglib2.0-0 \
         libsm6 \
@@ -96,31 +139,34 @@ ENV PYTHONUNBUFFERED=1 \
 
 # 暴露端口：
 #   · 7860 —— Gradio 网页界面（config.SERVER_PORT 默认）
-#   · 7861 —— 零依赖 REST 服务（server.py，需 `python main.py --api` 启动）
+#   · 7861 —— 零依赖 REST 服务（server.py，需 `python3.12 main.py --api` 启动）
 EXPOSE 7860
 EXPOSE 7861
 
-# 阶段 250 修**解释器错配（P0·确定性启动失败）**：本镜像装的是 `python3.11`
-#   （依赖落在 `/usr/local/lib/python3.11/site-packages`），但 Ubuntu 22.04 自带的
-#   `/usr/bin/python3` 是 **Python 3.10**——它只搜索 `python3.10` 的 dist-packages，
-#   **找不到** python3.11 的 site-packages ⇒ 旧写法 `ENTRYPOINT ["python3", ...]`
-#   启动即 `ModuleNotFoundError: No module named 'torch'`（gradio/opencv 同理）。
-#   本机无 docker CLI 也能静态判定：ENTRYPOINT/CMD 的解释器必须与装依赖的解释器**同一个**。
-#   这里做两件事（缺一不可）：
-#     ① symlink：让 `python3` / `python` 也指向 3.11——使用户 `docker exec` 进去后
-#        手工执行 `python3 xxx` 的行为与镜像内一致（否则 exec 进去是 3.10，同样找不到包）；
-#     ② 下方 ENTRYPOINT / HEALTHCHECK **显式**写 `python3.11`——不依赖 symlink 即可正确。
-RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.11 1 \
-    && ln -sf /usr/bin/python3.11 /usr/local/bin/python3 \
-    && ln -sf /usr/bin/python3.11 /usr/local/bin/python
+# 阶段 250 修**解释器错配（P0·确定性启动失败）**：本镜像装的是 `python3.12`
+#   （依赖落在 `/usr/local/lib/python3.12/site-packages`）。当时的基础镜像是
+#   Ubuntu 22.04，其 `/usr/bin/python3` 是 **Python 3.10**——它只搜索
+#   `python3.10` 的 dist-packages，**找不到** python3.11 的 site-packages ⇒
+#   旧写法 `ENTRYPOINT ["python3", ...]` 启动即 `ModuleNotFoundError: No module
+#   named 'torch'`（gradio/opencv 同理）。这是该 P0 的历史根因，**教训保留**。
+#   阶段 312：基础镜像升到 **ubuntu24.04**，其 `/usr/bin/python3` 本身就是
+#   **3.12** ⇒ 错配风险在源头上消失。但下面两件事仍**保留**（缺一不可）：
+#     ① symlink：让 `python3` / `python` 也显式指向 3.12——不依赖「发行版默认版本
+#        恰好是 3.12」这一巧合，且保证用户 `docker exec` 进去后 `python3 xxx`
+#        的行为与镜像构建时一致；
+#     ② ENTRYPOINT / HEALTHCHECK **显式**写 `python3.12`——契约由本文件自己锁定，
+#        换基础镜像时不会被发行版默认值悄悄改变。
+RUN update-alternatives --install /usr/bin/python3 python3 /usr/bin/python3.12 1 \
+    && ln -sf /usr/bin/python3.12 /usr/local/bin/python3 \
+    && ln -sf /usr/bin/python3.12 /usr/local/bin/python
 
-# HEALTHCHECK：轮询 Gradio 首页是否就绪（用容器自带 python3.11，免装 curl）。
+# HEALTHCHECK：轮询 Gradio 首页是否就绪（用容器自带 python3.12，免装 curl）。
 HEALTHCHECK --interval=30s --timeout=5s --start-period=120s --retries=3 \
-    CMD python3.11 -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('WME_SERVER_PORT','7860')+'/', timeout=4)"
+    CMD python3.12 -c "import os,urllib.request; urllib.request.urlopen('http://127.0.0.1:'+os.environ.get('WME_SERVER_PORT','7860')+'/', timeout=4)"
 
 USER appuser
 
 # 入口：运行主程序（main.py 内部会做目录自检、模型就绪、启动 Gradio）。
-#   ⚠ 必须显式 `python3.11`：镜像依赖装在 3.11，而系统 `python3` 是 3.10（见上方说明）。
-#   仅跑 REST 时覆盖命令为 `python3.11 main.py --api`（见上方用法示例）。
-ENTRYPOINT ["python3.11", "main.py"]
+#   ⚠ 必须显式 `python3.12`：镜像依赖装在 3.12，解释器契约由本文件自己锁定。
+#   仅跑 REST 时覆盖命令为 `python3.12 main.py --api`（见上方用法示例）。
+ENTRYPOINT ["python3.12", "main.py"]

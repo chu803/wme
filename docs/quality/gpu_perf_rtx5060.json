@@ -1,0 +1,118 @@
+{
+  "device": "NVIDIA GeForce RTX 5060 Laptop GPU",
+  "kind": "cuda",
+  "torch": "2.9.1+cu128",
+  "cuda": "12.8",
+  "use_fp16": true,
+  "crop_to_mask": true,
+  "n_detect": 10,
+  "detect_p50": 1.1988,
+  "detect_p95": 1.282,
+  "n_full": 10,
+  "full_p50": 4.3155,
+  "full_p95": 10.4537,
+  "detect_target_p95": 1.5,
+  "detect_target_met": true,
+  "per_image": [
+    {
+      "image": "ai_logo_03_white_coffee_cup.jpg",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.1217,
+      "full_s": 4.3155,
+      "regions": 3
+    },
+    {
+      "image": "ai_logo_04_neon_street_night.jpg",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.2667,
+      "full_s": 10.4537,
+      "regions": 14
+    },
+    {
+      "image": "ai_logo_05_fruit_platter.jpg",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.282,
+      "full_s": 2.9338,
+      "regions": 6
+    },
+    {
+      "image": "ai_logo_06_flower_field_portrait.jpg",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.1988,
+      "full_s": 4.3725,
+      "regions": 4
+    },
+    {
+      "image": "ai_logo_07_glass_curtain_building.jpg",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.1478,
+      "full_s": 5.508,
+      "regions": 19
+    },
+    {
+      "image": "ai_logo_08_abstract_fluid.jpg",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.1437,
+      "full_s": 5.5733,
+      "regions": 8
+    },
+    {
+      "image": "ai_logo_09_vintage_typewriter.jpg",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.1329,
+      "full_s": 2.9639,
+      "regions": 27
+    },
+    {
+      "image": "ai_logo_10_lavender_hot_air_balloon.jpg",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.2293,
+      "full_s": 2.8845,
+      "regions": 8
+    },
+    {
+      "image": "ai_logo_test_01_orange_cat.jpg",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.112,
+      "full_s": 1.8954,
+      "regions": 2
+    },
+    {
+      "image": "c1.png",
+      "size": [
+        2048,
+        2048
+      ],
+      "detect_s": 1.2309,
+      "full_s": 2.9036,
+      "regions": 6
+    }
+  ]
+}

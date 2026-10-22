@@ -19,23 +19,29 @@
 - 网络：本机 **HTTPS github.com:443 被 reset**、系统代理关闭；**SSH 22/443 可达** ⇒ push 走 SSH 或**由用户本机执行**；沙箱 HTTPS 走代理 502。PyPI 清华镜像可达。**ghproxy 下大文件频繁断连**（每段 10–37MB），需 `curl -C - --retry 80 --retry-all-errors --max-time 0` 循环续传。
 - Git Bash 显式 `export PATH` 须含 `PortableGit/.../usr/bin` + `/bin` + `System32` + venv Scripts，否则 `dirname/head/ls/grep` 全 127；跨盘脚本参数会被误映射成 `D:\c\...`，探针脚本放进项目 `scripts/` 用相对路径。
 
-## 真值基线与红线（2026-10-17 重锚，53 实评 = 57 标注 − 4 缺口）
-mask_recall **0.5960** / precision 0.0801 / recall 0.9057 / mean_iou 0.6638 / mask_iou 0.3217 / mask_coverage 0.0129 / coverage_ratio 2.30。
+## 真值基线与红线（**2026-10-22 重锚 · 阶段 313**，53 实评 = 57 标注 − 4 缺口）
+mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 / mask_iou 0.3325 / mask_coverage **0.0162** / coverage_ratio **2.83**。
 红线：recall≥0.64、precision≥0.05、mean_iou≥0.35、**mask_recall≥0.45**；崩溃护栏 mask_iou≥0.20、mask_coverage≤0.020、coverage_ratio≤3.50。`real_gate --strict-scope` EXIT=0。
-- mask_recall 仍最薄（余量 ~24.8%），靠 259 advisory 盯防；硬线 0.45 不动。
+- mask_recall 余量已宽（0.7700 vs 红线 0.45 ≈ **+71%**），不再是薄项；薄项仍在 over-detection 侧但已转宽：mask_coverage 余量 **19%**（红线 max 0.020）、coverage_ratio 余量 **19.1%**（红线 max 3.50），靠 258 余量体检预警盯防。硬线 0.45 不动。
+- **阶段 313 取舍**：P0-4 的救援曾按「逐框中心无证据即整框填满」实现，与 docstring 声称的「只补整图返空」不一致 ⇒ 文字密集图上一次填满 23 个框（9.1% 画面）、`prompted_area_gate` 文字类覆盖率 **+48%**。窄口径化后面积回基线、`prompted_area_gate` 与 `test_mask_param_calibration` 转绿，代价 committed 面 mask_recall 0.7809→0.7700。若将来发现「框内有部分证据但中心未覆盖」的真实静默漏检，应加**救援预算上限**（单图 ≤2% 画面），不要退回逐框整填。
 - 图像级缺口：`WATERMARK_KNOWN_GAP_IMAGES={a1..a4}`（大宝石角标像素域不可分）；`test_known_gap_images243.py` 4 例绿。
 - 能力声明：`WATERMARK_TYPE_COMMITTED={ai_logo}` + `KNOWN_SYNTHETIC_GAP={ai_gradient}`。
-- 重锚须 `--update --force-update` 双开（单独 `--force-update` 只判决不落盘）。
+- 重锚须 `--update --force-update` 双开（单独 `--force-update` 只判决不落盘）。**2026-10-19 已获授权双开执行**：baseline 由 0.5960→0.7700（P0-3）→**0.7809**（P0-4 救援式自播种，终值）落盘；不带 `--update` 复跑确认零漂移、全绿（RG_DRIFT_RC=0）。
 
 ## 门禁家族
 `quality_gate` + `real_gate`(30图) + `e2e_real_probe`(10图×4类) + `mask_param_audit` + `clean_bench_probe` + `prompted_area_gate` + `perf_probe` + `docker_consistency_check` + `crop_quality_probe`。退出码 0/1/2（real_gate +3=环境错误）；`--update/--refresh` 须接 `baseline_guard`；脚本 print 非 GBK 须 `force_utf8_stdio()`。
 
-## 性能归因
-- detect P95 **0.776s**（<1.5s 达标）；full P95 **8.585s**（superres=off，结构地板≈4.4s ⇒ 1.5s 对 full 不可达）。
-- 瓶颈=LaMa fp32 @2048² ≈7–8s（recommend+detect 仅 ~1.85s）。
+## 性能归因（GPU=RTX 5060 Laptop sm_120 / 7.93GiB / torch 2.9.1+cu128）
+- **GPU 真可用（305 更正）**：「沙箱/本机是 CPU torch」是**伪前提**——canonical venv 实为 torch 2.9.1+cu128、RTX 5060 Laptop sm_120 / 7.93GiB、EasyOCR 与 LaMa 均真在 cuda:0。判据用**真实 CUDA matmul 与 CPU 参考比对**（max|Δ|=7.2e-05），不信 `is_available()` 布尔自证。
+- **GPU↔CPU 严格 A/B**（同 12 张 ≥2048px 图、仅 `WME_DEVICE_MODE=cpu` 切换）：detect P95 GPU 1.282s vs CPU 6.823s（**5.3×**）、full P95 10.45s vs 22.68s（2.2×）⇒ 1.5s 目标在 CPU 上结构性不可达。
+- **权威口径取 `perf_probe`**：detect 阶段 GPU P95 **0.743s**（基线 0.679s×1.3=0.882s 护栏内、目标 1.5s 达标、噪声 0.041、无渐变）退出码 0；**full 阶段 P95 8.397s**（307 标定，`perf_baseline_gpu_default.json`，噪声 0.067、无渐变、超分 OFF）⇒ 1.5s 目标对 full 结构性不可达，须按 GPU 口径且对 full 另行放宽。两阶段写入**不同文件**互不覆盖（CI `run_all_checks` 默认跑 detect）。
+- ⚠️ **三处口径不可混用**：自定义 `gpu_perf_probe`（≥2048px 最重子集+冷启动）1.282s ≠ 权威 `perf_probe`（固定 10 图、repeat=3 取 min）0.743s；full 的 8.397/8.891/10.45 三值跨口径不可比，结论一律取 `perf_probe` 的 8.397s。
+- ⚠️ `use_fp16()` 返回 True **不代表本次推理用了 fp16**：LaMa 在 `_FP16_UNSAFE_MODELS` 内，model_manager 强制 float32（阶段 207，fp16 实测毁图）；`_run_lama_tile` 以模型 dtype 为唯一真值源。
+- 瓶颈=LaMa 在大包围盒上的推理（recommend+detect 仅 ~1.85s）；full P95 结构地板≈4.4s。
 - **裁剪修复 `INFER_CROP_TO_MASK`（默认开）**：2048² 7.3s→2.1s（3.6x）；只贴回 mask 区 ⇒ mask 外与 full 逐字节一致；mask 内为 LaMa 尺寸相关差异（非无损）。`crop_quality_probe` 58 张 ≥2048 图干净区 **58/58 通过**。fp16 禁（毁图）、resize 有损、固定网格分块 0.9x 更慢，均排除。
 - `recommend_preset` 不调 detect、不调 OCR（纯 numpy/cv2）；real_gate 用显式 `--presets`，红线不受 recommend 影响。
 - **角标判据 `_corner_watermark_signal`**：9 张真值边缘图模板库（base64 自包含）+ NCC（`RECOMMEND_CORNER_WATERMARK_NCC_MIN=0.30`）→ 右下/中右角标导向 `ai_logo`、跳过 OCR；召回 48%→76%（24/50→38/50），留出集 54%（31/57），自然图零误命中。坑：①模板与查询同灰度口径（cv2 RGB2GRAY；PIL mean 会让 NCC 0.7→0.45）；②必须走 `_require_cv2()`（NameError 被 except 吞成空库）；③合成实体复刻不了细粒度边缘 ⇒ 单测 monkeypatch 验分支、真实召回交 `scripts/verify_corner_reco.py`；④`verify_corner_reco`「非GT误命中=1」实为 c12.png（=c11 字节重复）。SSOT：`utils/recommend_view._FEATURE_KEYS` + `utils/i18n.py` 双语同序。守卫 `test_corner_watermark_signal.py`（9 例）。
+- **API 同步路径并发实测（306，RTX 5060 真机）**：worker=1/2/4/8 吞吐 0.132/0.257/**0.331**/0.287 img/s，P95 12.6/**10.2**/14.9/40.1s，峰值显存（worker=8）6543MB≈**80.5%** 卡容。吞吐甜点=4、尾延迟甜点=2；默认 `API_MAX_CONCURRENCY=4`（HTTP 闸门）与 `API_ASYNC_MAX_WORKERS=2`（异步作业池）验证合理、**无需改动**。⚠️ 并发甜点/显存上限**负载相关**：257 在 1200×900 PDF 测得「k=4 仅 16% 卡容」，本实测在 2048² 整帧水印下 worker=8 达 80.5%（同并发数显存差 5×），不可外推；worker=8 在重负载下是脚枪，仅标注警告、不收缩 [1,8]。
 
 ## 已收口的关键判定
 - **is_grid 误触发（docs/301，2026-10-18）**：doubao JPEG 图残差场 lag 8px 强自相关（0.19–0.57 vs 阈 0.09）= JPEG 8×8 DCT 块伪周期；修 `DETECT_GRID_MIN_PERIOD` 6→16（杠杆化）。效果：误触发 10/10→1/10；ai_grid 面积 mean 8.88%→2.43%、区域 747→42.8、余量 29%→80%；general 红线逐位不变；合成网格零漏检。残留 1 张 63px 为内容真周期（沙纹），属数据缺口。
@@ -64,9 +70,11 @@ mask_recall **0.5960** / precision 0.0801 / recall 0.9057 / mean_iou 0.6638 / ma
 ## 健康度与战略
 源码 ~33.2k + 测试 ~22.5k；**2504 用例 / 219 文件**（沙箱 14 FAILED 全为删除护栏 `SAFE_DELETE_BULK_CONFIRM_REQUIRED` 假红，隔离全过、父提交同败、非回归；正常机器预期全绿）；45 模块全审计（276–290 收官）。
 技术内核强、商品外壳缺。P1 数据质量 → P2 产品化性能 → P3 生态。护城河=全本地离线 + 免手涂 8 预设 + 图/PDF/视频全源 + 合规定位。记分卡 `docs/quality/product_scorecard.json`：overall **B-** / eng **A** / core **B-** / prod **C+** / eco **D**。
+- ⚠️ **cu121→cu128 声明对齐早已完成（305 复核证伪）**：此前「声明文件钉 cu121/torch 2.3.1、待处理」是**误记**。`requirements-gpu.txt` 与 `requirements.txt` 已同钉 `torch==2.9.1`，前者走 `--index-url .../cu128`；`Dockerfile.gpu` 基础镜像 `nvidia/cuda:12.8.1-runtime-ubuntu22.04`；`docker_consistency_check.py` 的 **E2（CUDA 12.8 ↔ cu128 匹配）+ W1（torch 2.9.1 一致）全绿** ⇒ 阶段 207 已收口，声明与运行环境一致，新人按声明装即 cu128。
+- **剩余开放项**（截至 307，wme 侧自主可推进工作已彻底耗尽）：① ✅ full 阶段 perf 基线标定（307，RTX 5060 真机 P95 8.397s 落盘 `perf_baseline_gpu_default.json`，超分 OFF）；② ✅ API 侧并发实测（306，真机 RTX 5060 验证默认 `API_MAX_CONCURRENCY=4`/`API_ASYNC_MAX_WORKERS=2` 合理，无需改动）；③ C5 真 build（需 docker CLI，本机缺失）。注：D1 GPU、cu121 声明、API 并发三项此前系误判阻塞，305/306 已证伪收口。
 
 ## 复盘教训（非显然项）
-- **语言是跨进程持久全局状态**（290）：i18n 落盘 `cache/i18n_state.json` 污染后续 pytest；`conftest.pytest_configure` 指向会话临时目录治本，须用「投毒态」重跑证伪。
+- **语言是跨进程持久全局状态**（290 治本 / 304 投毒态实证收口）：i18n 落盘 `cache/i18n_state.json` 污染后续 pytest；`conftest.pytest_configure` 指向会话临时目录治本；304 用「投毒真实文件 en-US → 拉起全新 pytest 子进程 → 断言 `get_language()==zh-CN`」做投毒态重跑证伪，反例闭合确认毒确实写入；并加守卫 `tests/test_i18n_state_leak_guard.py` + 注入式反证 `scripts/_i18n_leak_inject_proof.py`（`WME_I18N_NO_REDIRECT=1` 复现修复前，守卫必 FAIL）。**已收口**，正常跑零副作用。
 - **logging 单例污染**：`test_utils_audit90` rotation 用例受前序 handler/真实 `logs/app.log` 污染（既有顺序污染，父提交同样失败）；修复须 conftest 级重置 + 每用例 tmp 日志目录。
 - 「mask 外 0 变化」≠ LaMa 恒等（两种模式都有固有扰动）⇒ crop 安全性以「crop 干净区扰动不差于 full」判，非 crop-vs-full=0。
 - gradio `gr.update()` 返回普通 dict；`from-import` 后 monkeypatch 须打导入方命名空间；源码子串匹配会误命中注释，须 AST。

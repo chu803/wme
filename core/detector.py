@@ -502,6 +502,48 @@ def _refine_regions_to_mask(
     return mask, dropped
 
 
+def _ocr_box_rescue_mask(
+    regions: "List[DetectionRegion]",
+    evidence: np.ndarray,
+    h: int,
+    w: int,
+    pad: int,
+) -> np.ndarray:
+    """OCR 文字框的「救援式」掩码（阶段 P0-4）。
+
+    先按框内证据二次确认取形状掩码；**只有当 refine 后整幅图将返空**时，才退化为
+    整框填充。语义是「救援」而非「无条件信任」——无条件信任会把所有 OCR 框都填满，
+    实测令 real_gate 覆盖率余量从 19% 蚀到 9.9%（0.0162→0.0182，红线 0.020）。
+    本函数最初按「单框中心无证据」逐框触发，实测在 benchmark_prompted 上
+    一次填满 23 个文字框（占画面 9%），ai_text_heavy 覆盖率 +48%、p90 +51%
+    ⇒ 收窄为「整图返空才救援」，与下面 pair_04 的根因描述严格对齐。
+
+    根因（真实豆包成对图 pair_04「海边礁石」）：OCR 已读到角标文字
+    (2506,1434,187,51)，但框内残差证据弱且不覆盖中心点 ⇒ refine 后该区域被丢
+    ⇒ 整图返空掩码（静默漏检）。第一版救援用「框内无任何证据」作条件，实测该框内
+    仍有少量证据像素（非空）却偏不到中心 ⇒ 条件不触发；故改为按**中心点**判定，
+    与 kept_regions 的「中心须在掩码内」逐字对齐。
+    """
+    out = np.zeros((h, w), np.uint8)
+    live = [r for r in regions if int(r.w) > 0 and int(r.h) > 0]
+    if not live:
+        return out
+    refined, _dropped = _refine_regions_to_mask(live, evidence, h, w, pad)
+    # 救援只在「整图将返空」时触发（design intent 的窄口径）。逐框判断的宽口径实测
+    # 会在 benchmark_prompted 上一次填满 23 个文字框（占画面 9%），令
+    # ai_text_heavy.mask_coverage_mean +48%、p90 +51%，触发面积漂移门禁。
+    if refined.any():
+        return refined
+    for r in live:
+        y0, x0 = max(0, int(r.y)), max(0, int(r.x))
+        y1, x1 = min(h, int(r.y) + int(r.h)), min(w, int(r.x) + int(r.w))
+        if y1 <= y0 or x1 <= x0:
+            continue
+        # 救援：整图证据全部落空 ⇒ 整框填充，避免 pair_04 式静默漏检。
+        out[y0:y1, x0:x1] = 255
+    return out
+
+
 def _fill_holes(mask: np.ndarray) -> np.ndarray:
     """
     对二值掩码做孔洞填充（避免水印内部镂空导致修复不彻底）。
@@ -2875,23 +2917,37 @@ def detect_watermark_mask(
             if m.shape[:2] != (h, w):
                 m = cv2.resize(m, (w, h), interpolation=cv2.INTER_NEAREST)
         else:
-            # 阶段 103：策略只给了区域框时，不再**整框填满**，改为框内像素级二次确认。
-            # 归因依据见 _refine_regions_to_mask 的 docstring 与 config 同名开关注释。
-            _ev = _full_evidence()
-            if config.DETECT_BOX_EVIDENCE_REFINE and not _evidence_is_degenerate(_ev):
-                m, _dropped = _refine_regions_to_mask(
-                    regions, _ev, h, w, config.DETECT_BOX_REFINE_PAD
-                )
-                if _dropped:
-                    log.debug(
-                        "框内证据二次确认：%d/%d 个区域框内无任何证据，已整框丢弃。",
-                        _dropped, len(regions),
+            # 阶段 P0-4：先剥离 OCR 文字框，其余区域走原证据 refine 通路。
+            _trust = bool(config.DETECT_OCR_BOX_TRUST)
+            _ocr_regs = [r for r in regions if _trust and r.kind == KIND_OCR_TEXT]
+            _other = [r for r in regions if not (_trust and r.kind == KIND_OCR_TEXT)]
+            m = np.zeros((h, w), np.uint8)
+            if _ocr_regs:
+                _ev_o = _full_evidence()
+                if config.DETECT_BOX_EVIDENCE_REFINE and not _evidence_is_degenerate(_ev_o):
+                    m = np.maximum(m, _ocr_box_rescue_mask(
+                        _ocr_regs, _ev_o, h, w, config.DETECT_BOX_REFINE_PAD))
+                else:
+                    m = np.maximum(m, _regions_to_mask(_ocr_regs, h, w))
+            if _other:
+                # 阶段 103：策略只给了区域框时，不再**整框填满**，改为框内像素级二次确认。
+                # 归因依据见 _refine_regions_to_mask 的 docstring 与 config 同名开关注释。
+                _ev = _full_evidence()
+                if config.DETECT_BOX_EVIDENCE_REFINE and not _evidence_is_degenerate(_ev):
+                    m2, _dropped = _refine_regions_to_mask(
+                        _other, _ev, h, w, config.DETECT_BOX_REFINE_PAD
                     )
-            else:
-                # 回退：证据场退化（或该能力被显式关闭）⇒ 保持整框填充。
-                # 理由：整幅图取不到证据 ⇔ 证据判据在本图上不可用，而不是「没有水印」；
-                # 此时若照样按证据裁剪，会把整幅图裁空 = 静默漏检。
-                m = _regions_to_mask(regions, h, w)
+                    if _dropped:
+                        log.debug(
+                            "框内证据二次确认：%d/%d 个区域框内无任何证据，已整框丢弃。",
+                            _dropped, len(_other),
+                        )
+                    m = np.maximum(m, m2)
+                else:
+                    # 回退：证据场退化（或该能力被显式关闭）⇒ 保持整框填充。
+                    # 理由：整幅图取不到证据 ⇔ 证据判据在本图上不可用，而不是「没有水印」；
+                    # 此时若照样按证据裁剪，会把整幅图裁空 = 静默漏检。
+                    m = np.maximum(m, _regions_to_mask(_other, h, w))
         mask_parts.append((m > 0).astype(np.uint8) * 255)
 
     # ---------- 策略一：半透明水印 ----------

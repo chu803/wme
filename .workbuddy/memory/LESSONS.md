@@ -964,3 +964,102 @@
 ## 281 · 可比性维度可「按阶段作用域」收窄，避免连累无关基线；P95 回退先看「码/负载/图」三件套（263 发现）
 - 阶段 263 给 `perf_probe` 补「真实超分」口径维度时发现：若把超分三键塞进**全局** `COMPARABILITY_KEYS`，会让现有 **v3 detect 基线（无此键）** 被判「结构过旧」失效，且触发向下刷新护栏拒绝重标定（实测 detect P95 当时还莫名涨了 ~2.3×）。**正确做法**：超分只影响 `full` 阶段，故把该维度做成 **full 阶段专属**检查（仅当基线/本次均为 `stage=full` 时才比对），**不动全局 `COMPARABILITY_KEYS`、不递增版本号**——既守住「超分开/关不可比」，又不连累 detect 基线（LESSONS 230 的本意是「不让旧基线被误判为可比或误判为失效」，scope 收窄恰好满足）。
 - **铁律**：① 给门禁加可比性/口径维度时，先问「它是否对所有阶段都成立」；只对某一阶段成立的，用**阶段作用域**收窄，别为单阶段维度重标定所有基线。② 发现 P95 回退，**先排三件套再谈结论**：代码自基线日起是否有提交（git log）、工作负载是否变（图尺寸/数量）、测量是否瞬态受污染（噪声比/锚点比闸门）——三者皆否 ⇒ **持续性机器环境漂移**（后台进程/散热/运行时库），此时向下刷新护栏会拒绝植入，**绝不 `--force-update` 掩盖**，应列为开放项在空闲机复测。③ 「MEMORY/文档里的历史性能数字」可能是一次性探针值而非入库基线，引用前先核对 `perf_baseline.json` 是否真有该 stage。
+
+## 282 · OCR 文字框「救援式」自播种：中心判定对齐 kept_regions，而非无条件信任（303 / P0-4 发现）
+- 真实豆包成对图 pair_04「海边礁石」静默漏检：OCR 读到角标文字，但 `_refine_regions_to_mask` 在框内只找到**少量偏中心的弱残差** ⇒ 框被裁空 ⇒ `kept_regions`「中心须在掩码内」把区域丢 ⇒ **整图返空掩码**。
+- **第一直觉（无条件信任 OCR 框整框填充）是坑**：全开版令 real_gate 覆盖率余量从 19% 蚀到 9.9%（0.0162→0.0182，红线 0.020），并触发 3 处面积漂移守卫（ai_faint_tiled/ai_text_heavy/ai_grid 面积突胖）。根因：非水印文字（招牌/标语）也被填满，在真实照片上不可控放大。
+- **第二直觉（框内「无任何证据」才救援）不命中**：pair_04 框内仍有少量证据像素（非空），只是偏不到中心 ⇒ 条件不触发 ⇒ 仍丢框。
+- **正确做法（中心点救援式）**：对每个 `ocr_text` 区域先 refine；**仅当该区域中心点未被证据覆盖时**才整框填充。语义是「救援静默漏检」而非「填满所有 OCR 框」，与 `kept_regions` 中心判定**逐字对齐**才真救回。实测：pair_04 救回、10 对 mean removal 0.1649→0.3841、15 干净图零新增、12 角标面积零漂移；real_gate mask_recall 0.7809 全红线通过。
+- **铁律**：① 「OCR 读到就信任」类杠杆，**默认必须用「救援式 + 中心判定」而非「无条件信任」**——先量化无条件版对覆盖率余量/面积守卫的代价，再决定是否收口。② 判定条件要与下游一致性逻辑（此处 `kept_regions` 的中心规则）**对齐同一坐标**，否则「框内有证据但偏不到中心」会让你以为条件够了其实漏了。③ 注入式反例守卫的实操：把目标函数**就地 neutralized 成恒返空**（而非删代码），复刻守卫测试输入，断言缺陷复现 ⇒ 证明守卫在回退态必 FAIL；这是「守卫真能捕获声称缺陷」的最简可证法。
+
+## 283 · 「跨进程状态泄漏」必须用子进程重跑 + 反例闭合双向证伪（304 / i18n 发现）
+- 缺陷形态：`utils.i18n.apply_language()` 落盘 `cache/i18n_state.json`，`load_language()` 优先级 `env > 持久化文件 > config > 默认`——**磁盘文件一旦是 en-US，会在之后每一个全新 pytest 进程生效**，压过 `config.UI_LANGUAGE` 令「期望中文」用例全红。阶段 290 的治本（conftest 在 `pytest_configure` 早于 collection 把 `_STATE_FILE` 重定向到会话临时目录）**一直没被实证**。
+- **实证唯一可信手段是子进程重跑**：单进程内 monkeypatch 复现不了「新进程读旧盘文件」这种跨进程污染——必须**真的写毒到磁盘 + 拉起一个全新 pytest 子进程**（它会触发 conftest 重定向）再断言回落 `zh-CN`。这是「跨进程泄漏」类缺陷的通用证法（同思路也适用任何「落盘状态污染后续进程」的 bug）。
+- **反例闭合必须双向齐备**：① 正面断言（毒在盘上、子进程仍回落 zh-CN）；② 反例确认「毒确实写入生效」（子进程跑完后复查真实文件仍是 en-US）。缺②会落入「毒没生效却绿」的伪证。
+- **conftest 级修复的注入式反例最简法 = 测试重现实开关**：在 `pytest_configure` 加 `if os.environ.get("WME_I18N_NO_REDIRECT"): return`（正常跑恒为 unset、零行为变更），反证脚本设该环境变量重跑守卫 ⇒ 守卫必 FAIL，证它是有效防线而非恒绿假守卫。比「临时改源码 revert 再跑」更可复现、不留修改痕迹。
+- 守卫 `tests/test_i18n_state_leak_guard.py`：投毒真实文件 → 子进程 pytest → 断言 `get_language()=="zh-CN"` + 复查毒生效；反证 `scripts/_i18n_leak_inject_proof.py`（`WME_I18N_NO_REDIRECT=1` ⇒ RC=1）。更广回归 i18n 4 件套 + app_branches_audit RC=0 全绿。
+
+## #284 · 「环境阻塞型开放项」必须用探针证伪，因为它会长期伪装成事实（305 D1）
+- **病症**：「D1 需 GPU 实测（沙箱为 CPU torch）」被写进开放项清单、跨轮次沿用，**看起来像一条客观环境约束**，实际是**过期的印象**。同一次运行日志就写着 `自动选择设备：NVIDIA GeForce RTX 5060 Laptop GPU`，两条证据直接矛盾，却没人裁决——因为「凭印象写下的结论」没有新鲜度校验，会一直躺在记忆里被当既成事实引用。
+- **通用规律**：**任何「因为环境不具备 X 所以做不了 Y」的开放项，都是待证伪的断言，不是既定事实**。环境会变（venv 升级、驱动更新、依赖还原），而记忆不会自己过期。凡要写进长期记忆的阻塞理由，必须标注**验证日期 + 验证命令**，否则下一个人（和下一个我）会拿它当借口。
+- **证伪手段要比原结论更强**：`torch.cuda.is_available()` 返回 True 只是**自证式断言**（它只证明 torch 认为自己能用 GPU）。真正的判据是**在 GPU 上跑一次真实张量运算并与 CPU 参考比对数值**（本次：matmul on cuda:0，max|Δ|=7.2e-05）——这样才能排除「torch 装了但算子静默落到 CPU」。同理，探针报某个组件 FAIL 时，先怀疑**探针自己取名字的方式**（懒加载 + 对象属性不在模块命名空间），别急着下产品缺陷结论。
+- **性能结论必须给 A/B 对照，而不是单边数字**：只报「GPU 上 P95=1.282s」无法判断这是否算快。补一组**仅切换一个变量**的对照（`WME_DEVICE_MODE=cpu`，同图集同 warmup）才得出因果：GPU 5.3× 于 CPU，且 **1.5s 目标在 CPU 上结构性不可达**（6.823s）⇒ 证明该目标本就该按 GPU 口径考核。
+- **别用自己的尺子量自己**：自定义探针出数后，**必须用项目既有门禁复核**。本次自定义口径 1.282s vs `perf_probe.py` 权威口径 0.743s，差因图集与 warmup 口径不同 ⇒ 结论一律取权威口径，并把差异**显式披露**而非抹平。
+- **门禁「失败」未必是缺陷**：full 阶段退出码 2 实为两道护栏**正确工作**（相对噪声 0.377>0.20 ⇒ 拒绝采信自己；stage 不一致 ⇒ 拒绝跨口径比较）。判读退出码前先看是哪道 guard 触发、它想保护什么，别把「守卫拦住了」写成「测失败了」。
+- **命名会骗人**：`use_fp16()` 返回 True 只代表「设备允许 fp16」，不代表「本次推理用了 fp16」——LaMa 因实测毁图被列入 `_FP16_UNSAFE_MODELS` 强制 float32。开关类 API 的返回值必须连同「谁最终有否决权」一起解释，否则会被误当成性能杠杆。
+
+## #285 · 长期记忆里的「开放项/阻塞项」清单会过期且自相矛盾，动手前必须先与现状对账（305 cu121）
+- **病症（与 #284 同因的第二次）**：我在 MEMORY.md 写「requirements-gpu.txt / Dockerfile.gpu 仍钉 cu121/torch 2.3.1、声明落后待处理」，列为剩余开放项，并据此建议用户「下一步做 cu121→cu128 声明对齐」。用户「继续」后一查：requirements-gpu.txt 早已是 torch==2.9.1 + cu128、Dockerfile.gpu 基础镜像已 nvidia/cuda:12.8.1、docker_consistency_check.py E2/W1 全绿——**该开放项在阶段 207 就已完成**，纯属误记。
+- **通用规律（强化 #284）**：长期记忆中的「开放项 / 阻塞项 / 待处理」清单**本身不是真相**，只是某次收尾时的快照，会随主线推进而过时，且会与新近运行日志/门禁结果直接矛盾。**凡要「因为 X 还卡着所以去做 Y」时，X 必须先实证**：跑对应门禁或读对应文件，确认 X 仍为真再动手。不要因为记忆写过「待处理」就当它真待处理。
+- **本仓库的对账点**：声明对齐看 `docker_consistency_check.py`（E2 CUDA 镜像↔cu128、W1 torch 版本一致）；GPU 可用性看 `perf_probe.py` / `device_manager`；真值基线看 `benchmark_real/quality_baseline.json`。这些门禁的存在意义正是「用机器判断替代记忆判断」。
+- **自反证伪**：连续两次（D1 GPU、cu121 声明）都是「记忆写阻塞、实证证无阻塞」。**凡是自己写的「某物还没做」结论，都应先假设它可能是过期快照**，除非能指出验证日期与命令。这是 #284「环境阻塞型断言待证伪」在记忆管理维度的投影。
+- **更正动作**：证伪后应立即原地修正记忆中的误记条目（而非仅本轮口头更正），否则下一轮「继续」会把同一伪开放项再提一遍。本次已把 MEMORY.md 第 73–74 行与当日日志的 cu121 误记就地修正。
+
+## #286 · 并发甜点与显存上限是负载相关的，不可把一个负载的标定外推（306 D1 并发）
+- **病症**：阶段 257 标定 `API_ASYNC_MAX_WORKERS=2` 时负载是 2 页 PDF @1200×900，测得 k=4 峰值仅 1272 MB（16% 卡容），据此写「k=4 仍仅 16% 卡容、安全余量充足」。阶段 306 在真实同步 API 路径（2048² 整图水印全链路 inpaint）实测，worker=8 峰值 6543 MB（80.5%）——并发数相同，显存差 5×。**同一并发数、不同负载，结论直接反转。**
+- **通用规律**：**并发 / 显存 / 延迟的甜点与上限都是工作负载相关的**，取决于单请求峰值显存（由图像分辨率与裁剪修复能否生效决定：整帧水印让 `INFER_CROP_TO_MASK` 失效，仍走 2048² 推理）。任何「k=N 安全」的结论都隐含「在该负载下」的前提——换更重负载必须重测，不可外推。
+- **本仓库的对账点**：并发标定的负载画像要随负载变化重标；默认配置（gate=4 / worker=2）对「本地单用户 + ≤2048²」成立，对更重负载（4K 整帧水印、批量视频逐帧）需重新评估，必要时下调而非上调。
+- **自反证伪 / 诚实披露**：306 明确标注 worker=8 在重负载下是脚枪（吞吐回归 + P95 40s + 显存 80.5%），并保留 `API_ASYNC_MAX_WORKERS` 区间 [1,8] 不收缩（仅标注警告）——既承认高位风险，又保留可调性，不把「默认安全」偷换成「区间全体安全」。
+
+## #287 · perf 基线的「噪声门无逃逸口」与 detect/full 双文件分工（307 full 基线）
+- **噪声门是可信性的硬门槛，不是护栏**：`perf_probe` 的相对噪声比（极差/P95）阈 0.20，即使 `--force-update` 也**绕过不了**——它过了，才说明这次测量本身干净、P95 可采信。这与「向下刷新护栏」不同：后者 `--force-update` 可强制 supersede 旧基线。判读时要分清「哪道 guard 有逃逸口」：可逃逸的 `--force-update` 只在「比较口径/向下刷新」维度放行，绝不放行噪声/锚点（机器状态）维度。
+- **基线文件是分阶段的，别用 `--force-update` 误覆盖 detect**：约定 `perf_baseline.json` = detect 阶段（CI `run_all_checks` 默认跑它，必须保留），`perf_baseline_gpu_default.json` = full/GPU 阶段（阶段 263 确立）。full 标定显式 `--baseline perf_baseline_gpu_default.json`，绝不清掉 detect 文件。
+- **陈旧基线 supersession 要诚实披露不可比**：既有 full 文件是 2026-10-06 旧口径（缺 `real_superres_*` 键，阶段 263 后才纳入），守卫会判「不可比」并 prescribe `--force-update`。新值（8.397s）与旧值（9.846s）**口径不同、不可直接比较**——取新值为唯一承诺值，旧值降级为历史探针数字。
+- **1.5s 性能目标对 full 阶段结构性不可达**：full 瓶颈是 LaMa 大包围盒推理（recommend+detect 仅 ~1.85s，其余全是 inpaint），P95 结构地板≈4.4s、GPU 实测 8.397s。该目标只应考核 detect（0.743s 达标）；对 full 须另行放宽或重设，不能拿 full 数字硬套 detect 目标。
+
+## #288 · 依赖「提权=本机 daemon 可用」是错的；docker build 类本地 daemon 任务须委托用户本机（C5）
+- **病症**：用户装好 Docker 后，我 `--dangerouslyDisableSandbox` 提权想跑 `docker build`，结果 `docker: command not found` + 无 `/var/run/docker.sock` + `registry-1.docker.io` 000 不可达。说明**提权只放开网络，不提供本机 docker daemon**——沙箱是独立 Linux 容器，用户的 Docker Desktop 在其 Windows 宿主，二者不共享 daemon/套接字。
+- **通用规律**：`dangerouslyDisableSandbox` 能解的是「沙箱代理挡住的真实网络」（如 git push over SSH/HTTPS），**解不了「需要本地守护进程」的任务**（docker build / 本机 GUI / 硬件加速）。凡需本地 daemon/套接字/专用二进制的操作，AI 侧只能**准备好一切（镜像契约、依赖源、可复现脚本）并验证静态门禁**，真正的执行环节委托用户在宿主机终端完成。
+- **本仓库对账点**：C5「真 build」因此不可由 AI 闭环——`docker_consistency_check.py` 静态门禁全绿只证明「镜像契约自洽」，不等于「能 build」。真 build 的交付物是 `scripts/build_gpu_image.sh` 这类交给用户本机跑的脚本，而非 AI 直接出镜像。
+- **依赖源防坑**：国内 build 前先探连通性——`download.pytorch.org` 的 cu128 wheel 用裸 `curl` 常 403（缺 pip 头部），但 `pip` 自身能下；清华 PyTorch 镜像对**新版本（如 torch 2.9.1）常未同步（404）**，故 torch 必须留官方 CDN，只把普通 PyPI 依赖切清华镜像加速。Docker Hub 基础镜像在国内常需配 registry mirror。
+
+## #289 · JSON 报「position 1 / line 1 column 2」时，先分清坏字符在磁盘还是在编辑器（C5 registry mirror）
+- **病症**：在 Docker Desktop 的 Docker Engine 编辑框粘贴合法 JSON，报 `Expected property name or '}' in JSON at position 1 (line 1 column 2)`，Apply 灰化。肉眼反复检查括号、逗号、引号全对，重贴两次仍报同一条错。
+- **归因法**：报错位置本身就是线索——`position 1` 意味着**第 0 个字符被接受了、第 1 个字符非法**。若文本确以 `{` 开头，则 `{` 后面紧跟了一个不可见字符（零宽空格 U+200B / BOM / 全角引号 U+201C），JSON 解析器把它当成「期望属性名」的位置却读到垃圾。**先读磁盘原件做字节级判定**：`od -An -tx1 -N8 file` 看首字节是否 `7b`（`{`），再 `json.load` 跑一次。磁盘合法 ⇒ 坏字符只在 GUI 编辑器里（粘贴链路引入），不是文件问题。
+- **通用规律**：**「输入文本看起来对但解析器说第 N 个字符错」优先怀疑不可见字符，而不是语法**。凡是「人→编辑器→文件」这条链，链条中间环节（聊天渲染、剪贴板、富文本编辑器）都可能做引号美化或插入零宽字符。这类问题**不要靠反复粘贴解决**（不可见 ⇒ 无法自证修好了），要用字节级工具证伪。
+- **处置范式（本次采用）**：绕开人肉粘贴，**由程序直接写目标文件**，并在写后做双重校验——①首字节 `7b` 无 BOM；②`json.load` 通过。改配置前先 `.bak` 备份，并给出回滚命令。GUI 侧只做「Cancel 丢弃坏文本 → 重开读回磁盘内容 → Apply」。
+- **本仓库对账点**：Docker Desktop 的引擎配置真值在 `%USERPROFILE%\.docker\daemon.json`（Windows），GUI 编辑框只是它的视图。任何「GUI 改不动」的配置，直写该文件 + 重启引擎是等价且更可靠的通路。
+- **顺带**：多 mirror 用数组按序 fallback（`xuanyuan` / `daocloud` / `nju`），因为不同镜像源对 `nvidia/` 这类非 `library/` 命名空间的代理覆盖度不同，单源易单点失效。
+
+## #290 · 「解释器一致」不等于「包管理器属于该解释器」——静态门禁的 pip 归属盲区（311 C5）
+- **病症**：`Dockerfile.gpu` 的 builder 阶段写 `apt install python3.11 python3-pip` 然后 `python3.11 -m pip install ...`。`docker_consistency_check.py` 的 E1 判定「ENTRYPOINT/装依赖用的解释器都是 python3.11 ⇒ 自洽」**全绿通过**，但真 build 会在第一步死于 `No module named pip`。
+- **根因**：Ubuntu 22.04 **没有 `python3.11-pip` 包**。`python3-pip` 装的是 **python3.10** 的 pip，装在 `/usr/lib/python3/dist-packages`；`python3.11 -m pip` 只搜 3.11 的路径，找不到。正确引导方式是 `python3.11 -m ensurepip --upgrade`（`python3.11-venv` 包自带 ensurepip）。
+- **通用规律**：**「同一个解释器」这条约束有两个层次**——①可执行文件一致（静态可查：路径/版本号）；②**该解释器自己的包管理器可用**（静态查不出，只能真跑或查发行版包结构）。凡「A 语言的运行时 + B 版本的包管理器」混搭（系统 python3 装 pip、nvm 切版本后 npm 错配、conda env 与系统 pip 混用），第一层能过、第二层会炸。写 Dockerfile/CI 时，**装依赖的那一行要用「该解释器自举」而非「系统包管理器」**：python 用 `ensurepip`，node 用 `corepack`/对应版本 npm。
+- **门禁盲区的处理方式**：不为这一条硬加静态检查（要解析发行版包依赖关系，成本远高于收益），而是在 Dockerfile 里**就地注释说明为什么要 ensurepip**，让下一个人不会被「E1 全绿」误导而改回去。**门禁绿 ≠ 可运行**，两者之间必须靠「真跑一次」填补 —— 这正是 C5 的价值。
+- **附带**：同一族配方（`Dockerfile` 与 `Dockerfile.gpu`）的同类修改必须**同轮同步**。阶段 310 只清了 GPU 版的 `# syntax=docker/dockerfile:1`，CPU 版漏了 ⇒ 配方漂移，下一个 build CPU 镜像的人再踩一次同样的坑。
+
+## #291 · Debian/Ubuntu 禁用系统 python 的 ensurepip；「预判失败链」本身也可能错，真 build 是唯一裁决（311 C5 第 1 轮）
+- **两次误判的诚实记录**：`Dockerfile.gpu` builder 阶段要给 python3.11 装 pip。我第 1 次判断「`python3-pip` 会给 3.11 装 pip」⇒ 错（那是 3.10 的）；第 2 次判断「改用 `python3.11 -m ensurepip` 即可」⇒ 也错，真 build 报 `ensurepip is disabled in Debian/Ubuntu for the system python`——**Debian 给系统 python 打了补丁主动禁用 ensurepip**，而发行版又没有 `python3.11-pip` 包。**结论：一个未真跑过的构建配方，连「我预判的修法」都可能是错的。**
+- **正解（Debian/Ubuntu 系）**：`python3.11 -m venv /opt/venv` + `/opt/venv/bin/python -m pip ...`。`python3.11-venv` 包的存在意义正是「**venv 内允许 ensurepip，系统 python 不允许**」——这是发行版的设计意图，不是绕过补丁的歪招。同理适用于 python3.12/3.13 等任何非默认版本。
+- **可迁移判据**：凡「给某个 Python 装 pip」的需求，先问「它是该发行版的**默认** python 吗？」非默认 ⇒ 直接走 venv，不要尝试 `pythonX -m ensurepip`，也不要找不存在的 `pythonX-pip` 包。这条判据在写任何 Ubuntu/Debian 系 Dockerfile 时都适用。
+- **「真 build 是唯一裁决」的又一份证据**：本轮已暴露 4 个盲点（`# syntax` 前端外拉、`python3-pip` 版本归属、ensurepip 被禁、`--no-deps` 跳过 cuDNN）。前 3 个在我逐行人工复审 + 静态门禁全绿的情况下依然漏掉。**静态门禁的覆盖面天然有限**（它只能查文件间的机械一致性），人工复审的覆盖面也有限（依赖我对发行版包结构的记忆，而记忆会错）。⇒ 对「从未真跑过」的构建/部署链路，唯一可信的验收就是**真跑一次**，并预期要修 2–4 轮。
+- **顺带工程结论**：国内构建 Ubuntu 镜像，apt 源必须切清华（实测 `archive.ubuntu.com` ≈100KB/s，`mirrors.tuna.tsinghua.edu.cn` 快一个数量级），但 `sed` 要带 `|| true` —— 镜像源改写失败时退回原源，不阻断构建。
+
+## #292 · 部署目标要满足依赖契约，而不是反向降钉子；「requires_python」必须查 simple 索引而非 JSON API（312 C5 第 2 轮）
+- **病症**：`requirements.txt` 钉 `numpy==2.5.1`，Docker 镜像用 Ubuntu 22.04 + `python3.11` ⇒ pip 报 `Could not find a version that satisfies the requirement numpy==2.5.1` + `Ignored versions that require a different python version: 2.5.1 Requires-Python >=3.12`。
+- **方向性决策（比修法本身更重要）**：遇到「镜像装不上某个钉子」，第一反应可能是**把钉子降到镜像能装的版本**（如 numpy 2.4.x）——**这是错的方向**。`requirements.txt` 是依赖契约的真值源，开发机（Py 3.13 + numpy 2.5.1）按它配置；为迁就镜像而降钉子，立刻制造「契约声明 2.4.x / 开发机实际 2.5.1」的**第三套依赖漂移**（本仓库 184/187/250 已因「三套 torch」付过三次学费）。正确方向是**抬部署目标去满足契约**（Python 3.11→3.12），代价只是换基础镜像 tag。
+- **「某版本是否存在」要查 simple 索引，不要查 JSON API**：清华（及 PyPI）的 JSON API 在**版本不存在/未同步时会 fallback 到项目级旧元数据**，我据此误报 `numpy 2.5.1 requires_python>=3.9`（假）。决定性判据是 simple 索引页：`curl <mirror>/simple/<pkg>/` 后 grep 该版本文件名与其 `data-requires-python` 属性，并统计目标 ABI（如 `-cp311`）的 wheel 数量——本次 `grep -c 'numpy-2\.5\..*-cp311'` = **0** 一锤定音。
+- **会撒谎的探针必须删**：我写了个批量查 `requires_python` 的脚本，因 fallback 逻辑给出与事实相反的结论。**探针的错误比没有探针更危险**（会让人据此做决策）。已当场删除，不留一个会误判的一次性脚本在 scripts/。
+- **Ubuntu 24.04 的 apt 源布局变了**：`/etc/apt/sources.list` 不再存在，改用 deb822 的 `/etc/apt/sources.list.d/ubuntu.sources`。只 sed 老路径会**静默无效**（不报错、也不生效）。稳妥写法是 glob 循环覆盖 `*.list` 与 `*.sources` 两种格式，每项 `|| true`。
+- **升级发行版的连带项**：`python3.11`→`python3.12` 要改**全链路**（apt 包名、venv、`update-alternatives`、symlink、HEALTHCHECK、ENTRYPOINT、注释里的用法示例），且 CPU/GPU 两个配方必须同轮同步，否则又一次漂移。门禁 E1 是版本无关的（取文件内最高频 `python3.X`），E2 只取 CUDA 主.次版本 ⇒ 换 ubuntu 小版本不会误触门禁，但也意味着**门禁不会提醒你「该升级 Python」**——这类契约冲突只有真 build 能发现。
+
+## #293 · 非 ASCII 路径会让 `torch.jit.load` 静默失败，连带大批用例「假失败」（313 环境重建）
+- **病症**：项目从 `D:\work 111\...` 迁到含中文的路径后，`import torch` 正常、`torch.cuda.is_available()` 也 True，但加载 `models/big-lama.pt` 报 `OSError: [WinError 127] ... fopen: No such file or directory`——**文件明明在**。连带 46 个用例失败，失败原因五花八门（report_service FileNotFound、export/history 系列、demo_assets…），看起来像「项目坏了」，实际全是同一个根因。
+- **根因**：Windows 上 libtorch 的 `fopen` 走 ANSI 代码页，中文路径在非 UTF-8 locale 下无法解析。**不是文件缺失，是路径编码**。
+- **判据**：`WinError 127` + `fopen: No such file or directory` + 文件确实存在 ⇒ 先怀疑路径编码，别去查文件系统。用 `python -c "import os; print(os.path.exists(p))"` 与 torch 的报错对照，一分钟内可定性。
+- **通用规律**：**任何「批量用例同时变红、失败原因分散但都涉及文件读写」的现象，先查环境不变量（路径编码、locale、工作目录），再查代码**。本次 69 failed → 9 failed 只靠两件事：换 ASCII 路径 + `PYTHONUTF8=1`，一行产品代码都没改。
+- **配套**：Windows 控制台默认 GBK，凡脚本会打印 `⇒✅❌⚠²` 或子进程输出中文，必须 `PYTHONUTF8=1`（或调 `scripts/console_encoding.force_utf8_stdio()`），否则「通过」会被读成「退出码 1」（阶段 146/170 已登记过同一失效模式，在重建环境里再次踩到）。
+
+## #294 · 传递依赖会悄悄换掉你钉死的核心库；混装两套 torch 的症状是 DLL 符号缺失（313 环境重建）
+- **病症**：`pip install easyocr` 之后 `import torch` 崩：`OSError: [WinError 127] Error loading ...\torch\lib\c10_cuda.dll or one of its dependencies`。torch/lib 下 37 个 DLL 全在、无 0 字节文件、VC++ 运行库 14.51 也够新。
+- **根因**：easyocr 声明依赖 `torch`/`torchvision`，pip 顺手装了**最新的 torch 2.14.1（CPU 版）**，覆盖掉先前装的 `torch 2.9.1+cu128`；随后我又装回 cu128 wheel，但 pip 认为「版本已是 2.9.1+cu128」而**跳过覆盖** ⇒ 目录里混着两套构建的 DLL。
+- **决定性诊断**：用 `pefile` 比对导入/导出符号——`c10_cuda.dll` 从 `c10.dll` 导入的 `AcceleratorError` 构造函数**不在 c10.dll 的导出表里**，且两者 `TimeDateStamp` 差了近一年 ⇒ 确认是**混装**而非缺依赖。（比「重装一遍试试」快，也不会把症状盖掉。）
+- **修法（顺序很重要）**：`pip uninstall -y torch` → **物理删掉** `site-packages/torch`（pip 卸载会留残余）→ `pip install --force-reinstall --no-deps <cu128 wheel>`。`--no-deps` 是必须的，否则又会拉回 CPU 版。
+- **通用规律**：钉版本只约束**直接依赖**。凡引入一个「自己依赖重型库」的包（easyocr/transformers/onnx 系），装完必须复验核心库的构建标识（`torch.__version__` 要带 `+cu128` 后缀，且 `torch.cuda.is_available()` 为 True）。**「装完不验」等于没钉**。
+
+## #295 · 硬编码常量的「反例测试」会静默退化成哑巴守卫；反例必须从被测对象现读（313）
+- **病症**：`tests/test_docker_consistency250.py` 的两条 E1 反例失败，报「反例未被 E1 捕获（守卫是哑巴？）；实得 ERROR=[]」。第一反应是「E1 规则坏了」，实际规则完好。
+- **根因**：反例用 `dfg.replace('ENTRYPOINT ["python3.11", ...]', 'ENTRYPOINT ["python3", ...]')` 构造坏文件，而 `Dockerfile.gpu` 自阶段 312 起已是 `python3.12` ⇒ **replace 什么都没替换**，「坏文件」等于好文件 ⇒ 守卫当然不报错。更糟的是它**不报红**（在版本升级前一直是绿的），失效方式完全静默。
+- **修法**：①反例里的常量**从被测对象现读**（正则抓 `ENTRYPOINT \["(python3(?:\.\d+)?)", "main\.py"\]`）；②加两条「构造自检」断言——`assert bad != no_sym`（替换确实发生）与 `assert interp != "python3"`（当前态仍可构造反例）。这样版本再升级反例自动跟随，失效时立即红。
+- **通用规律**：**「证明守卫不是哑巴」的反例，本身也会腐化**。凡反例靠字符串替换/硬编码常量构造，就必须同时断言「构造成功」——否则它会和被测对象一起漂移，把「守卫有效」变成「守卫看起来有效」。同族：阶段 107 的 `guard=(_rescue_depth == 0)` 实参遮蔽 config，令注入式反例自诞生起就无效。
+- **可迁移检查**：写反例时问一句「如果这个常量将来变了，我的反例会红还是会静默通过？」答案是后者 ⇒ 必须补构造自检。

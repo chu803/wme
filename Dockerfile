@@ -1,4 +1,8 @@
-# syntax=docker/dockerfile:1
+# 阶段 311：移除 `# syntax=docker/dockerfile:1`（与 Dockerfile.gpu 的阶段 310 同步）。
+#   该指令会让 BuildKit 先从 Docker Hub 拉 `docker/dockerfile:1` 前端镜像；
+#   国内直连 registry-1.docker.io 超时，build 在**解析阶段**即失败（还没开始构建）。
+#   本文件只用标准指令（FROM/ARG/RUN/COPY --chown/--from/ENV/EXPOSE/HEALTHCHECK/USER/
+#   ENTRYPOINT），Docker 内置前端完全够用，无需外拉。
 # ==============================================================================
 #  AI 智能水印擦除工作台 —— Docker 镜像构建文件
 #  阶段 197（优化清单 C5）：多阶段构建 + HEALTHCHECK + 非 root 运行。
@@ -29,13 +33,21 @@
 #    4. 默认 CPU 推理；GPU 见文末参考配方。
 # ==============================================================================
 
-ARG PYTHON_VERSION=3.11
+# 阶段 312：3.11 → 3.12。硬约束：`requirements.txt` 钉 `numpy==2.5.1`，
+#   而 numpy 2.5.x 只发布 cp312+ wheel（`data-requires-python=">=3.12"`）
+#   ⇒ 3.11 镜像解析到 numpy 直接 `No matching distribution found`。
+#   依赖契约是真值源，让部署目标满足契约，而非反向降钉子（避免第三套依赖）。
+ARG PYTHON_VERSION=3.12
 
 # ------------------------------ Stage 1 · builder -----------------------------
 FROM python:${PYTHON_VERSION}-slim AS builder
 
 # 构建期工具链：部分依赖若没有预编译 wheel，需要就地编译。
-RUN apt-get update && apt-get install -y --no-install-recommends \
+#   apt 源切清华（python:*-slim 是 Debian，deb822 布局；glob 覆盖两种格式）。
+RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do \
+        [ -f "$f" ] && sed -i 's|http://deb.debian.org/debian|http://mirrors.tuna.tsinghua.edu.cn/debian|g; s|http://security.debian.org/debian|http://mirrors.tuna.tsinghua.edu.cn/debian|g' "$f" || true; \
+    done \
+    && apt-get update && apt-get install -y --no-install-recommends \
         build-essential \
     && rm -rf /var/lib/apt/lists/*
 
@@ -51,8 +63,11 @@ RUN pip install --no-cache-dir --upgrade pip setuptools wheel \
 # ------------------------------ Stage 2 · runtime -----------------------------
 FROM python:${PYTHON_VERSION}-slim AS runtime
 
-# 运行期系统库（OpenCV / Gradio 所需）+ ffmpeg（视频处理）。
-RUN apt-get update && apt-get install -y --no-install-recommends \
+# 运行期系统库（OpenCV / Gradio 所需）+ ffmpeg（视频处理）。apt 源同样切清华。
+RUN for f in /etc/apt/sources.list /etc/apt/sources.list.d/*.list /etc/apt/sources.list.d/*.sources; do \
+        [ -f "$f" ] && sed -i 's|http://deb.debian.org/debian|http://mirrors.tuna.tsinghua.edu.cn/debian|g; s|http://security.debian.org/debian|http://mirrors.tuna.tsinghua.edu.cn/debian|g' "$f" || true; \
+    done \
+    && apt-get update && apt-get install -y --no-install-recommends \
         libgl1 \
         libglib2.0-0 \
         libsm6 \
@@ -103,13 +118,13 @@ ENTRYPOINT ["python", "main.py"]
 #  ⚠ 本项目**已有独立的 Dockerfile.gpu**（阶段 197建、250 修解释器错配）——要显卡加速
 #    直接用它，不要照抄下面的片段（阶段 250：下列片段是「曾经可行」的历史写法，
 #    其 `python3` 与 `python3.11` 的错配、以及已过时的 cu121 时代假设都可能让镜像起不来）。
-#  FROM nvidia/cuda:12.8.1-runtime-ubuntu22.04        # ← 与 requirements-gpu.txt 的 cu128 源匹配
+#  FROM nvidia/cuda:12.8.1-runtime-ubuntu24.04        # ← 与 requirements-gpu.txt 的 cu128 源匹配
 #  RUN apt-get update && apt-get install -y --no-install-recommends \
-#          python3.11 python3-pip libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 ffmpeg \
+#          python3.12 python3.12-venv libgl1 libglib2.0-0 libsm6 libxext6 libxrender1 ffmpeg \
 #          && rm -rf /var/lib/apt/lists/*
-#  # 关键：依赖装进 3.11 后，必须让 `python3` 也指向 3.11，或在 ENTRYPOINT 里显式写
-#  #      `python3.11`（Ubuntu 22.04 的 `python3` 是 3.10，找不到 3.11 的 site-packages）。
+#  # 关键：依赖装进 3.12 后，必须让 `python3` 也指向 3.12，或在 ENTRYPOINT 里显式写
+#  #      `python3.12`（旧 Ubuntu 22.04 的 `python3` 是 3.10，找不到 3.12 的 site-packages）。
 #  ... 其余步骤见 Dockerfile.gpu，但 builder 阶段把 torch 换成 CUDA 版（见 requirements-gpu.txt）...
 #  运行（网页界面）：docker run --gpus all -p 7860:7860 -p 7861:7861 -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu
-#  运行（仅 REST 服务）：docker run --gpus all -p 7861:7861 -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu python3.11 main.py --api
+#  运行（仅 REST 服务）：docker run --gpus all -p 7861:7861 -e WME_SERVER_HOST=0.0.0.0 watermark-eraser-gpu python3.12 main.py --api
 # ------------------------------------------------------------------------------

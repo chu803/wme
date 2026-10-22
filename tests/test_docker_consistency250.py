@@ -21,6 +21,7 @@ from __future__ import annotations
 
 import io
 import os
+import re
 import sys
 
 import pytest
@@ -84,27 +85,44 @@ def _with(monkeypatch: pytest.MonkeyPatch, **fake) -> list:
     return list(errs)
 
 
-def test_rule_E1_catches_interpreter_mismatch(monkeypatch):
-    """反例：GPU 镜像 ENTRYPOINT 改回 python3 且去掉 symlink ⇒ 必须报 E1。"""
-    dfg = _real("Dockerfile.gpu")
+def _strip_symlink(dfg: str) -> str:
+    """去掉 `RUN update-alternatives` 兜底块（构造「无 symlink」场景）。"""
     s = dfg.find("RUN update-alternatives")
     e = dfg.find("\n\n", s) if s != -1 else -1
-    no_sym = (dfg[:s] + dfg[e + 2:]) if s != -1 else dfg
-    bad = no_sym.replace('ENTRYPOINT ["python3.11", "main.py"]',
-                        'ENTRYPOINT ["python3", "main.py"]')
+    return (dfg[:s] + dfg[e + 2:]) if s != -1 else dfg
+
+
+def test_rule_E1_catches_interpreter_mismatch(monkeypatch):
+    """反例：GPU 镜像 ENTRYPOINT 改回 python3 且去掉 symlink ⇒ 必须报 E1。
+
+    ⚠ 阶段 312 起镜像解释器由 3.11 升到 3.12，反例**从 Dockerfile 现读**而非硬编码
+    版本号——否则版本一升级、`.replace()` 就静默空转，守卫变哑巴（本次实测踩到）。
+    """
+    dfg = _real("Dockerfile.gpu")
+    no_sym = _strip_symlink(dfg)
+    m = re.search(r'ENTRYPOINT \["(python3(?:\.\d+)?)", "main\.py"\]', no_sym)
+    assert m, "Dockerfile.gpu 未找到 `ENTRYPOINT [\"python3.x\", \"main.py\"]`"
+    interp = m.group(1)
+    assert interp != "python3", f"当前 ENTRYPOINT 已是 python3，反例构造无意义：{dfg[-200:]}"
+    bad = no_sym.replace(f'ENTRYPOINT ["{interp}", "main.py"]',
+                         'ENTRYPOINT ["python3", "main.py"]')
+    assert bad != no_sym, "反例构造失败：ENTRYPOINT 未被替换"
     errs = _with(monkeypatch, **{"Dockerfile.gpu": bad})
     assert [x for x in errs if x.startswith("E1[Dockerfile.gpu]")], (
         f"反例未被E1 捕获（守卫是哑巴？）；实得 ERROR={errs}")
 
 
 def test_rule_E1_catches_healthcheck_interpreter(monkeypatch):
-    """反例：HEALTHCHECK 的 python3.11 改回 python3（无 symlink）⇒ 必须报 E1。"""
+    """反例：HEALTHCHECK 的解释器改回 python3（无 symlink）⇒ 必须报 E1。"""
     dfg = _real("Dockerfile.gpu")
-    s = dfg.find("RUN update-alternatives")
-    e = dfg.find("\n\n", s) if s != -1 else -1
-    no_sym = (dfg[:s] + dfg[e + 2:]) if s != -1 else dfg
-    bad = no_sym.replace('CMD python3.11 -c "import os,urllib.request;',
+    no_sym = _strip_symlink(dfg)
+    m = re.search(r'CMD (python3(?:\.\d+)?) -c "import os,urllib\.request;', no_sym)
+    assert m, "Dockerfile.gpu 未找到 HEALTHCHECK 里的 `CMD python3.x -c \"import os,urllib.request;`"
+    interp = m.group(1)
+    assert interp != "python3", "HEALTHCHECK 已是 python3，反例构造无意义"
+    bad = no_sym.replace(f'CMD {interp} -c "import os,urllib.request;',
                          'CMD python3 -c "import os,urllib.request;')
+    assert bad != no_sym, "反例构造失败：HEALTHCHECK 未被替换"
     errs = _with(monkeypatch, **{"Dockerfile.gpu": bad})
     assert [x for x in errs if x.startswith("E1[Dockerfile.gpu]")], (
         f"反例未被 E1 捕获；实得 ERROR={errs}")

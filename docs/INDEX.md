@@ -38,7 +38,7 @@
 | B2 清单项 | ✅ | `188-打包元数据与仓库卫生清单.md` | 见清单 185 定义 |
 | B3 真实水印图 | ⛔ 待你出图 | `117-交图作战包-豆包生成真实水印图提示词.md` | 见清单 185 定义 |
 | B4 真实 FP 率测量 | ⛔ 待你出图 | `180-干净图基准与补全先验误报门禁.md`、`181-基线corner_logo非确定性再审计-纠正180误判.md` | 干净图误报率测量 |
-| D1 GPU/API 产品化 | ✅ 代码全收口 | `116-项目自我质检与竞品对标-龙头路线图.md`、`101-产品战略诊断-能力现状与最大问题.md`、`198-D1产品化GPU与API接入.md` | Stage 1~6 全落地（GPU 契约 / `main --api` / Dockerfile.gpu / 细粒度端点 / `--stage full` / 基线硬件守卫）；仅剩真机 GPU 实测 |
+| D1 GPU/API 产品化 | ✅ 代码全收口 | `116-项目自我质检与竞品对标-龙头路线图.md`、`101-产品战略诊断-能力现状与最大问题.md`、`198-D1产品化GPU与API接入.md` | Stage 1~6 全落地（GPU 契约 / `main --api` / Dockerfile.gpu / 细粒度端点 / `--stage full` / 基线硬件守卫）；真机 GPU 实测 **305 性能 + 306 并发全收口** |
 | D1 并发策略（185 清单） | ✅ | `199-REST并发闸门.md` | `_BoundedThreadingHTTPServer` + `API_MAX_CONCURRENCY`（排队而非拒绝，health 豁免并自省） |
 | D2 批量/媒体页耗时展示 | ✅ | `193-D2批量媒体页耗时展示.md` | 与单图页共用 `format_elapsed` 接缝 |
 | E1 归档 | ✅ | `188-打包元数据与仓库卫生清单.md` | 根目录点文件归档至 `.scratch/` |
@@ -344,6 +344,63 @@
 
 - `301-is_grid-jpeg-block-min-period.md`
 - `302-资产重建清单.md`
+
+### 303 · 检测器 OCR 文字框救援式自播种掩码（2026-10-19）
+
+阶段 P0-4：真实豆包成对图 pair_04「海边礁石」静默漏检（OCR 读到角标文字但整图返空掩码）的救援式修复。OCR 文字框在「框内证据二次确认」裁空 ⇒ kept_regions 丢区域 ⇒ 整图返空；改为「中心点救援式」自播种（仅当中心无证据时整框填充），救回 pair_04、10 对 mean removal 0.1649→0.3841，干净图零新增、角标面积零漂移；real_gate 通过（mask_recall 0.7809）。含注入式反例守卫 `test_ocr_box_trust_rescues_empty_refine`。
+
+- `303-检测器OCR文字框救援式自播种掩码.md`
+
+### 304 · apply_language i18n 跨进程泄漏 —— 投毒态实证与守卫（2026-10-19）
+
+阶段 290 已实现 conftest 会话级重定向 `_STATE_FILE` 治本，但**从未被投毒态实证**。本阶段用
+「投毒真实文件 en-US → 拉起全新 pytest 子进程 → 断言回落 zh-CN」做投毒态重跑证伪，并加守卫
+`test_i18n_state_leak_guard.py` + 注入式反证 `scripts/_i18n_leak_inject_proof.py`（设
+`WME_I18N_NO_REDIRECT=1` 复现修复前，守卫必 FAIL）。待复审项收口。
+
+- `304-apply_language_i18n跨进程泄漏-投毒态实证与守卫.md`
+
+### 305 · D1 GPU 真机实测收口（RTX 5060 / cu128）（2026-10-19）
+
+推翻一条被长期当作事实的错误前提：此前「D1 因沙箱为 CPU torch 而阻塞」与同一次运行日志
+（`自动选择设备：NVIDIA GeForce RTX 5060 Laptop GPU` + `EasyOCR（GPU 模式）`）直接矛盾。
+探针以**真实 CUDA matmul 与 CPU 参考比对**（max|Δ|=7.2e-05）数值级证实 GPU 通道打通，
+并给出同 12 张图、仅设备不同的严格 A/B：detect P95 GPU 1.282s vs CPU 6.823s（**5.3×**），
+从因果上证明 1.5s 目标在 CPU 上结构性不可达。再以项目自有 `perf_probe.py` 复核：
+detect 阶段 P95 **0.743s** < 1.5s 目标、护栏内、退出码 0（full 阶段退出码 2 系噪声与
+stage 两道护栏正确拒绝下结论，非失败）。另附诚实披露三处口径差异，及「历史 perf 基线
+早在 10-06 就在本机 GPU 上标定」这一事实更正。
+
+- `305-D1-GPU真机实测收口-RTX5060.md`
+
+### 306 · D1 真实 GPU 并发吞吐实测（RTX 5060 / cu128）（2026-10-19）
+
+阶段 299 脚手架 `scripts/d1_concurrency_probe.py` 在真机 RTX 5060 上实跑同步 API 路径
+（`api.remove_watermark_bytes` 全链路 detect+inpaint）的并发扫描（worker=1/2/4/8，各 12 请求），
+给出吞吐 / 尾延迟 / 峰值显存曲线，验证默认 `API_MAX_CONCURRENCY=4`（HTTP 闸门）与
+`API_ASYNC_MAX_WORKERS=2`（异步作业池）在真实负载下合理。
+
+- `306-D1真实GPU并发吞吐实测-RTX5060.md`
+
+### 307 · full 阶段 perf 基线标定（RTX 5060 / cu128）（2026-10-19）
+
+用项目自有 `perf_probe.py --stage full` 把全链路（detect+inpaint）时延落成一等公民基线，写入
+`benchmark_real/perf_baseline_gpu_default.json`。测量干净（噪声比 0.067、锚点比 0.617 双过噪声/锚点门），
+P95 **8.397s**（RTX 5060，超分 OFF，min-of-3），确认「P95<1.5s 对 full 结构性不可达」；陈旧 2026-10-06
+旧口径文件（缺 `real_superres_*` 键）经 `--force-update` 正确 supersede。detect 基线 `perf_baseline.json` 未动。
+
+- `307-full阶段perf基线标定-RTX5060.md`
+
+### 313 · OCR 救援窄口径化（面积门禁回归）+ 真实图基线重锚（2026-10-22）
+
+环境重建后首跑全量，`prompted_area_gate` 报 5 项面积漂移（`ai_text_heavy` 覆盖率 **+48%**、max **+105%**）。
+消融（`WME_DETECT_OCR_BOX_TRUST=0`）定位到 P0-4 救援通路：docstring 声称「只补**整图返空**」，实现却**逐框**
+判中心无证据即整框填满 ⇒ 单图一次填满 23 个文字框（9.1% 画面）。窄口径化后面积回基线、两道门禁转绿；
+代价 committed 面 mask_recall 0.7809→**0.7700**（余量仍 +71%），换来 mask_coverage 余量 19%→**27%**、
+coverage_ratio 余量 13%→**24%**（与 MEMORY「薄项在 over-detection 侧」一致）。基线经授权双开重锚。
+同轮另修 4 处守卫腐化，其中 `test_docker_consistency250` 的反例因 Dockerfile 升 3.12 而**静默空转**（哑巴守卫）。
+
+- `313-OCR救援窄口径化-面积门禁回归与真实图重锚.md`
 
 ### 特殊编号
 
