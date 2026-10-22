@@ -1105,6 +1105,8 @@ def remove_watermark_video(
     threshold: Optional[int] = None,
     denoise: Optional[int] = None,
     sensitivity: Optional[float] = None,
+    preset: Optional[str] = None,
+    auto_preset: bool = True,
     real_superres: Optional[bool] = None,
     real_scale: Optional[int] = None,
     real_backend: Optional[object] = None,
@@ -1122,6 +1124,10 @@ def remove_watermark_video(
                      固定位置水印（台标、角标）设为 3~5 可显著提速。
         max_frames : 最多处理多少帧（默认 900，约 30fps 下的 30 秒），防呆用。
         reuse_mask : 是否复用上一次检测到的水印位置（默认 True）。
+        preset     : 检测预设名（如 "ai_logo"）；None 表示由 auto_preset 决定。
+        auto_preset: True（默认）= 逐帧智能推荐预设；False = 整段共用 preset。
+                     ⚠ 阶段 315 补齐：本入口此前**没有**这两个参数，而 PDF 入口有
+                     ⇒ 脚本化调用无法为视频钉预设（门面不透出，服务层其实支持）。
         其余参数   : 与单图处理一致的修复参数（含 real_superres / real_scale 真实超分放大）。
 
     返回值：
@@ -1146,6 +1152,8 @@ def remove_watermark_video(
         threshold=threshold,
         denoise=denoise,
         sensitivity=sensitivity,
+        preset=preset,
+        auto_preset=auto_preset,
         real_superres=real_superres,
         real_scale=real_scale,
         real_backend=real_backend,

@@ -78,7 +78,8 @@ def test_full_mode_has_no_marker_filter():
 def test_gates_flag_appends_gate_steps():
     names = [s.name for s in rac.build_steps(gates=True)]
     assert names == ["pytest", "undef_scan", "docker_static",
-                     "clean_bench_probe", "quality_gate", "real_gate", "perf_probe"]
+                     "clean_bench_probe", "quality_gate", "real_gate", "perf_probe",
+                     "media_gate"]
 
 
 def test_real_gate_step_uses_strict_scope():

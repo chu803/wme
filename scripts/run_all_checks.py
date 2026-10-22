@@ -28,6 +28,7 @@
 #                        clean_bench_probe（干净图误报）· quality_gate（合成红线）
 #                        · real_gate --strict-scope（真实图红线 + 漂移）
 #                        · perf_probe（检测阶段 P95 回归护栏）
+#                        · media_gate（PDF/视频链路；阶段 315 补齐全源验证）
 #
 # 退出码（与门禁家族契约一致）
 # ----------------------------
@@ -147,6 +148,11 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
             Step("perf_probe",
                  [sys.executable, os.path.join(root, "scripts", "perf_probe.py")],
                  note="性能探针（检测阶段 P95 回归护栏；未标定时退出码 2）"),
+            # 阶段 315：补齐「全源」承诺的验证缺口——既有三门禁全是静态图，
+            # PDF/视频链路长期「有代码、有单测、无端到端验证」。
+            Step("media_gate",
+                 [sys.executable, os.path.join(root, "scripts", "media_gate.py")],
+                 note="PDF/视频链路门禁（真实图合成样本；防静默丢页·丢帧·跑完不干活）"),
         ]
     return steps
 

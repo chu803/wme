@@ -134,6 +134,10 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/make_demo_assets.py": "S 合成资产生成",
     "scripts/make_real_compare_crops.py": "S 对比图裁剪",
     "scripts/mask_param_audit.py": "S 掩码参数标定审计",
+    # 阶段 315：媒体链路门禁要**真跑 PDF + 视频全链**（≈23s，依赖 torch/EasyOCR/真图集），
+    # 与 quality_gate/real_gate 同族 ⇒ 归 S 类豁免；其判据由 tests/test_media_gate.py 守，
+    # 端到端执行由 `run_all_checks --gates` 守。
+    "scripts/media_gate.py": "S PDF/视频链路门禁（真实跑全链，慢且依赖模型）",
     "scripts/prompted_area_gate.py": "S 次级档面积门禁（真实跑 20 图×4 预设 ≈171s）",
     "scripts/quality_gate.py": "S 合成质量门禁",
     "scripts/real_asset_preflight.py": "S 真实资产入库预检",

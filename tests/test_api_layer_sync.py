@@ -260,3 +260,24 @@ def test_response_echoes_explicit_dual_run(monkeypatch):
                         lambda data, **kw: (b"x", None))
     resp = server._process_one_b64(_b64_png(), {"dual_run": True})
     assert resp["dual_run"] is True
+
+
+# ==============================================================================
+# 阶段 315 · PDF / 视频入口的「预设面」必须对称（实测不对称过一次）
+# ==============================================================================
+def test_pdf_video_preset_surface_is_symmetric():
+    """两个媒体入口都必须能钉预设，且**真的转发下去**（收下就丢等于没有）。
+
+    背景：`api.remove_watermark_pdf` 一直有 `preset`/`auto_preset`，而
+    `remove_watermark_video` 没有 —— 但 `services.video_service.process_video`
+    **本来就支持**。门面漏透出，导致脚本化调用「PDF 能钉预设、视频不能」，
+    与 api 文件头承诺的「统一的调用姿势」不符。
+    本门禁（scripts/media_gate.py）第一次跑就撞上了：TypeError: unexpected keyword 'preset'。
+    """
+    for name in ("remove_watermark_pdf", "remove_watermark_video"):
+        params = inspect.signature(getattr(api, name)).parameters
+        assert "preset" in params, f"{name} 缺 preset 参数"
+        assert "auto_preset" in params, f"{name} 缺 auto_preset 参数"
+        src = inspect.getsource(getattr(api, name))
+        assert "preset=preset" in src, f"{name} 收了 preset 但没往下转发"
+        assert "auto_preset=auto_preset" in src, f"{name} 收了 auto_preset 但没往下转发"
