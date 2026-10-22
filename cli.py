@@ -39,6 +39,11 @@
 
               # 处理整个目录时，连同其中的 PDF 与视频一起处理
               python cli.py -i 素材目录 -o 结果 -r --include-media
+
+            退出码（阶段 316 明确，此前恒为 0 使 CI 无法判败）：
+              0  全部成功（含「跳过」——跳过是正常裁决，不算失败）
+              1  存在处理失败项（如损坏图片）
+              2  参数或输入问题（未给 -i、目录中无可处理文件）
  版 权声明 : Copyright (c) 2026 AI 智能水印擦除工作台. All Rights Reserved.
 ==============================================================================
 """
@@ -485,8 +490,19 @@ def _print_result(rd: dict, args: argparse.Namespace,
         print(f"  ❌ {name} 失败：{rd.get('error', '')}")
 
 
+def _batch_exit_code(summary: dict) -> int:
+    """批量阶段的退出码。
+
+    动机（阶段 315 演练实测）：17 个文件、2 个失败，进程仍返回 0 ⇒ 脚本与 CI
+    无法分辨「全部成功」和「全军覆没」，只能去解析中文汇总文本（脆且不可依赖）。
+    口径与门禁家族一致：**0 = 全部成功**（「跳过」是正常裁决，不计失败）/
+    **1 = 存在处理失败**；2 保留给「参数或输入缺失」（在 main 前段返回）。
+    """
+    return 1 if summary.get("failed", 0) else 0
+
+
 def main(argv: list[str] | None = None) -> int:
-    """CLI 主入口，返回进程退出码（0=正常）。"""
+    """CLI 主入口，返回进程退出码（0=全部成功 / 1=存在失败 / 2=参数或输入问题）。"""
     # argparse 对 -h 会自己退出，这里仅做解析。
     args = _build_arg_parser().parse_args(argv)
 
@@ -674,7 +690,10 @@ def main(argv: list[str] | None = None) -> int:
             for n, q in flagged:
                 print(f"  🔍 {n}：分 {q.score} · {q.level} —— {q.detail}")
     print("完成。")
-    return 0
+    rc = _batch_exit_code(summary)
+    if rc:
+        print(f"存在 {summary['failed']} 个失败项，退出码 1（供脚本/CI 判断，无需解析上面的文本）。")
+    return rc
 
 
 if __name__ == "__main__":

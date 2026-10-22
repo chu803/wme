@@ -7,8 +7,10 @@
 - --verify-model：内置槽无权重时应返回「未通过」且退出码非 0。
 - --set-model lama：成功切换，退出码 0。
 - --set-model nope：未知槽，退出码 1。
+- 批量阶段退出码：有失败⇒1、干净/跳过⇒0（阶段 316）。
 
-约束：不使用网络（不测 --download-model），不创建/删除文件。
+约束：不使用网络（不测 --download-model）；文件只在 pytest 的 tmp_path 里创建，
+不动仓库与用户目录（沙箱的 safe-delete 钩子会拦 Python 删除，故一律不删）。
 """
 
 import pytest
@@ -67,3 +69,47 @@ def test_set_model_invalid_does_not_corrupt_active(cli_run):
     r2 = cli_run("--list-models")
     assert r2.returncode == 0
     assert "lama" in r2.stdout
+
+
+# ---------------------------------------------------------------------------
+# 阶段 316 · 批量阶段退出码（承 315 实战演练）
+# 演练实测：17 个文件、2 个失败，进程仍返回 0 ⇒ 脚本/CI 只能去解析中文汇总文本
+# 才能知道「这批里有东西没做成」。以下三例把退出码钉死。
+# ---------------------------------------------------------------------------
+def test_batch_exit_code_failures_become_1():
+    import cli
+
+    assert cli._batch_exit_code({"success": 15, "skipped": 0, "failed": 0}) == 0
+    assert cli._batch_exit_code({"success": 15, "skipped": 0, "failed": 2}) == 1
+
+
+def test_batch_exit_code_skip_is_not_failure():
+    """「未检出水印 ⇒ 跳过」是正常裁决，不得被当成失败（否则干净图一批全红）。"""
+    import cli
+
+    assert cli._batch_exit_code({"success": 0, "skipped": 5, "failed": 0}) == 0
+
+
+def test_cli_batch_reports_failure_via_exit_code(cli_run, tmp_path):
+    """真实子进程：目录里只有 1 个 0 字节图片 ⇒ stdout 记失败、退出码 1。"""
+    src = tmp_path / "in"
+    src.mkdir()
+    (src / "empty.jpg").write_bytes(b"")
+    r = cli_run("-i", str(src), "-o", str(tmp_path / "out"))
+    assert "失败 1" in r.stdout, f"汇总文本未如实计数：{r.stdout[-500:]}"
+    assert r.returncode == 1, f"有失败仍退 0（CI 无法判败）：rc={r.returncode}"
+
+
+@pytest.mark.timeout(420)   # 内层 cli_run(timeout=300) ⇒ 外层必须更宽（tests/test_timeout_contract.py 契约）
+def test_cli_batch_all_clean_exits_zero(cli_run, tmp_path):
+    """反方向：没有失败项时不得返回 1（含「全部跳过」与「全部成功」两种结局）。"""
+    import numpy as np
+    from PIL import Image
+
+    src = tmp_path / "in"
+    src.mkdir()
+    g = np.repeat(np.arange(64, dtype=np.uint8)[None, :], 64, axis=0)
+    Image.fromarray(g).save(src / "gradient.png")
+    r = cli_run("-i", str(src), "-o", str(tmp_path / "out"), timeout=300)
+    assert "失败 0" in r.stdout, f"干净图被判失败：{r.stdout[-500:]}"
+    assert r.returncode == 0, f"无失败却非 0：rc={r.returncode}\n{r.stdout[-500:]}"

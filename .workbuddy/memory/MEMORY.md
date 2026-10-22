@@ -72,6 +72,14 @@ mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 
 技术内核强、商品外壳缺。P1 数据质量 → P2 产品化性能 → P3 生态。护城河=全本地离线 + 免手涂 8 预设 + 图/PDF/视频全源 + 合规定位。记分卡 `docs/quality/product_scorecard.json`：overall **B-** / eng **A** / core **B-** / prod **C+** / eco **D**。
 - ⚠️ **cu121→cu128 声明对齐早已完成（305 复核证伪）**：此前「声明文件钉 cu121/torch 2.3.1、待处理」是**误记**。`requirements-gpu.txt` 与 `requirements.txt` 已同钉 `torch==2.9.1`，前者走 `--index-url .../cu128`；`Dockerfile.gpu` 基础镜像 `nvidia/cuda:12.8.1-runtime-ubuntu22.04`；`docker_consistency_check.py` 的 **E2（CUDA 12.8 ↔ cu128 匹配）+ W1（torch 2.9.1 一致）全绿** ⇒ 阶段 207 已收口，声明与运行环境一致，新人按声明装即 cu128。
 - **剩余开放项**（截至 307，wme 侧自主可推进工作已彻底耗尽）：① ✅ full 阶段 perf 基线标定（307，RTX 5060 真机 P95 8.397s 落盘 `perf_baseline_gpu_default.json`，超分 OFF）；② ✅ API 侧并发实测（306，真机 RTX 5060 验证默认 `API_MAX_CONCURRENCY=4`/`API_ASYNC_MAX_WORKERS=2` 合理，无需改动）；③ C5 真 build（需 docker CLI，本机缺失）。注：D1 GPU、cu121 声明、API 并发三项此前系误判阻塞，305/306 已证伪收口。
+- **316 实战演练新增待决项**（出处 `docs/316-实战演练-混合批量一个文件夹吞到底.md` §六；均**需产品拍板，不属可自主推进**）：
+  A 后处理全图作用 ⇒ 真实原分辨率图上「水印外改动 46.9%–88.4%」（314b 同源，本次首次量化）；
+  B 无参考质量分对「水印没动手」无感（a2/a3 bbox 差 1.06/0.74 仍得 100·good）；
+  C 内容非 PDF 的 `.pdf` 被 MuPDF 静默按图片当 1 页处理，成功但无提示；
+  D 预设置信度 0.01、触发特征「无」仍修复 12228px（阈值牵 real_gate 红线，动它需重锚授权）；
+  E 输出命名不一致（图 `X_cleaned_HHMMSS.png` vs 媒体 `X_已去水印.pdf`）；
+  F JPEG 输入默认输出 PNG，单图体积 ×4.65、整批 ×1.35。
+  ✅ 同期缺陷「批量有失败仍退 0」已在 316 修复（`cli._batch_exit_code` 0/1/2 + 4 例守卫）。
 
 ## 复盘教训（非显然项）
 - **语言是跨进程持久全局状态**（290 治本 / 304 投毒态实证收口）：i18n 落盘 `cache/i18n_state.json` 污染后续 pytest；`conftest.pytest_configure` 指向会话临时目录治本；304 用「投毒真实文件 en-US → 拉起全新 pytest 子进程 → 断言 `get_language()==zh-CN`」做投毒态重跑证伪，反例闭合确认毒确实写入；并加守卫 `tests/test_i18n_state_leak_guard.py` + 注入式反证 `scripts/_i18n_leak_inject_proof.py`（`WME_I18N_NO_REDIRECT=1` 复现修复前，守卫必 FAIL）。**已收口**，正常跑零副作用。
