@@ -108,13 +108,19 @@ def _mask_to_rgba_layer(mask: np.ndarray, color=(255, 59, 48)) -> np.ndarray:
 
     返回值：
         (H, W, 4) uint8 RGBA 数组，alpha 通道 = 掩码值（255 处不透明）。
+
+    ⚠ 阶段 314b（实测）：Gradio 6.x 在往返编辑框时会把图层**压成 RGB、丢弃 alpha**。
+    因此不能「RGB 全图刷红 + 靠 alpha 表达掩码」——alpha 一丢，整层灰度恒 ≈116 > 阈值 10
+    ⇒ 整图被判为涂抹区 ⇒ 一键修复重绘整张图（实测 82% 像素被改、状态栏「你补画 413 万像素」）。
+    故只在掩码处上色，其余保持纯黑：丢 alpha 后灰度仍是 0，阈值可正确区分。
     """
     h, w = mask.shape[:2]
     rgba = np.zeros((h, w, 4), dtype=np.uint8)
-    rgba[:, :, 0] = color[0]
-    rgba[:, :, 1] = color[1]
-    rgba[:, :, 2] = color[2]
-    rgba[:, :, 3] = mask  # alpha = 掩码：水印处不透明，其余透明
+    on = mask > 0
+    rgba[on, 0] = color[0]
+    rgba[on, 1] = color[1]
+    rgba[on, 2] = color[2]
+    rgba[:, :, 3] = mask  # alpha 仍写（RGBA 感知的通路用得上）；RGB 侧已自带掩码语义
     return rgba
 
 

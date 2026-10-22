@@ -247,8 +247,19 @@ def _decode_image_raw(p: str) -> "Tuple[np.ndarray, Optional[np.ndarray]]":
     cv2 = _require_cv2()
     with open(p, "rb") as f:
         data = f.read()
+    if not data:
+        # 阶段 314b：0 字节文件会让 cv2.imdecode **抛 cv2.error**（不是返回 None），
+        # 旧实现在这里把 OpenCV 的原始 C++ 报错直接甩给用户（实测：空 .png 走 API
+        # 抛 error: OpenCV(5.0.0) ... loadsave.cpp），与「其余损坏图都是友好中文提示」不一致。
+        raise CorruptedImageError(f"图片文件为空（0 字节）：{p}\n建议：重新导出或重新下载该图片。")
     raw = np.frombuffer(data, dtype=np.uint8)
-    bgr = cv2.imdecode(raw, cv2.IMREAD_UNCHANGED)
+    try:
+        bgr = cv2.imdecode(raw, cv2.IMREAD_UNCHANGED)
+    except cv2.error as exc:
+        # 头部损坏到连解码器都进不去时 imdecode 会抛，而非返回 None。
+        raise CorruptedImageError(
+            f"图片解码失败，文件可能已损坏：{p}\n原因：{exc}"
+        ) from exc
     if bgr is None:
         raise CorruptedImageError(f"图片解码失败，文件可能已损坏：{p}")
     if bgr.ndim == 2:

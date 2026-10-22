@@ -410,7 +410,15 @@ def process_pdf(
     try:
         # ---------- 打开源文档 ----------
         on_progress(0.02, "正在打开 PDF……")
-        doc = fitz.open(src)
+        try:
+            doc = fitz.open(src)
+        except Exception as exc:  # noqa: BLE001
+            # 阶段 314b：损坏/非 PDF 文件时 PyMuPDF 抛英文 FileDataError，
+            # 直接透出会让用户看到 `Failed to open file ... as type pdf.`（实测）。
+            result.error = (
+                f"无法打开 PDF（文件可能已损坏，或根本不是 PDF）：{src}\n原因：{exc}"
+            )
+            return result
         total = doc.page_count
         result.total_pages = total
         if total <= 0:
