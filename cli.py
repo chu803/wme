@@ -475,6 +475,40 @@ def _dispatch(path: str, args: argparse.Namespace, show_progress: bool,
     return _run_one(path, args, show_progress, index, total)
 
 
+def size_hint(in_bytes: int | None, out_bytes: int | None,
+              out_fmt: str | None = None, threshold: float = 1.5) -> str | None:
+    """输出体积明显大于输入时，给一句可执行的换算提示（阶段 319）。
+
+    实测（2048² 真图，本机 2026-10-23）：PNG **4.65×** 输入、JPG(95) 1.13×、WebP(95) **1.00×**。
+    「去水印顺手把 7.7MB 换成 1.6MB」是交付面最容易被感知的负担之一，故在结果行附一句提示
+    ——**只提示不改默认**：格式是观感/无损承诺，属产品决策（见 docs/319）。
+    """
+    if not in_bytes or not out_bytes or in_bytes <= 0 or out_bytes <= 0:
+        return None
+    ratio = out_bytes / float(in_bytes)
+    if ratio < threshold:
+        return None
+    alt = "WebP" if (out_fmt or "").upper() == "PNG" else "JPG"
+    return (f"体积 {ratio:.1f}× 输入（{out_bytes / 1e6:.1f}MB）；"
+            f"若不需要无损，`-f {alt.upper()}` 实测约 1.0–1.1× 输入")
+
+
+def frame_step_hint(frame_step: int | None, reuse_mask: bool = True,
+                    max_frames: int | None = None) -> str | None:
+    """静止水印的抽帧提速提示（阶段 319）。
+
+    实测（24 帧 1024² 静止水印）：step=1 37.3s / 24 次检测；step=5 20.5s / 5 次检测
+    ⇒ **1.82×** 提速，且与源帧的平均绝对差几乎不变（2.79 vs 2.77）。
+    只对「用户没改过步长」的情形提示；滚动/飘动水印必须每帧检测，故提示里写明前提。
+    """
+    if frame_step != 1 or not reuse_mask:
+        return None
+    if max_frames is not None and max_frames < 20:
+        return None
+    return ("视频默认每帧检测；若水印位置固定，加 `--frame-step 5` 实测约 1.8× 提速"
+            "（移动/滚动水印请保持每帧检测）")
+
+
 def _print_result(rd: dict, args: argparse.Namespace,
                   summary: dict, quality_reports: list) -> None:
     """打印单张处理结果，并按需评估质量、累计统计。"""
@@ -493,6 +527,21 @@ def _print_result(rd: dict, args: argparse.Namespace,
         print(line)
         if rd.get("note"):
             print(f"      {rd['note']}")
+        # 阶段 319：交付面提示（只提示、不改默认）。
+        if kind == "image" and rd.get("out_path"):
+            try:
+                h = size_hint(_os.path.getsize(rd["input_path"]),
+                              _os.path.getsize(rd["out_path"]), args.fmt)
+            except OSError:
+                h = None
+            if h:
+                print(f"      💡 {h}")
+        elif kind == "video":
+            h = frame_step_hint(getattr(args, "frame_step", None),
+                                reuse_mask=not getattr(args, "no_reuse_mask", False),
+                                max_frames=getattr(args, "max_frames", None))
+            if h:
+                print(f"      💡 {h}")
     elif rd["status"] == "skipped":
         summary["skipped"] += 1
         print(f"  ⏭️  {name} 跳过：{rd.get('error', '')}")
