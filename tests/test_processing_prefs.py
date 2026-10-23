@@ -30,6 +30,8 @@ _PREF_ATTRS = (
     "IMAGE_NORMALIZE_BIT_DEPTH",
     # 阶段 318c：只动水印区（apply_processing_prefs 新增参数会写它）
     "POSTPROCESS_PRESERVE_UNTOUCHED",
+    # 阶段 320d：输出格式跟随输入
+    "OUTPUT_FMT_FOLLOW_INPUT",
 )
 
 
@@ -93,6 +95,27 @@ def test_preserve_untouched_key_roundtrip(overrides_path):
     assert config.load_user_overrides()["POSTPROCESS_PRESERVE_UNTOUCHED"] is True
     config.save_user_overrides({"POSTPROCESS_PRESERVE_UNTOUCHED": "关"})
     assert config.load_user_overrides()["POSTPROCESS_PRESERVE_UNTOUCHED"] is False
+
+
+def test_follow_input_fmt_key_roundtrip(overrides_path):
+    """阶段 320d：新键进白名单，字符串按 parse_bool 语义解析。"""
+    assert config.save_user_overrides({"OUTPUT_FMT_FOLLOW_INPUT": "true"}) is True
+    assert config.load_user_overrides()["OUTPUT_FMT_FOLLOW_INPUT"] is True
+    config.save_user_overrides({"OUTPUT_FMT_FOLLOW_INPUT": "off"})
+    assert config.load_user_overrides()["OUTPUT_FMT_FOLLOW_INPUT"] is False
+
+
+def test_apply_follow_input_fmt_tristate(overrides_path):
+    config.OUTPUT_FMT_FOLLOW_INPUT = False
+    apply_processing_prefs(True, True, True, True, save_default=True)   # 不传 ⇒ None
+    assert config.OUTPUT_FMT_FOLLOW_INPUT is False
+    persisted = json.loads(open(overrides_path, encoding="utf-8").read())
+    assert "OUTPUT_FMT_FOLLOW_INPUT" not in persisted
+
+    apply_processing_prefs(True, True, True, True, save_default=True, follow_input_fmt=True)
+    assert config.OUTPUT_FMT_FOLLOW_INPUT is True
+    persisted = json.loads(open(overrides_path, encoding="utf-8").read())
+    assert persisted["OUTPUT_FMT_FOLLOW_INPUT"] is True
 
 
 def test_invalid_secondary_falls_back_to_lama(overrides_path):
@@ -198,6 +221,8 @@ def test_apply_preserve_untouched_tristate(overrides_path):
     "settings.prefs.bitdepth_info",
     "settings.prefs.preserve_label",
     "settings.prefs.preserve_info",
+    "settings.prefs.follow_fmt_label",
+    "settings.prefs.follow_fmt_info",
     "settings.prefs.save_label",
     "settings.prefs.apply",
     "settings.prefs.msg_applied",

@@ -250,13 +250,16 @@ TRANSLATIONS: dict = {
                 "bitdepth_label": "非 8 位图位深规范化",
                 "bitdepth_info": "16 位/浮点输入自动映射到 8 位（关闭后此类图会在修复阶段报错）",
                 "preserve_label": "只动水印区（推荐追求保真时开启）",
+                "follow_fmt_label": "输出格式跟随输入",
+                "follow_fmt_info": "JPEG 进 → JPEG 出、WebP 进 → WebP 出；实测输出体积从输入 4.65× 降到 1.13×/1.00×。"
+                                   "代价是再经历一次有损编码。关闭时一律输出 PNG（无损，体积较大）。",
                 "preserve_info": "水印区 + 8px 保护带之外，输出与原图**逐字节一致**；"
                                  "实测「水印外被改动」从约 50% 降到约 1%，不影响擦除效果。"
                                  "关闭时保持整图轻微锐化的现有观感。",
                 "save_label": "保存为默认（写入 config.user_overrides.json）",
                 "save_info": "与真实超分/保留策略互不影响（合并式写入）",
                 "apply": "应用处理偏好",
-                "msg_applied": "已应用处理偏好 —— 双跑择优：{dual}；透明通道：{alpha}；EXIF 方向：{exif}；位深规范化：{depth}；只动水印区：{preserve}",
+                "msg_applied": "已应用处理偏好 —— 双跑择优：{dual}；透明通道：{alpha}；EXIF 方向：{exif}；位深规范化：{depth}；只动水印区：{preserve}；输出格式跟随输入：{fmt}",
             },
             "real_superres": {
                 "title": "### 🔍 真实超分（Real Super-Resolution）",
@@ -1051,6 +1054,10 @@ TRANSLATIONS: dict = {
                 "bitdepth_label": "Normalize non-8-bit depth",
                 "bitdepth_info": "16-bit/float inputs are mapped to 8-bit (otherwise inpaint would fail on them)",
                 "preserve_label": "Touch watermark area only (recommended for fidelity)",
+                "follow_fmt_label": "Output format follows input",
+                "follow_fmt_info": "JPEG in → JPEG out, WebP in → WebP out; measured output size drops from "
+                                   "4.65x input to 1.13x/1.00x. Costs one extra lossy encode. "
+                                   "Off = always PNG (lossless, larger).",
                 "preserve_info": "Outside the watermark mask (plus an 8px guard band) the output is "
                                  "**byte-identical** to the input; measured collateral dropped from "
                                  "~50% to ~1% of pixels with no loss in removal. Off keeps the "
@@ -1058,7 +1065,7 @@ TRANSLATIONS: dict = {
                 "save_label": "Save as default (writes config.user_overrides.json)",
                 "save_info": "Merged write; does not affect superres/retention keys",
                 "apply": "Apply preferences",
-                "msg_applied": "Preferences applied — dual-run: {dual}; alpha: {alpha}; EXIF: {exif}; bit-depth: {depth}; watermark-area-only: {preserve}",
+                "msg_applied": "Preferences applied — dual-run: {dual}; alpha: {alpha}; EXIF: {exif}; bit-depth: {depth}; watermark-area-only: {preserve}; format follows input: {fmt}",
             }, "real_superres": {
                 "title": "### 🔍 Real Super-Resolution",
                 "title": "### 🔍 Real Super-Resolution",

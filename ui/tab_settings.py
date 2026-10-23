@@ -317,6 +317,7 @@ def apply_processing_prefs(
     bit_depth: bool,
     save_default: bool,
     preserve_untouched: bool | None = None,
+    follow_input_fmt: bool | None = None,
 ) -> "tuple[str, str]":
     """
     设置页「处理偏好」（阶段 75）：实时写入运行时配置 + 可选持久化 + 刷新快照。
@@ -327,8 +328,9 @@ def apply_processing_prefs(
         exif_orient: 加载端应用 EXIF 方向（阶段 70）；
         bit_depth  : 非 8 位输入位深规范化（阶段 70）。
 
-    阶段 318c 新增 `preserve_untouched`（只动水印区）：默认 **None = 不改这项**，
-    以便旧调用方/旧测试保持原语义；设置页显式传布尔值时才写入与持久化。
+    阶段 318c 新增 `preserve_untouched`（只动水印区）；阶段 320d 新增 `follow_input_fmt`
+    （输出格式跟随输入）：两者默认 **None = 不改这项**，以便旧调用方/旧测试保持原语义；
+    设置页显式传布尔值时才写入与持久化。
 
     返回值：
         (快照 Markdown, 信息文案)，与 prefs_apply.click 的 outputs 对齐。
@@ -341,6 +343,8 @@ def apply_processing_prefs(
         config.IMAGE_NORMALIZE_BIT_DEPTH = bool(bit_depth)
         if preserve_untouched is not None:
             config.POSTPROCESS_PRESERVE_UNTOUCHED = bool(preserve_untouched)
+        if follow_input_fmt is not None:
+            config.OUTPUT_FMT_FOLLOW_INPUT = bool(follow_input_fmt)
     except Exception as exc:  # noqa: BLE001
         log.exception("写入处理偏好运行时配置失败")
         return build_snapshot_md(), t("settings.snap.msg.err", exc=format_exception_for_ui(exc))
@@ -356,6 +360,8 @@ def apply_processing_prefs(
             }
             if preserve_untouched is not None:
                 patch["POSTPROCESS_PRESERVE_UNTOUCHED"] = config.POSTPROCESS_PRESERVE_UNTOUCHED
+            if follow_input_fmt is not None:
+                patch["OUTPUT_FMT_FOLLOW_INPUT"] = config.OUTPUT_FMT_FOLLOW_INPUT
             ok = config.save_user_overrides(patch)
             if not ok:
                 log.warning("持久化处理偏好默认未生效：save_user_overrides 返回 False"
@@ -373,6 +379,7 @@ def apply_processing_prefs(
         # 阶段 318c：确认文案必须带上这一项，否则用户勾了也看不出是否生效
         #   （实测点击「应用」后原文案只报四项）。
         preserve=_snap_state(config.POSTPROCESS_PRESERVE_UNTOUCHED),
+        fmt=_snap_state(config.OUTPUT_FMT_FOLLOW_INPUT),
     )
     return snap, info
 
@@ -602,6 +609,13 @@ def build_settings_tab():
                 )
                 reg_label_info(pp_preserve, "settings.prefs.preserve_label",
                                "settings.prefs.preserve_info")
+                pp_follow_fmt = gr.Checkbox(
+                    value=config.OUTPUT_FMT_FOLLOW_INPUT,
+                    label=t("settings.prefs.follow_fmt_label"),
+                    info=t("settings.prefs.follow_fmt_info"),
+                )
+                reg_label_info(pp_follow_fmt, "settings.prefs.follow_fmt_label",
+                               "settings.prefs.follow_fmt_info")
             with gr.Row():
                 prefs_save = gr.Checkbox(
                     value=False,
@@ -693,7 +707,7 @@ def build_settings_tab():
         # 阶段 75：处理偏好「应用」——实时写入运行时 + 可选持久化 + 刷新快照。
         prefs_apply.click(
             fn=apply_processing_prefs,
-            inputs=[pp_dual, pp_alpha, pp_exif, pp_depth, prefs_save, pp_preserve],
+            inputs=[pp_dual, pp_alpha, pp_exif, pp_depth, prefs_save, pp_preserve, pp_follow_fmt],
             outputs=[snapshot, info],
         )
 
