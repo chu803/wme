@@ -365,6 +365,9 @@ TRANSLATIONS: dict = {
         },
         "auto": {
             "upload_label": "① 上传图片（拖拽或点击）",
+            "sample_btn": "🖼 没有图？试一张示例",
+            "sample_loaded": "已载入示例图（右下角有「StudioAI」角标）——接着点「② 自动检测水印」，再点「④ 一键修复」即可。",
+            "sample_fail": "示例图载入失败（{exc}）；请改为上传自己的图片。",
             "detect_accordion": "② 检测参数（可微调后重新检测）",
             "detect_mode_label": "检测模式",
             "detect_mode_info": "针对 AI 生成图常见水印样式选择预设，一键提升检测成功率（也可在下方手动微调）",
@@ -1162,6 +1165,10 @@ TRANSLATIONS: dict = {
         },
         "auto": {
             "upload_label": "① Upload Image (drag or click)",
+            "sample_btn": "🖼 No image? Try a sample",
+            "sample_loaded": "Sample loaded (has a \"StudioAI\" badge in the bottom-right corner) — "
+                             "next click \"② Detect Watermark\", then \"④ One-click Repair\".",
+            "sample_fail": "Failed to load the sample ({exc}); please upload your own image instead.",
             "detect_accordion": "② Detect Parameters (tweak then re-detect)",
             "detect_mode_label": "Detect Mode",
             "detect_mode_info": "Pick a preset tuned for common AI-generated watermark styles to boost detection at one click (manual tweaks below still apply)",

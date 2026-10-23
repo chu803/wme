@@ -551,6 +551,33 @@ def _clear_editor(upload):
     return {"background": bg, "layers": [], "composite": None}
 
 
+#: 阶段 320：随包发布的示例图（640² 真照片 + 右下角「StudioAI」角标）。
+SAMPLE_IMAGE_PATH = _os.path.join(_ROOT, "docs", "assets", "sample_watermarked.png")
+
+
+def load_sample_image():
+    """「试一张示例」：把示例图填进上传框与编辑框，返回 (upload, editor, 状态文案)。
+
+    返回三值与 `sample_btn.click(outputs=[upload, editor, status_box])` 对齐。
+    读不到文件时三个值都不变（upload/editor 返回 gr.update()），只报错文案——
+    缺一个演示资源不该让整页崩掉。
+    """
+    try:
+        from PIL import Image as _PILImage
+        with _PILImage.open(SAMPLE_IMAGE_PATH) as im:
+            arr = np.array(im.convert("RGB"))
+    except Exception as exc:  # noqa: BLE001 - 资源缺失/损坏都只降级为提示
+        return gr.update(), gr.update(), t("auto.sample_fail", exc=str(exc)[:120])
+    if arr.ndim != 3 or arr.shape[2] != 3:
+        return gr.update(), gr.update(), t("auto.sample_fail", exc="示例图通道异常")
+    # ⚠ 实测（320）：把 `{"background": arr, "layers": [], "composite": ...}` 直接塞给
+    #   Gradio 6 的 ImageEditor，浏览器回传后会被当作"没有图" ⇒ 修复回调报
+    #   「请先拖拽或上传一张图片到左侧编辑框」（composite 填 arr 也无效）。
+    #   而「检测」回调返回的 `background + 1 个图层` 是**已被验证可用**的形态
+    #   （314b 实测 + 本次真机点过）。故示例图只填上传框，编辑框交给用户点「② 自动检测水印」去填。
+    return arr, gr.update(), t("auto.sample_loaded")
+
+
 def build_auto_tab():
     """
     构建「智能自动检测」标签页的全部 Gradio 组件，并绑定回调。
@@ -571,6 +598,14 @@ def build_auto_tab():
                 elem_id="auto_upload",
             )
             reg_label(upload, "auto.upload_label")
+            # 阶段 320：首次体验——没有素材的人也能一键看到完整效果。
+            #   动机：首屏只有「上传」，新用户没有现成的带水印图就直接卡住；
+            #   示例图随包发布（docs/assets/sample_watermarked.png，640² 真照片 + 右下角标）。
+            with gr.Row():
+                sample_btn = gr.Button(
+                    t("auto.sample_btn"), size="sm", variant="secondary",
+                )
+                reg_value(sample_btn, "auto.sample_btn")
 
             with gr.Accordion(t("auto.detect_accordion"), open=True) as _det_acc:
                 reg_label(_det_acc, "auto.detect_accordion")
@@ -904,6 +939,13 @@ def build_auto_tab():
         fn=process_auto_detect,
         inputs=[upload, sensitivity, en_translucent, en_corner, en_edge, detect_preset],
         outputs=[detect_preview, editor, status_box, detect_stats_md, det_mask_state],
+    )
+
+    # 阶段 320：一键载入示例图（填 上传框 + 编辑框 + 状态栏）。
+    sample_btn.click(
+        fn=load_sample_image,
+        inputs=[],
+        outputs=[upload, editor, status_box],
     )
 
     # 阶段 25：绑定「智能推荐预设」按钮（输出更新检测预设下拉 + 推荐理由）。
