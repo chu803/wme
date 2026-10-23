@@ -52,6 +52,15 @@
 
 ## [Unreleased]
 
+### 优化（阶段 320e · 设备选择惰性化）
+- `core/inpainter.py` 原本无条件 `select_device()`（实测 **1.66s** + `import torch`）；
+  而内置 OpenCV 引擎的 `inpaint` 根本不看 device、LaMa/插件引擎自行 `device or select_device()`、
+  且结果有缓存。改为 `engine != "opencv"` 才选，**输出逐字节不变**。
+- 实测（真跑 CLI）：默认 OCR 开 7.64s（设备在检测阶段已选，缓存命中 ⇒ 本改动省不到）；
+  `WME_DETECT_USE_OCR=false` 时 **7.64s → 3.27s（−4.4s，−57%）**，日志不再出现「自动选择设备」。
+- 守卫 3 例：OpenCV 不选 / 模型引擎仍选 / 显式 device 不再选。
+- 诚实边界：默认配置下几乎无收益；插件引擎一律照旧选设备。见 `docs/320e`。
+
 ### 新增（阶段 320d · 设置页开关「输出格式跟随输入」）
 - 320c 的能力只有环境变量可达 ⇒ 按 318c 同款接入「设置页 → 处理偏好」：复选框 + 应用即生效
   （`process_file` 每次读 config）+ 可保存为默认；`user_overrides` 两份清单一并登记；

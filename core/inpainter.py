@@ -628,7 +628,15 @@ def inpaint(
     progress(0.2, f"修复引擎：{engine.upper()}"
              + (f" + {secondary.upper()}（双跑择优）" if secondary else ""))
 
-    if device is None:
+    # 阶段 320e：只在**真需要模型**时才选设备。
+    #   · OpenCV 引擎的实现 `inpaint(..., device=None)` 根本不看 device（core/plugins.py 内置实现）；
+    #   · LaMa / 插件引擎在入口自行 `device or select_device()`（core/plugins.py），传 None 安全。
+    #   实测（2026-10-23）：`select_device()` = **1.66s** 且会 `import torch`，结果有缓存。
+    #   **收益条件**：默认 OCR 开启时，检测阶段（OCR 读器）已经选过设备 ⇒ 这里只是缓存命中，
+    #   改动省不到什么；真正的收益在 `DETECT_USE_OCR=false`（或未来不含文字策略的预设）：
+    #   实测 OCR 关闭时整条首图链路 **7.64s → 3.27s（−4.4s，−57%）**，且日志不再出现「自动选择设备」。
+    #   任何配置下输出逐字节不变（OpenCV 分支本就忽略 device）。
+    if device is None and engine != "opencv":
         device = select_device()
 
     if secondary:
