@@ -90,6 +90,12 @@ py-modules = [
 # ⚠ 也**不含** `tests`：测试套件不随分发发布。
 include = ["core*", "services*", "ui*", "utils*"]
 
+[tool.setuptools.package-data]
+# 阶段 320：UI 的「试一张示例」需要随包发布的示例图。
+#   ⚠ 不能放 docs/assets——`docs` 既不在 packages.find 里、又被 MANIFEST.in prune
+#   ⇒ 安装态用户点按钮只会看到降级提示（实测过）。放 ui/assets 并在此声明才会进 wheel。
+ui = ["assets/*.png"]
+
 # 注：覆盖率口径的**权威文件是 `.coveragerc`**（含 `parallel = False` 的环境说明）。
 # 此处**刻意不写** `[tool.coverage.*]`——coverage 只读它找到的第一个配置文件，
 # 两处都写会造成「改了一处不生效」的静默陷阱。

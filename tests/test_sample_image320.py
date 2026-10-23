@@ -31,6 +31,21 @@ def test_sample_asset_exists_and_is_a_real_photo():
         assert im.convert("RGB").size == (640, 640)
 
 
+def test_sample_asset_is_declared_for_packaging():
+    """示例图必须在**会被打进 wheel** 的位置，且 pyproject 有对应 package-data。
+
+    实测过的坑（阶段 320）：放在 `docs/assets/` 时 `packages.find` 不含 docs、`MANIFEST.in`
+    又 prune 了 docs ⇒ 安装态用户点「试一张示例」只有降级提示（功能存在但无资源）。
+    """
+    p = os.path.abspath(tab.SAMPLE_IMAGE_PATH)
+    rel = os.path.relpath(p, _ROOT).replace("\\", "/")
+    assert rel.startswith("ui/assets/"), (
+        f"示例图位于 {rel}：不在 ui/assets 下就不会随 wheel 发布（docs/ 被 prune）")
+    text = open(os.path.join(_ROOT, "pyproject.toml"), encoding="utf-8").read()
+    assert "[tool.setuptools.package-data]" in text, "缺 package-data 段：wheel 里不会有示例图"
+    assert 'ui = ["assets/*.png"]' in text, "package-data 未声明 ui/assets/*.png"
+
+
 def test_load_sample_returns_aligned_triplet():
     up, ed, msg = tab.load_sample_image()
     assert isinstance(up, np.ndarray) and up.shape == (640, 640, 3)

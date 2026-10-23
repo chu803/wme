@@ -552,7 +552,10 @@ def _clear_editor(upload):
 
 
 #: 阶段 320：随包发布的示例图（640² 真照片 + 右下角「StudioAI」角标）。
-SAMPLE_IMAGE_PATH = _os.path.join(_ROOT, "docs", "assets", "sample_watermarked.png")
+#: ⚠ 必须放在 `ui/assets/`（pyproject 的 `[tool.setuptools.package-data]` 声明了它）——
+#:   放 docs/assets 时 wheel 里没有该文件，安装态用户点按钮只会看到降级提示。
+SAMPLE_IMAGE_PATH = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
+                                  "assets", "sample_watermarked.png")
 
 
 def load_sample_image():

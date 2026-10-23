@@ -62,8 +62,9 @@
   ② **掩码经浏览器往返会变胖**（先前存在）：用户一笔没画，编辑框却比检测多 **+33%**（8,454px），
   314b 同现象在 2048² 残留 2,949px；方向是「多擦一点」（安全侧），但文案写「你补画」不诚实，未改。
 - 守卫 `tests/test_sample_image320.py`（5 例）：资源存在与尺寸 / 三值对齐 / 资源缺失降级 / 双语键。
-  ⚠ **示例图不进 pip 包**（`packages.find` 只含 core/services/ui/utils，`docs/` 不在其中）⇒
-  安装态用户点按钮只会看到降级提示；修法需把图挪进 `ui/assets/` + 补 package-data，列为开放项。
+  **打包已修**：示例图从 `docs/assets/` 挪到 `ui/assets/`（`packages.find` 含 `ui*`），并补
+  `[tool.setuptools.package-data] ui = ["assets/*.png"]`；真打 wheel 验证该文件在包内（566,420 字节）。
+  守卫 `test_sample_asset_is_declared_for_packaging` 防「挪了但没声明」。
   诚实边界：示例是**合成水印**，只能体验流程，数字不能当能力证据（能力见 docs/317 与 real_gate）。
 
 ### 新增（阶段 318c · 设置页开关「只动水印区」）
