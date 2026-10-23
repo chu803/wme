@@ -491,6 +491,19 @@ A/B（60 用例，只翻开关）：误伤 **50% → 0.8–2.1%**、**0/60 gain 
 
 - `318-只动水印区-后处理作用域开关与AB判决.md`
 
+### 318b · 「只动水印区」抬到用户能用：CLI / api / REST（2026-10-23）
+
+318 的能力只经环境变量可达 ⇒ 正是 LESSONS #298 的「能力存在但对外不可达」。本阶段把同一开关
+接到四个门面，默认值仍不动：`postprocess(preserve_untouched=None)` 三态语义（None=跟随 config，
+显式 True/False=逐请求覆盖）；`process_image/file`、`process_pdf/video`（逐页/逐帧）全部下传；
+`api` 6 入口 + `get_capabilities` 暴露；`server._collect_params` 白名单 + 字符串归一；
+CLI `--preserve-untouched/--no-preserve-untouched`（三态）。守卫 13 例全用
+「替换下游 + 捕获实参」证明**真的走到了下一层**（签名存在不算接上），含 PDF/视频各造真样本
+monkeypatch `process_image` 的两例，以及「关闭态带外确有变化」的反例前置断言。
+未做：UI 设置页（318c，需同时进 `user_overrides` 白名单）；视频逐帧还原的帧间稳定性基准。
+
+- `318b-只动水印区的门面暴露.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`

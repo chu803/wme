@@ -404,6 +404,11 @@ def get_capabilities() -> dict:
         "postprocess_texture_transfer_amount": float(getattr(config, "POSTPROCESS_TEXTURE_TRANSFER_AMOUNT", 0.5)),
         "postprocess_artifact_reduce": bool(getattr(config, "POSTPROCESS_ARTIFACT_REDUCE", False)),
         "postprocess_artifact_reduce_amount": float(getattr(config, "POSTPROCESS_ARTIFACT_REDUCE_AMOUNT", 0.5)),
+        # ---- 阶段 318b：只动水印区（掩码+带之外逐字节还原）----
+        "postprocess_preserve_untouched": bool(
+            getattr(config, "POSTPROCESS_PRESERVE_UNTOUCHED", False)),
+        "postprocess_preserve_band_px": int(
+            getattr(config, "POSTPROCESS_PRESERVE_BAND_PX", 8)),
         # ---- 阶段 12 新增：模型管理（多权重切换 / 校验）----
         "active_model": _get_active_model_safe(),
         "models": _list_models_safe(),
@@ -566,6 +571,7 @@ def remove_watermark(
     real_backend: Optional[str] = None,
     dual_run: Optional[bool] = None,
     allow_auto_erase: bool = False,
+    preserve_untouched: Optional[bool] = None,
 ) -> RemoveResult:
     """
     处理一张本地图片文件，返回 RemoveResult。
@@ -603,6 +609,7 @@ def remove_watermark(
         out_fmt=fmt,
         quality=quality,
         out_dir=out_dir,
+        preserve_untouched=preserve_untouched,
         poisson_blend=poisson_blend,
         poisson_strength=poisson_strength,
         texture_transfer=texture_transfer,
@@ -689,6 +696,7 @@ def remove_watermark_bytes(
     real_backend: Optional[str] = None,
     dual_run: Optional[bool] = None,
     allow_auto_erase: bool = False,
+    preserve_untouched: Optional[bool] = None,
 ) -> tuple[bytes, Optional[QualityReport]]:
     """
     处理内存里的图片字节（例如从 HTTP 请求 / 数据库读到的图），返回 (结果字节, 质量报告)。
@@ -721,6 +729,7 @@ def remove_watermark_bytes(
         preset=preset,
         auto_preset=auto_preset,
         dual_run=dual_run,
+        preserve_untouched=preserve_untouched,
         poisson_blend=poisson_blend,
         poisson_strength=poisson_strength,
         texture_transfer=texture_transfer,
@@ -904,6 +913,7 @@ def remove_watermark_array(
     real_scale: Optional[int] = None,
     real_backend: Optional[str] = None,
     dual_run: Optional[bool] = None,
+    preserve_untouched: Optional[bool] = None,
 ) -> tuple[np.ndarray, Optional[QualityReport]]:
     """
     处理内存里的 numpy 数组（BGR uint8，OpenCV 排布），返回 (结果数组, 质量报告)。
@@ -922,6 +932,7 @@ def remove_watermark_array(
         preset=preset,
         auto_preset=auto_preset,
         dual_run=dual_run,
+        preserve_untouched=preserve_untouched,
         poisson_blend=poisson_blend,
         poisson_strength=poisson_strength,
         texture_transfer=texture_transfer,
@@ -962,6 +973,7 @@ def batch_remove(
     evaluate: bool = False,
     dual_run: Optional[bool] = None,
     allow_auto_erase: bool = False,
+    preserve_untouched: Optional[bool] = None,
 ) -> list[RemoveResult]:
     """批量处理一组本地图片到指定目录，返回 RemoveResult 列表。
 
@@ -982,6 +994,7 @@ def batch_remove(
                 fmt=fmt, quality=quality, evaluate=evaluate,
                 dual_run=dual_run,
                 allow_auto_erase=allow_auto_erase,
+                preserve_untouched=preserve_untouched,
             )
             # 重定向到用户指定目录（remove_watermark 默认落 outputs/，这里统一挪过来）。
             if res.out_path and _os.path.exists(res.out_path):
@@ -1041,6 +1054,7 @@ def remove_watermark_pdf(
     real_superres: Optional[bool] = None,
     real_scale: Optional[int] = None,
     real_backend: Optional[str] = None,
+    preserve_untouched: Optional[bool] = None,
 ) -> "PdfResult":
     """
     对一份 PDF 逐页去水印，输出新的 PDF 文件。
@@ -1088,6 +1102,7 @@ def remove_watermark_pdf(
         real_scale=real_scale,
         real_backend=real_backend,
         on_progress=on_progress,
+        preserve_untouched=preserve_untouched,
     )
 
 
@@ -1113,6 +1128,7 @@ def remove_watermark_video(
     real_model_path: Optional[str] = None,
     real_model_dir: Optional[str] = None,
     on_progress=None,
+    preserve_untouched: Optional[bool] = None,
 ) -> "VideoResult":
     """
     对一段视频逐帧去水印，输出新的视频文件（无音轨）。
@@ -1160,6 +1176,7 @@ def remove_watermark_video(
         real_model_path=real_model_path,
         real_model_dir=real_model_dir,
         on_progress=on_progress,
+        preserve_untouched=preserve_untouched,
     )
 
 

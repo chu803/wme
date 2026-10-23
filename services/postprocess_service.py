@@ -366,13 +366,17 @@ def _preserve_band(mask: np.ndarray, px: int) -> np.ndarray:
                       borderType=cv2.BORDER_CONSTANT, borderValue=0) > 0
 
 
-def _preserve_untouched(out: np.ndarray, original_rgb, m) -> np.ndarray:
-    """阶段 318 ·「只动水印区」：带外像素**逐字节**还原为原图。默认关闭时是 no-op。
+def _preserve_untouched(out: np.ndarray, original_rgb, m,
+                        override: Optional[bool] = None) -> np.ndarray:
+    """阶段 318 ·「只动水印区」：带外像素**逐字节**还原为原图。
 
+    `override=None` ⇒ 取 `config.POSTPROCESS_PRESERVE_UNTOUCHED`（默认 False，no-op）；
+    门面（CLI/API/REST）可显式传 True/False 覆盖单个请求。
     与真·超分同一惯例：需**原图 + 掩码**同时在场，缺任一或形状/类型不符 ⇒ 跳过并记 info
     （宁可少保护，不可改错像素）。
     """
-    if not config.POSTPROCESS_PRESERVE_UNTOUCHED:
+    enabled = config.POSTPROCESS_PRESERVE_UNTOUCHED if override is None else bool(override)
+    if not enabled:
         return out
     if original_rgb is None or m is None:
         log.info("后处理·只动水印区已开启，但缺原图或掩码 ⇒ 本次跳过（输出仍为全图后处理结果）")
@@ -410,6 +414,7 @@ def postprocess(
     real_backend: Optional[object] = None,
     real_model_path: Optional[str] = None,
     real_model_dir: Optional[str] = None,
+    preserve_untouched: Optional[bool] = None,
 ) -> np.ndarray:
     """
     对 inpaint 结果做后处理增强，返回提升观感的结果图。
@@ -440,6 +445,9 @@ def postprocess(
                         视频场景一次性探测后整段复用同一实例，避免逐帧重复探测。
         real_model_path: 自定义 ESRGAN 权重路径；None → config.REAL_SUPERRES_MODEL_PATH。
         real_model_dir : Real-ESRGAN 权重目录；None → config.REAL_SUPERRES_MODEL_DIR。
+        preserve_untouched : 阶段 318「只动水印区」；None → config.POSTPROCESS_PRESERVE_UNTOUCHED。
+                       显式 True 时把「掩码 + 外扩带之外」逐字节还原为 original_rgb
+                       （需原图 + 掩码，缺任一则跳过）。
 
     返回值：
         增强后的 H×W×3 uint8；总开关关闭时原样返回 result_rgb。
@@ -557,7 +565,7 @@ def postprocess(
             out = sharpened
 
     # ⑧ 只动水印区（阶段 318，默认关闭）：带外像素逐字节还原为原图。
-    return _preserve_untouched(out, original_rgb, m)
+    return _preserve_untouched(out, original_rgb, m, preserve_untouched)
 
 
 # ==============================================================================

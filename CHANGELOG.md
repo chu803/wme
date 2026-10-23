@@ -66,6 +66,17 @@
   差异只在作用域（含带宽方向反写检测）；另钉 `cv2.dilate` 默认边界值 DBL_MAX 陷阱与 OpenCV 5 不接受 bool 输入。
 - **默认值未翻**（用户定「先看判决再定」）：建议 318b 做 CLI/设置页/REST 暴露后再看真实反馈。见 `docs/318`。
 
+### 新增（阶段 318b ·「只动水印区」的门面暴露）
+- 318 的能力此前只经环境变量可达（= LESSONS #298「能力存在但对外不可达」）。现接到四个门面，默认值仍不动：
+  `postprocess(..., preserve_untouched=None)` 三态（None 跟随 config / 显式 True|False 逐请求覆盖）→
+  `process_image`/`process_file` → `process_pdf`/`process_video`（逐页/逐帧）→ `api` 6 个入口
+  （file/bytes/array/batch/pdf/video）+ `get_capabilities` 暴露 → REST `_collect_params` 白名单与
+  `"true"/"1"/"yes"/"on"` 归一 → CLI `--preserve-untouched/--no-preserve-untouched`（三态）。
+- 守卫 `tests/test_preserve_untouched_facades318b.py`（13 例）：**签名存在不算接上**——每例都替换下游
+  并捕获实参；PDF/视频两例真造 1 页 PDF 与 3 帧 MP4，断言逐页/逐帧 `process_image` 收到开关；
+  端到端那例先断言「关闭态带外确实变化」再断言「开启态逐字节不变」（LESSONS #304）。
+- 未做：UI 设置页（318c，需同时进 `user_overrides` 白名单）；视频逐帧还原的帧间稳定性基准。见 `docs/318b`。
+
 ### 度量（阶段 317 · 修复侧真值探针——「擦干净了吗」第一次可算）
 - 补齐项目最大的证据空洞：既有指标全在**检测侧**，ΔPSNR 用例底图是 640² **程序生成图**，
   真实照片侧从未有「未加水印的原图」⇒ 交付质量无数字可说。

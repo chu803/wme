@@ -434,6 +434,7 @@ def process_video(
     real_model_path: Optional[str] = None,
     real_model_dir: Optional[str] = None,
     on_progress: Optional[ProgressCallback] = None,
+    preserve_untouched: Optional[bool] = None,
 ) -> VideoResult:
     """
     对一段视频逐帧去水印，输出一个新的视频文件（无音轨）。
@@ -627,6 +628,7 @@ def process_video(
                         real_model_dir=real_model_dir,
                         device=device,
                         on_progress=None,
+                        preserve_untouched=preserve_untouched,
                     )
                     result.detected_frames += 1
                     result.frame_stats.append(core.get("stats"))  # 阶段 23：收集逐帧命中率
@@ -695,6 +697,7 @@ def process_video(
                         real_model_dir=real_model_dir,
                         device=device,
                         on_progress=None,
+                        preserve_untouched=preserve_untouched,
                     )
                     result.reused_frames += 1
                     result.frame_stats.append(core.get("stats"))  # 阶段 23：收集逐帧命中率（manual 为 None）

@@ -103,6 +103,8 @@ def _collect_params(body: Dict[str, Any]) -> Dict[str, Any]:
                 "superres", "superres_amount",
                 "real_superres", "real_scale", "real_backend",
                 "dual_run",
+                # 阶段 318b：「只动水印区」逐请求覆盖（None ⇒ 取服务端 config）
+                "preserve_untouched",
                 # 阶段 233：显式允许「自动选预设 + 直接擦除」。
                 #   REST 是**客户端显式发起的处理请求**，但「自动选预设」意味着
                 #   服务端替客户端拿主意；对文字密集插画可能大面积误检，
@@ -112,7 +114,7 @@ def _collect_params(body: Dict[str, Any]) -> Dict[str, Any]:
             params[key] = body[key]
     for bool_key in ("dual_run", "auto_preset", "evaluate", "poisson_blend",
                      "texture_transfer", "artifact_reduce", "superres",
-                     "real_superres", "allow_auto_erase"):
+                     "real_superres", "allow_auto_erase", "preserve_untouched"):
         if bool_key in params and isinstance(params[bool_key], str):
             params[bool_key] = params[bool_key].strip().lower() in (
                 "1", "true", "yes", "on")

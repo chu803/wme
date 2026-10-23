@@ -247,6 +247,14 @@ def _build_arg_parser() -> argparse.ArgumentParser:
                          "esrgan=纯 torch RRDB（无需 basicsr）；"
                          "realesrgan=官方权重（需 realesrgan+basicsr）")
 
+    # 阶段 318b：「只动水印区」——默认 None 表示跟随配置（当前默认关）。
+    pp.add_argument("--preserve-untouched", dest="preserve_untouched",
+                    action=argparse.BooleanOptionalAction, default=None,
+                    help="只动水印区：掩码 + 8px 保护带之外，输出与原图**逐字节一致**"
+                         "（实测误伤 50%→约 1%，不增加耗时）。"
+                         f"不传则跟随配置（当前默认 {'开' if config.POSTPROCESS_PRESERVE_UNTOUCHED else '关'}）；"
+                         "用 --no-preserve-untouched 可显式关闭")
+
     # ------------------------------------------------------------------
     # 阶段 10：更多输入源（PDF 文档 / 视频）
     # ------------------------------------------------------------------
@@ -323,6 +331,7 @@ def _run_one(path: str, args: argparse.Namespace, show_progress: bool,
             real_scale=args.real_scale,
             real_backend=args.real_backend,
             on_progress=_prog if show_progress else None,
+            preserve_untouched=args.preserve_untouched,
         )
     except Exception as exc:  # noqa: BLE001 - 单张失败不中断整批。
         rd = {"status": "failed", "original_name": _os.path.basename(path),
@@ -377,6 +386,7 @@ def _run_pdf(path: str, args: argparse.Namespace, index: int = 0, total: int = 0
             real_scale=args.real_scale,
             real_backend=args.real_backend,
             on_progress=_prog,
+            preserve_untouched=args.preserve_untouched,
         )
         return {
             "kind": "pdf",
@@ -434,6 +444,7 @@ def _run_video(path: str, args: argparse.Namespace, index: int = 0, total: int =
             real_scale=args.real_scale,
             real_backend=args.real_backend,
             on_progress=_prog,
+            preserve_untouched=args.preserve_untouched,
         )
         return {
             "kind": "video",

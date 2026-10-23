@@ -144,6 +144,7 @@ def process_image(
     mask_mode: Optional[str] = None,
     postprocess_eval: bool = False,
     dual_run: Optional[bool] = None,
+    preserve_untouched: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
     数组级原子单元：对「已读入内存的 RGB 数组」完成 检测 + 修复，返回结果数组。
@@ -304,7 +305,9 @@ def process_image(
                                 real_scale=real_scale,
                                 real_backend=real_backend,
                                 real_model_path=real_model_path,
-                                real_model_dir=real_model_dir)
+                                real_model_dir=real_model_dir,
+                                # 阶段 318b：门面可逐请求覆盖「只动水印区」（None ⇒ 取 config）
+                                preserve_untouched=preserve_untouched)
 
     # 可选：优化前 / 后 质量对比（联动 quality_service）。
     imp = None
@@ -378,6 +381,8 @@ def process_file(
     out_dir: Optional[str | _os.PathLike] = None,
     device: Optional[object] = None,
     on_progress: Optional[ProgressCallback] = None,
+    # 阶段 318b：只动水印区（None ⇒ 取 config.POSTPROCESS_PRESERVE_UNTOUCHED）
+    preserve_untouched: Optional[bool] = None,
 ) -> Dict[str, Any]:
     """
     处理单张图片文件的原子单元（auto / manual 两种模式）。
@@ -479,6 +484,7 @@ def process_file(
         real_model_dir=real_model_dir,
         device=device,
         on_progress=on_progress,
+        preserve_untouched=preserve_untouched,
     )
     if core["status"] == "failed":
         core["input_path"] = input_path

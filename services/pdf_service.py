@@ -354,6 +354,7 @@ def process_pdf(
     real_backend: Optional[str] = None,
     auto_preset: bool = True,
     on_progress: Optional[ProgressCallback] = None,
+    preserve_untouched: Optional[bool] = None,
 ) -> PdfResult:
     """
     对一份 PDF 逐页去水印，输出一份新的 PDF。
@@ -502,6 +503,7 @@ def process_pdf(
                     real_backend=real_backend,
                     device=device,
                     on_progress=_page_progress,
+                    preserve_untouched=preserve_untouched,
                 )
 
                 pr.status = core.get("status", "failed")

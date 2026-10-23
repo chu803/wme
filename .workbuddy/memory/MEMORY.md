@@ -94,6 +94,9 @@ mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 
   残余 0–16.5% 落在**检测误报区**，归检测侧。
   **下一步（待用户定）**：318b = CLI `--preserve-untouched` + 设置页 + REST，按 315 对称性守卫推进；
   默认值翻不翻属观感承诺，本阶段刻意未动。
+- **318b 已完成（CLI/api/REST 三面；UI 未做）**：三态语义 `None`=跟随 config / 显式 True|False=逐请求覆盖；
+  api 6 入口 + `get_capabilities` + REST 白名单 + CLI 三态全接；守卫 13 例用「替换下游+捕获实参」
+  证明真的下传（含 PDF/视频真样本逐页逐帧）。**剩 318c（UI 设置页，需进 `user_overrides` 白名单）**。
 
 ## 复盘教训（非显然项）
 - **语言是跨进程持久全局状态**（290 治本 / 304 投毒态实证收口）：i18n 落盘 `cache/i18n_state.json` 污染后续 pytest；`conftest.pytest_configure` 指向会话临时目录治本；304 用「投毒真实文件 en-US → 拉起全新 pytest 子进程 → 断言 `get_language()==zh-CN`」做投毒态重跑证伪，反例闭合确认毒确实写入；并加守卫 `tests/test_i18n_state_leak_guard.py` + 注入式反证 `scripts/_i18n_leak_inject_proof.py`（`WME_I18N_NO_REDIRECT=1` 复现修复前，守卫必 FAIL）。**已收口**，正常跑零副作用。
