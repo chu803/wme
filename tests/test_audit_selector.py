@@ -343,10 +343,14 @@ def test_real_repo_current_top_desert_snapshot():
         第一荒漠回摆为 `ui/tab_auto`（14.40）。
       · 阶段 167 覆盖度荒漠审计程序已收口（`--unaudited` 返回 0 模块），
         故「第一荒漠」均为已审模块，仅反映代码/测试比，不再指向待审目标。
+      · 2026-10-23（阶段 315–320）：给 `ui/tab_auto` / `services/postprocess_service`
+        补了「示例图按钮」「只动水印区还原」等代码与配套测试，二者比值下移；
+        未动的 `services/compare_service`（8.96）被动成为第一，`ui/tab_media` 8.79、
+        `ui/tab_auto` 8.44 紧随。**再次说明本条只是比值快照，不是待办指向**。
     **本条是"结论编码"，不是不变量**——下次排名变化时更新本条。
     """
     targets = asel.collect(_ROOT)
-    assert targets[0].key == "ui/tab_auto", (
+    assert targets[0].key == "services/compare_service", (
         f"当前第一荒漠已变为 {targets[0].key}；若排名再变化，请更新本条"
     )
 
