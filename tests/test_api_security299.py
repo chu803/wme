@@ -26,8 +26,10 @@ from __future__ import annotations
 import http.client
 import json
 import os
+import socket
 import sys
 import threading
+import time
 
 import pytest
 
@@ -104,6 +106,24 @@ def test_gate_on_rejects_bad_token(monkeypatch):
 # ---------------------------------------------------------------------------
 # 集成：安全模式开启的 live server
 # ---------------------------------------------------------------------------
+def _wait_ready(port: int, timeout: float = 10.0) -> None:
+    """等服务线程真正开始接受连接。
+
+    2026-10-23 全量实测：`serve_forever()` 线程刚 start 时立刻发请求，在慢机（当天整机比前一日慢 2.9×）
+    上偶发 `ConnectionRefusedError`，表现为 `test_post_without_token_401` 单点红、隔离跑全绿。
+    这不是产品的竞态（生产由 start_server 阻塞启动），是**测试夹具的启动竞态** ⇒ 此处轮询等待，
+    不放宽任何断言。
+    """
+    deadline = time.time() + timeout
+    while time.time() < deadline:
+        try:
+            with socket.create_connection(("127.0.0.1", port), timeout=0.5):
+                return
+        except OSError:
+            time.sleep(0.02)
+    raise AssertionError(f"测试服务 {timeout}s 内未就绪（端口 {port}）")
+
+
 def _make_server(monkeypatch, **cfg):
     for k, v in cfg.items():
         monkeypatch.setattr(config, k, v)
@@ -112,6 +132,7 @@ def _make_server(monkeypatch, **cfg):
                                          max_concurrency=2)
     port = srv.server_address[1]
     threading.Thread(target=srv.serve_forever, daemon=True).start()
+    _wait_ready(port)
     return srv, port
 
 
@@ -145,6 +166,7 @@ def open_server():
                                          max_concurrency=2)
     port = srv.server_address[1]
     threading.Thread(target=srv.serve_forever, daemon=True).start()
+    _wait_ready(port)
     yield port
     srv.shutdown()
     srv.server_close()
