@@ -63,6 +63,17 @@ def test_model_engine_still_selects_device(counters):
     assert counters.get("last_device") == "FAKE_DEVICE"
 
 
+def test_opencv_output_is_device_independent():
+    """更强的一条：**输出逐字节等价**，不只是"没调用 select_device"。
+
+    直接让内置 OpenCV 引擎分别收到 `device=None` 与一个假设备句柄，同一图同一掩码，
+    结果必须 `array_equal`——这才是 320e「输出不变」的直接证据（不靠推断）。
+    """
+    a = ip.inpaint(_img(), _mask(), engine="opencv", device=None)
+    b = ip.inpaint(_img(), _mask(), engine="opencv", device="FAKE_DEVICE")
+    assert np.array_equal(a, b), "OpenCV 引擎的输出随 device 变化了——320e 的前提不成立"
+
+
 def test_explicit_device_is_respected(counters):
     ip.inpaint(_img(), _mask(), engine="lama", device="GIVEN")
     assert counters["device"] == 0, "调用方显式给 device 时不应再选一次"

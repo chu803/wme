@@ -568,7 +568,10 @@ CUDA 初始化 ≈2s + EasyOCR ≈2s，**即使用纯 OpenCV 引擎也要付**�
 根本不看 device、LaMa/插件引擎自行 `device or select_device()`，且结果有缓存。改为
 `engine != "opencv"` 才选。**收益条件说清**：默认 OCR 开时检测阶段已选过设备（缓存命中，省不到）；
 真正省的是 OCR 关闭配置——实测首图 **7.64s → 3.27s（−4.4s，−57%）**，日志不再出现「自动选择设备」。
-输出逐字节不变；守卫 3 例（OpenCV 不选 / 模型仍选 / 显式 device 不再选）。
+输出逐字节不变（另有一例实证：同一图 OpenCV 引擎下 `device=None` 与假设备输出 `array_equal`）；
+守卫 4 例（OpenCV 不选 / 模型仍选 / 显式 device 不再选 / 逐字节等价）。
+
+- `320e-设备选择惰性化.md`
 
 ### 特殊编号
 
