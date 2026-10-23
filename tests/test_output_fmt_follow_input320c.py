@@ -82,6 +82,7 @@ def test_cli_format_default_is_none_so_follow_input_can_apply():
     assert p.parse_args(["-i", "x", "-f", "PNG"]).fmt == "PNG"
 
 
+@pytest.mark.timeout(420)   # 内层 subprocess timeout=300 ⇒ 外层必须更宽（tests/test_timeout_contract.py）
 def test_cli_end_to_end_follows_input(tmp_path):
     """真跑 CLI：JPEG 进 → JPEG 出（开关开）；并确认此时体积提示**不出现**（已不胖）。"""
     import subprocess
