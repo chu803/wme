@@ -351,6 +351,43 @@ def _resolve_backend(real_backend, model_path: str, model_dir: str):
     return get_superres_backend(kind, model_path=model_path, model_dir=model_dir)
 
 
+def _preserve_band(mask: np.ndarray, px: int) -> np.ndarray:
+    """掩码向外保留 px 像素（返回 True = 允许后处理改动该像素）。
+
+    ⚠ 必须显式 `borderValue=0`：`cv2.dilate` 的默认边界值是 DBL_MAX，对膨胀等于
+    「图外全是前景」⇒ 沿整张图四边凭空生出一条 px 宽实心带，会把本应还原的边缘错误
+    保留成后处理结果（阶段 317 的守卫实测抓到）。
+    """
+    if px <= 0:
+        return mask > 0
+    k = cv2.getStructuringElement(cv2.MORPH_RECT, (2 * px + 1, 2 * px + 1))
+    # ⚠ OpenCV 5 的 dilate 不支持 bool（CV_8U 起）：先转 uint8。
+    return cv2.dilate((mask > 0).astype(np.uint8), k,
+                      borderType=cv2.BORDER_CONSTANT, borderValue=0) > 0
+
+
+def _preserve_untouched(out: np.ndarray, original_rgb, m) -> np.ndarray:
+    """阶段 318 ·「只动水印区」：带外像素**逐字节**还原为原图。默认关闭时是 no-op。
+
+    与真·超分同一惯例：需**原图 + 掩码**同时在场，缺任一或形状/类型不符 ⇒ 跳过并记 info
+    （宁可少保护，不可改错像素）。
+    """
+    if not config.POSTPROCESS_PRESERVE_UNTOUCHED:
+        return out
+    if original_rgb is None or m is None:
+        log.info("后处理·只动水印区已开启，但缺原图或掩码 ⇒ 本次跳过（输出仍为全图后处理结果）")
+        return out
+    o = np.asarray(original_rgb)
+    if o.shape != out.shape or o.dtype != out.dtype:
+        log.info(f"后处理·只动水印区跳过：原图与结果不匹配 shape {o.shape} vs {out.shape}，"
+                 f"dtype {o.dtype} vs {out.dtype}")
+        return out
+    keep = _preserve_band(m, config.POSTPROCESS_PRESERVE_BAND_PX)
+    if bool(keep.all()):
+        return out                      # 掩码铺满全图：没有「外部」可还原
+    return np.where(keep[:, :, None], out, o)
+
+
 def postprocess(
     result_rgb: np.ndarray,
     *,
@@ -412,7 +449,8 @@ def postprocess(
         上采样），**不再**走「回退轻量超分」这条路——判断是否真·放大请看日志 note 或输出尺寸。
         ⚠ 阶段 122 勘误：旧文写「缺权重时自动回退轻量超分（同分辨率）」，与 115 后的实现不符。
 
-    处理顺序：色彩还原 → 边缘融合 → 伪影抑制 → 纹理重建 → Poisson 融合 → 超分（真实优先·轻量回退）→ 锐化。
+    处理顺序：色彩还原 → 边缘融合 → 伪影抑制 → 纹理重建 → Poisson 融合 → 超分（真实优先·轻量回退）→ 锐化
+    → 只动水印区还原（阶段 318，`POSTPROCESS_PRESERVE_UNTOUCHED`，默认关闭）。
     阶段 21 三道深化、阶段 29 轻量超分与阶段 32 真·超分默认关闭，未传参时行为与阶段 18 完全一致（向后兼容）。
     真实超分与轻量超分互斥（不叠加），避免细节过锐 / 双重放大。
     """
@@ -518,7 +556,8 @@ def postprocess(
         else:
             out = sharpened
 
-    return out
+    # ⑧ 只动水印区（阶段 318，默认关闭）：带外像素逐字节还原为原图。
+    return _preserve_untouched(out, original_rgb, m)
 
 
 # ==============================================================================

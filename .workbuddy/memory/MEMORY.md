@@ -87,6 +87,13 @@ mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 
   H `ai_faint_tiled` 在真实照片上 **0/15 可达**；I 真值集 57 标注 style **100% corner_logo**，
   角标仅 5/15 被推成 `ai_logo`（主打场景推荐器未学会，现靠 text_heavy 误打误着）。
   G/H/I 均牵检测与红线，属"先出判决再定重锚"流程。
+- **318 已落地（默认关）**：`POSTPROCESS_PRESERVE_UNTOUCHED` + `BAND_PX=8` ⇒「掩码+带之外逐字节还原」。
+  A/B（60 用例只翻开关）：误伤中位 **50% → 0.8–2.1%**、**0/60 gain 变差**、**60/60 ΔPSNR 改善 2.2–3.7 dB**；
+  `faint_tiled`/`grid` 由净伤害转为 ~0（检回未变 ⇒ 是"停止帮倒忙"不是"擦掉了"）；
+  同进程交替耗时 **0.99×**（跨会话绝对耗时不可比——今晨整机比昨晚慢 2.9×）。
+  残余 0–16.5% 落在**检测误报区**，归检测侧。
+  **下一步（待用户定）**：318b = CLI `--preserve-untouched` + 设置页 + REST，按 315 对称性守卫推进；
+  默认值翻不翻属观感承诺，本阶段刻意未动。
 
 ## 复盘教训（非显然项）
 - **语言是跨进程持久全局状态**（290 治本 / 304 投毒态实证收口）：i18n 落盘 `cache/i18n_state.json` 污染后续 pytest；`conftest.pytest_configure` 指向会话临时目录治本；304 用「投毒真实文件 en-US → 拉起全新 pytest 子进程 → 断言 `get_language()==zh-CN`」做投毒态重跑证伪，反例闭合确认毒确实写入；并加守卫 `tests/test_i18n_state_leak_guard.py` + 注入式反证 `scripts/_i18n_leak_inject_proof.py`（`WME_I18N_NO_REDIRECT=1` 复现修复前，守卫必 FAIL）。**已收口**，正常跑零副作用。
