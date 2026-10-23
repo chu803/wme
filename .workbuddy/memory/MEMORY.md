@@ -107,6 +107,11 @@ mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 
   已落地两条**只提示不改默认**（`cli.size_hint` / `cli.frame_step_hint` + 9 例守卫含接线断言）。
   待拍板：A 输出格式跟随输入、B 视频步长做成页签选项、C 设备/OCR 延迟初始化
   （≈省半冷启动；需先消融「哪些预设必须 OCR」，牵 detector/inpainter 初始化时机）。
+- **已否证的假设（勿重试）**：给 `grid_on` 加 `regularity` 门槛以挡真实照片误推 `ai_grid`。
+  实测：15 张真照片 regularity 0.000–0.001，**合成点阵也只有 0.001–0.003**
+  （grid 分 0.39–0.79 才是它们的判别依据）⇒ 加门槛会打死合成点阵通路，且对真照片零区分力。
+  真缺口是**风格覆盖面**：角标模板来自 9 张豆包图 + 白底板先验（V≥140/S≤80），
+  深色圆角板+白字两条都不命中，落到 `text` 分支误打误着（corner 信号二值 0/1，5/15 命中）。
 
 ## 复盘教训（非显然项）
 - **语言是跨进程持久全局状态**（290 治本 / 304 投毒态实证收口）：i18n 落盘 `cache/i18n_state.json` 污染后续 pytest；`conftest.pytest_configure` 指向会话临时目录治本；304 用「投毒真实文件 en-US → 拉起全新 pytest 子进程 → 断言 `get_language()==zh-CN`」做投毒态重跑证伪，反例闭合确认毒确实写入；并加守卫 `tests/test_i18n_state_leak_guard.py` + 注入式反证 `scripts/_i18n_leak_inject_proof.py`（`WME_I18N_NO_REDIRECT=1` 复现修复前，守卫必 FAIL）。**已收口**，正常跑零副作用。
