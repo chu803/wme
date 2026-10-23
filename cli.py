@@ -173,7 +173,8 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     p.add_argument("--list-engines", action="store_true",
                    help="列出所有可用修复引擎（含插件）并退出，不做任何处理")
     p.add_argument("-f", "--format", dest="fmt", type=str.upper, choices=fmt_choices,
-                   default=config.DEFAULT_OUTPUT_FORMAT, help="输出格式（默认取配置）")
+                   default=None,
+                   help="输出格式；不指定时按配置（若已开启「输出格式跟随输入」则跟随输入格式）")
     p.add_argument("-q", "--quality", type=int, default=config.DEFAULT_OUTPUT_QUALITY,
                    help="输出画质 1~100（仅 JPG/WebP 生效）")
     p.add_argument("-s", "--sensitivity", type=float,
@@ -475,6 +476,13 @@ def _dispatch(path: str, args: argparse.Namespace, show_progress: bool,
     return _run_one(path, args, show_progress, index, total)
 
 
+def _fmt_label() -> str:
+    """CLI 头部展示用：未显式 -f 时说明本次格式来源（跟随输入 / 配置默认）。"""
+    if config.OUTPUT_FMT_FOLLOW_INPUT:
+        return f"跟随输入（默认 {config.DEFAULT_OUTPUT_FORMAT}）"
+    return config.DEFAULT_OUTPUT_FORMAT
+
+
 def size_hint(in_bytes: int | None, out_bytes: int | None,
               out_fmt: str | None = None, threshold: float = 1.5) -> str | None:
     """输出体积明显大于输入时，给一句可执行的换算提示（阶段 319）。
@@ -536,7 +544,7 @@ def _print_result(rd: dict, args: argparse.Namespace,
             if _src and _dst:
                 try:
                     h = size_hint(_os.path.getsize(_src), _os.path.getsize(_dst),
-                                  getattr(args, "fmt", None))
+                                  _os.path.splitext(str(_dst))[1].lstrip(".").upper() or None)
                 except OSError:
                     h = None
             if h:
@@ -705,7 +713,7 @@ def main(argv: list[str] | None = None) -> int:
         compose += f" + {n_vid} 段视频"
 
     print(f"开始处理：{compose} | 模式={args.mode} | 引擎={args.engine} | "
-          f"格式={args.fmt} | 输出={args.output_dir}")
+          f"格式={args.fmt or _fmt_label()} | 输出={args.output_dir}")
     if args.recursive:
         print("（已开启递归遍历子目录）")
     if n_pdf:

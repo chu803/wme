@@ -68,3 +68,34 @@ def test_end_to_end_output_extension_follows_input(monkeypatch, tmp_path):
         f"开着时 JPEG 输入应输出 JPEG，实得 {rd_on['out_path']}")
     import os as _os
     assert _os.path.getsize(rd_on["out_path"]) > 0
+
+
+def test_cli_format_default_is_none_so_follow_input_can_apply():
+    """回归（2026-10-23 实测）：CLI 的 `-f` 默认曾是 `config.DEFAULT_OUTPUT_FORMAT`，
+    被 `_resolve_out_fmt` 当成"用户显式指定"⇒ **跟随输入永远不生效**（输出仍是 PNG）。
+    改为 default=None 后，不传 -f 才由「跟随输入 / 配置默认」决定。
+    """
+    import cli
+    p = cli._build_arg_parser()
+    assert p.parse_args(["-i", "x"]).fmt is None, (
+        "不传 -f 时必须为 None，否则开关被当成显式指定而失效")
+    assert p.parse_args(["-i", "x", "-f", "PNG"]).fmt == "PNG"
+
+
+def test_cli_end_to_end_follows_input(tmp_path):
+    """真跑 CLI：JPEG 进 → JPEG 出（开关开）；并确认此时体积提示**不出现**（已不胖）。"""
+    import subprocess
+    import cv2
+    env = dict(os.environ, PYTHONUTF8="1", WME_OUTPUT_FMT_FOLLOW_INPUT="true")
+    jpg = str(tmp_path / "wm.jpg")
+    cv2.imwrite(jpg, cv2.imread(SAMPLE_IMAGE_PATH), [cv2.IMWRITE_JPEG_QUALITY, 95])
+    out_dir = tmp_path / "out"
+    r = subprocess.run([sys.executable, "cli.py", "-i", jpg, "-o", str(out_dir),
+                        "--engine", "opencv"],
+                       cwd=_ROOT, env=env, capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", timeout=300)
+    outs = [ln for ln in r.stdout.splitlines() if "_cleaned" in ln and "->" in ln]
+    assert outs, f"CLI 未产出结果：{r.stdout[-400:]}"
+    assert outs[0].split("->")[1].strip().lower().endswith(".jpg"), (
+        f"跟随输入未生效，实得：{outs[0]}")
+    assert "💡" not in r.stdout, "格式已经不胖时不应再提示换格式"
