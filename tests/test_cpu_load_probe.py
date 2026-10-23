@@ -163,32 +163,47 @@ def test_process_and_system_estimates_are_same_order():
     # 阶段 314b：两个采样必须**并发**（各 1.5s）。旧实现串行取，两次落在不同的负载窗口里；
     # 全量跑时（本机 CPU 持续负载降频）窗口一错位，比值就假性破 10× —— 实测全量偶发红、
     # 隔离跑必绿。并发后两者看到同一段负载，判据才是在比「口径」而不是比「时间」。
-    box: dict = {}
+    #
+    # 阶段 318b：**最多试 3 个窗口，任一同量级即通过**。实测 2026-10-23 全量又偶发红
+    # （3242 passed / 仅此例 failed，隔离跑 3/3 绿）——单窗口仍会被一次瞬时尖峰打穿
+    # （例：另一进程恰好在 1.5s 内编译/OCR）。判据的意图是「口径没坏」，而口径坏了
+    # 会**连续**三个窗口都破；一个窗口破不构成证据。反之若三次全破，则不是巧合。
+    ratios: list = []
+    skipped_low = 0
+    for _attempt in range(3):
+        box: dict = {}
 
-    def _system() -> None:
-        box["s"] = probe.sample(1.5)
+        def _system() -> None:
+            box["s"] = probe.sample(1.5)
 
-    def _process() -> None:
-        box["p"] = cl.process_busy_pct(1.5)
+        def _process() -> None:
+            box["p"] = cl.process_busy_pct(1.5)
 
-    threads = [threading.Thread(target=_system), threading.Thread(target=_process)]
-    for t in threads:
-        t.start()
-    for t in threads:
-        t.join()
-    s, p = box.get("s"), box.get("p")
-    if s is None or not s.reliable:
-        pytest.skip(f"系统级采样不可靠：{getattr(s, 'note', '无结果')}")
-    if p is None or p <= 0.0:
-        pytest.skip("逐进程枚举不可用（权限限制），跳过交叉验证")
-    # 低负载区比值没有意义：分母趋近 0 时 1% vs 0.1% 也是 10×，但两者都只是噪声。
-    # 224 定案「机器空闲」用的是**高负载**证据，低负载场景本就不该用比值判口径。
-    if s.busy_pct < 5.0:
-        pytest.skip(f"系统负载过低（{s.busy_pct:.1f}% < 5%），比值判据不适用")
-    hi, lo = max(s.busy_pct, p), max(min(s.busy_pct, p), 0.1)
-    assert hi / lo < 10.0, (
-        f"系统级 {s.busy_pct:.1f}% 与逐进程 {p:.1f}% 差一个数量级"
-        f"⇒ 至少一个口径已损坏")
+        threads = [threading.Thread(target=_system), threading.Thread(target=_process)]
+        for t in threads:
+            t.start()
+        for t in threads:
+            t.join()
+        s, p = box.get("s"), box.get("p")
+        if s is None or not s.reliable:
+            pytest.skip(f"系统级采样不可靠：{getattr(s, 'note', '无结果')}")
+        if p is None or p <= 0.0:
+            pytest.skip("逐进程枚举不可用（权限限制），跳过交叉验证")
+        # 低负载区比值没有意义：分母趋近 0 时 1% vs 0.1% 也是 10×，但两者都只是噪声。
+        # 224 定案「机器空闲」用的是**高负载**证据，低负载场景本就不该用比值判口径。
+        if s.busy_pct < 5.0:
+            skipped_low += 1
+            continue
+        hi, lo = max(s.busy_pct, p), max(min(s.busy_pct, p), 0.1)
+        ratios.append((hi / lo, s.busy_pct, p))
+        if hi / lo < 10.0:
+            return                      # 本窗口同量级 ⇒ 口径一致，判过
+    if not ratios:
+        pytest.skip(f"三个窗口的系统负载均过低（每窗 <5%，共 {skipped_low} 次），比值判据不适用")
+    assert False, (
+        f"连续 {len(ratios)} 个窗口都差一个数量级 ⇒ 至少一个口径已损坏："
+        + "；".join(f"系统 {s:.1f}% vs 逐进程 {p:.1f}%（{r:.1f}×）"
+                    for r, s, p in ratios))
 
 
 @_win_only
