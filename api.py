@@ -424,6 +424,8 @@ def get_capabilities() -> dict:
         "output_flatten_bg_color": list(
             getattr(config, "OUTPUT_FLATTEN_BG_COLOR", (255, 255, 255))),
         "keep_alpha_default": bool(getattr(config, "PNG_KEEP_ALPHA", True)),
+        # 阶段 320c：输出格式跟随输入（实测 PNG 4.65× 输入 → JPG 1.13× / WebP 1.00×）
+        "output_fmt_follow_input": bool(getattr(config, "OUTPUT_FMT_FOLLOW_INPUT", False)),
         "exif_orientation_applied": bool(
             getattr(config, "IMAGE_APPLY_EXIF_ORIENTATION", True)),
         "bit_depth_normalized": bool(getattr(config, "IMAGE_NORMALIZE_BIT_DEPTH", True)),

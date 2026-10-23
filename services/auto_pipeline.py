@@ -75,6 +75,27 @@ def _noop_progress(p: float, msg: str) -> None:
     return None
 
 
+#: 输入扩展名 → 输出格式（阶段 320c：`OUTPUT_FMT_FOLLOW_INPUT` 开启时使用）。
+#  BMP 无对应输出格式 ⇒ 落 PNG（无损）；未知扩展名 ⇒ None（走既有默认格式）。
+_FMT_BY_INPUT_EXT: dict = {
+    ".png": "PNG", ".jpg": "JPG", ".jpeg": "JPG", ".webp": "WEBP",
+    ".tif": "TIFF", ".tiff": "TIFF", ".avif": "AVIF", ".bmp": "PNG",
+}
+
+
+def _resolve_out_fmt(input_path: str, out_fmt: Optional[str]) -> Optional[str]:
+    """决定本次输出格式：显式指定 > 跟随输入（开关打开时）> None（交给既有默认）。
+
+    None 的语义必须保留：调用方（如 CLI）不传 `-f` 时，下游 `save_image` 会按
+    `config.DEFAULT_OUTPUT_FORMAT` 处理，行为与阶段 319 之前逐字节一致。
+    """
+    if out_fmt:
+        return out_fmt
+    if not config.OUTPUT_FMT_FOLLOW_INPUT:
+        return None
+    return _FMT_BY_INPUT_EXT.get(_os.path.splitext(input_path)[1].lower())
+
+
 def _same_name_mask(input_path: str) -> Optional[str]:
     """
     为某张原图寻找「同名掩码图」，约定后缀：
@@ -429,6 +450,9 @@ def process_file(
     denoise = config.DENOISE_STRENGTH_DEFAULT if denoise is None else denoise
     sensitivity = config.DETECT_TRANSLUCENT_SENSITIVITY if sensitivity is None else sensitivity
     engine = config.INPAINT_ENGINE if engine is None else engine.lower()
+
+    # 阶段 320c：输出格式（显式 out_fmt > 跟随输入（开关打开时）> None = 既有默认）。
+    out_fmt = _resolve_out_fmt(input_path, out_fmt)
 
     on_progress(0.02, f"读取图片：{original_name}")
     # 阶段 73：同时取出内嵌 ICC 色彩配置（宽色域输入导出不偏色的前提）。

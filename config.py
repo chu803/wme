@@ -1928,6 +1928,14 @@ SUPPORTED_OUTPUT_FORMATS: Final[tuple[str, ...]] = ("PNG", "JPG", "WEBP", "TIFF"
 # 【默认导出格式】
 DEFAULT_OUTPUT_FORMAT: Final[str] = _env_str("DEFAULT_OUTPUT_FORMAT", "PNG").upper()
 
+# 【输出格式跟随输入】布尔，默认 False（保持既有「一律 PNG」的行为）。
+#   实测（阶段 319，2048² 真图、-q 95）：PNG 输出是输入的 **4.65×**（7.68MB vs 1.65MB），
+#   JPG 1.13×、WebP **1.00×**；阶段 316 的 17 文件混合批量整批 62.4MB → 84.0MB（×1.35）。
+#   开启后：JPEG 进 → JPEG 出、WebP 进 → WebP 出（体积分别降到 1.13× / 1.00×），
+#   PNG 进仍出 PNG（无损不变）。**未开启时逐字节等于旧行为**（本阶段只加能力，不改默认）。
+#   代价：JPEG/WebP 输入会再经历一次有损编码（处理本身已重编码一次，无代际叠加）。
+OUTPUT_FMT_FOLLOW_INPUT: Final[bool] = _env_bool("OUTPUT_FMT_FOLLOW_INPUT", False)
+
 # 【默认导出画质】取值 1 ~ 100，仅对 JPG 与 WebP 生效。
 #   95 是「肉眼几乎看不出损失」与「文件不至于过大」的平衡点。
 #   低于 80 会出现明显的块状压缩痕迹。
