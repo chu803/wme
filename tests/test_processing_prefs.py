@@ -28,6 +28,8 @@ _PREF_ATTRS = (
     "PNG_KEEP_ALPHA",
     "IMAGE_APPLY_EXIF_ORIENTATION",
     "IMAGE_NORMALIZE_BIT_DEPTH",
+    # 阶段 318c：只动水印区（apply_processing_prefs 新增参数会写它）
+    "POSTPROCESS_PRESERVE_UNTOUCHED",
 )
 
 
@@ -83,6 +85,14 @@ def test_new_pref_keys_roundtrip(overrides_path):
         "IMAGE_APPLY_EXIF_ORIENTATION": False,
         "IMAGE_NORMALIZE_BIT_DEPTH": False,
     }
+
+
+def test_preserve_untouched_key_roundtrip(overrides_path):
+    """阶段 318c：新键进白名单，`"true"/"关"` 等字符串按 parse_bool 语义解析。"""
+    assert config.save_user_overrides({"POSTPROCESS_PRESERVE_UNTOUCHED": "true"}) is True
+    assert config.load_user_overrides()["POSTPROCESS_PRESERVE_UNTOUCHED"] is True
+    config.save_user_overrides({"POSTPROCESS_PRESERVE_UNTOUCHED": "关"})
+    assert config.load_user_overrides()["POSTPROCESS_PRESERVE_UNTOUCHED"] is False
 
 
 def test_invalid_secondary_falls_back_to_lama(overrides_path):
@@ -155,6 +165,23 @@ def test_apply_processing_prefs_restore_defaults(overrides_path):
     assert persisted["IMAGE_APPLY_EXIF_ORIENTATION"] is False
 
 
+def test_apply_preserve_untouched_tristate(overrides_path):
+    """阶段 318c：`preserve_untouched=None` 不动这项（旧调用方兼容），显式布尔才写入与持久化。"""
+    config.POSTPROCESS_PRESERVE_UNTOUCHED = False
+
+    apply_processing_prefs(True, True, True, True, save_default=True)   # 不传 ⇒ None
+    assert config.POSTPROCESS_PRESERVE_UNTOUCHED is False, (
+        "None 应当保持原值，而不是被写成 False/True")
+    persisted = json.loads(open(overrides_path, encoding="utf-8").read())
+    assert "POSTPROCESS_PRESERVE_UNTOUCHED" not in persisted, "None 不该把键写进覆盖文件"
+
+    apply_processing_prefs(True, True, True, True, save_default=True,
+                           preserve_untouched=True)
+    assert config.POSTPROCESS_PRESERVE_UNTOUCHED is True
+    persisted = json.loads(open(overrides_path, encoding="utf-8").read())
+    assert persisted["POSTPROCESS_PRESERVE_UNTOUCHED"] is True
+
+
 # ---------------------------------------------------------------------------
 # 3. i18n：settings.prefs.* 双语键齐全
 # ---------------------------------------------------------------------------
@@ -169,6 +196,8 @@ def test_apply_processing_prefs_restore_defaults(overrides_path):
     "settings.prefs.exif_info",
     "settings.prefs.bitdepth_label",
     "settings.prefs.bitdepth_info",
+    "settings.prefs.preserve_label",
+    "settings.prefs.preserve_info",
     "settings.prefs.save_label",
     "settings.prefs.apply",
     "settings.prefs.msg_applied",

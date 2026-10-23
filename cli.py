@@ -528,12 +528,17 @@ def _print_result(rd: dict, args: argparse.Namespace,
         if rd.get("note"):
             print(f"      {rd['note']}")
         # 阶段 319：交付面提示（只提示、不改默认）。
-        if kind == "image" and rd.get("out_path"):
-            try:
-                h = size_hint(_os.path.getsize(rd["input_path"]),
-                              _os.path.getsize(rd["out_path"]), args.fmt)
-            except OSError:
-                h = None
+        # ⚠ 必须防御式取值：`rd` 由各处理分支拼出，历史调用方/测试可能只给最小键集；
+        #   此处不是「不该发生的场景」——tests/test_cli_audit114 就专门喂最小 dict。
+        if kind == "image":
+            _src, _dst = rd.get("input_path"), rd.get("out_path")
+            h = None
+            if _src and _dst:
+                try:
+                    h = size_hint(_os.path.getsize(_src), _os.path.getsize(_dst),
+                                  getattr(args, "fmt", None))
+                except OSError:
+                    h = None
             if h:
                 print(f"      💡 {h}")
         elif kind == "video":

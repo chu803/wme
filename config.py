@@ -2575,6 +2575,9 @@ _USER_OVERRIDABLE_KEYS: Final[tuple] = (
     "PNG_KEEP_ALPHA",
     "IMAGE_APPLY_EXIF_ORIENTATION",
     "IMAGE_NORMALIZE_BIT_DEPTH",
+    # 阶段 318c：只动水印区（与 _USER_OVERRIDE_VALIDATORS 一一对应，
+    #   tests/test_config_parse.py::test_override_lists_are_consistent 守）
+    "POSTPROCESS_PRESERVE_UNTOUCHED",
 )
 
 # 各键的校验器：返回合法值，非法则回退到各自的安全默认。
@@ -2612,6 +2615,8 @@ _USER_OVERRIDE_VALIDATORS: Final[dict] = {
         else "lama"
     ),
     "PNG_KEEP_ALPHA": lambda v: parse_bool(v, True),
+    # 阶段 318c：只动水印区（掩码+带之外逐字节还原）。默认 False = 保持现行观感。
+    "POSTPROCESS_PRESERVE_UNTOUCHED": lambda v: parse_bool(v, False),
     "IMAGE_APPLY_EXIF_ORIENTATION": lambda v: parse_bool(v, True),
     "IMAGE_NORMALIZE_BIT_DEPTH": lambda v: parse_bool(v, True),
 }

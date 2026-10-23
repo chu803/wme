@@ -316,6 +316,7 @@ def apply_processing_prefs(
     exif_orient: bool,
     bit_depth: bool,
     save_default: bool,
+    preserve_untouched: bool | None = None,
 ) -> "tuple[str, str]":
     """
     设置页「处理偏好」（阶段 75）：实时写入运行时配置 + 可选持久化 + 刷新快照。
@@ -326,6 +327,9 @@ def apply_processing_prefs(
         exif_orient: 加载端应用 EXIF 方向（阶段 70）；
         bit_depth  : 非 8 位输入位深规范化（阶段 70）。
 
+    阶段 318c 新增 `preserve_untouched`（只动水印区）：默认 **None = 不改这项**，
+    以便旧调用方/旧测试保持原语义；设置页显式传布尔值时才写入与持久化。
+
     返回值：
         (快照 Markdown, 信息文案)，与 prefs_apply.click 的 outputs 对齐。
     """
@@ -335,6 +339,8 @@ def apply_processing_prefs(
         config.PNG_KEEP_ALPHA = bool(keep_alpha)
         config.IMAGE_APPLY_EXIF_ORIENTATION = bool(exif_orient)
         config.IMAGE_NORMALIZE_BIT_DEPTH = bool(bit_depth)
+        if preserve_untouched is not None:
+            config.POSTPROCESS_PRESERVE_UNTOUCHED = bool(preserve_untouched)
     except Exception as exc:  # noqa: BLE001
         log.exception("写入处理偏好运行时配置失败")
         return build_snapshot_md(), t("settings.snap.msg.err", exc=format_exception_for_ui(exc))
@@ -342,12 +348,15 @@ def apply_processing_prefs(
     # 可选：持久化为默认（合并式写入，不影响真实超分/保留策略键）。
     if save_default:
         try:
-            ok = config.save_user_overrides({
+            patch = {
                 "INPAINT_DUAL_RUN": config.INPAINT_DUAL_RUN,
                 "PNG_KEEP_ALPHA": config.PNG_KEEP_ALPHA,
                 "IMAGE_APPLY_EXIF_ORIENTATION": config.IMAGE_APPLY_EXIF_ORIENTATION,
                 "IMAGE_NORMALIZE_BIT_DEPTH": config.IMAGE_NORMALIZE_BIT_DEPTH,
-            })
+            }
+            if preserve_untouched is not None:
+                patch["POSTPROCESS_PRESERVE_UNTOUCHED"] = config.POSTPROCESS_PRESERVE_UNTOUCHED
+            ok = config.save_user_overrides(patch)
             if not ok:
                 log.warning("持久化处理偏好默认未生效：save_user_overrides 返回 False"
                             "（无写权限或值非法）。")
@@ -361,6 +370,9 @@ def apply_processing_prefs(
         alpha=_snap_state(config.PNG_KEEP_ALPHA),
         exif=_snap_state(config.IMAGE_APPLY_EXIF_ORIENTATION),
         depth=_snap_state(config.IMAGE_NORMALIZE_BIT_DEPTH),
+        # 阶段 318c：确认文案必须带上这一项，否则用户勾了也看不出是否生效
+        #   （实测点击「应用」后原文案只报四项）。
+        preserve=_snap_state(config.POSTPROCESS_PRESERVE_UNTOUCHED),
     )
     return snap, info
 
@@ -579,6 +591,17 @@ def build_settings_tab():
                     info=t("settings.prefs.bitdepth_info"),
                 )
                 reg_label_info(pp_depth, "settings.prefs.bitdepth_label", "settings.prefs.bitdepth_info")
+            # 阶段 318c：只动水印区（掩码 + 8px 带之外逐字节还原为原图）。
+            #   实测：误伤（水印外被改动像素）中位 50% → 约 1%，0/60 用例擦除度变差。
+            #   默认关：关着时保持现行「整图轻微锐化」观感；开了则承诺更诚实。
+            with gr.Row():
+                pp_preserve = gr.Checkbox(
+                    value=config.POSTPROCESS_PRESERVE_UNTOUCHED,
+                    label=t("settings.prefs.preserve_label"),
+                    info=t("settings.prefs.preserve_info"),
+                )
+                reg_label_info(pp_preserve, "settings.prefs.preserve_label",
+                               "settings.prefs.preserve_info")
             with gr.Row():
                 prefs_save = gr.Checkbox(
                     value=False,
@@ -670,7 +693,7 @@ def build_settings_tab():
         # 阶段 75：处理偏好「应用」——实时写入运行时 + 可选持久化 + 刷新快照。
         prefs_apply.click(
             fn=apply_processing_prefs,
-            inputs=[pp_dual, pp_alpha, pp_exif, pp_depth, prefs_save],
+            inputs=[pp_dual, pp_alpha, pp_exif, pp_depth, prefs_save, pp_preserve],
             outputs=[snapshot, info],
         )
 

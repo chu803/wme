@@ -96,7 +96,11 @@ mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 
   默认值翻不翻属观感承诺，本阶段刻意未动。
 - **318b 已完成（CLI/api/REST 三面；UI 未做）**：三态语义 `None`=跟随 config / 显式 True|False=逐请求覆盖；
   api 6 入口 + `get_capabilities` + REST 白名单 + CLI 三态全接；守卫 13 例用「替换下游+捕获实参」
-  证明真的下传（含 PDF/视频真样本逐页逐帧）。**剩 318c（UI 设置页，需进 `user_overrides` 白名单）**。
+  证明真的下传（含 PDF/视频真样本逐页逐帧）。
+- **318c 已完成**：设置页 → 处理偏好新增全局默认复选框「只动水印区」，应用即生效（`postprocess()` 每次读 config），
+  可存 `user_overrides`（**两份清单都要登记**，只加一份会被 `test_config_parse` 抓红）。
+  **真开界面点过**：截图 → 勾选 → 应用 → 文案回「只动水印区：开启」（原文案漏报该项，已补）。
+  **默认仍为关**；4 个页签的逐次开关未做（需 `RepairParamHandles` 扩展 + 位置参数接线，独立阶段）。
 - **319 效率实测（同会话对照）**：首图冷启动 **7.23s**——import 仅 0.4s（torch 懒加载 2.0s），
   成本在 CUDA ≈2s + EasyOCR ≈2s，**纯 OpenCV 引擎也要付**；视频 `--frame-step 5` **1.82×**
   （37.3→20.5s，改动量 2.79 vs 2.77）；输出体积 PNG **4.65×** 输入 / JPG 1.13× / WebP **1.00×**。

@@ -52,6 +52,18 @@
 
 ## [Unreleased]
 
+### 新增（阶段 318c · 设置页开关「只动水印区」）
+- 318 有引擎、318b 有 CLI/api/REST，但网页用户用不到（#298 的第三种形态：门面接了、界面没接）。
+  在**设置页 → 处理偏好**加一个全局默认复选框：点「应用」立即写
+  `config.POSTPROCESS_PRESERVE_UNTOUCHED`（`postprocess()` 每次读 config ⇒ 立即生效），
+  可勾「保存为默认」写入 `config.user_overrides.json`；`user_overrides` 的**两份清单**
+  （`_USER_OVERRIDABLE_KEYS` + `_USER_OVERRIDE_VALIDATORS`）同时登记，缺一份会被
+  `test_config_parse::test_override_lists_are_consistent` 当场抓红。
+- 确认文案补「只动水印区：{preserve}」——实测原文案只报四项，用户点完看不出是否生效。
+- 验证是**真开界面点的**：截图确认渲染 → 勾选 → 应用 → 文案回「只动水印区：开启」；
+  全程未勾「保存为默认」，未改用户配置文件。单测 +3 例（白名单往返 / `None` 不动这项的三态 / 双语键）。
+- **默认仍为关**：翻默认会改变所有用户成片观感，留给产品决策。见 `docs/318c`。
+
 ### 优化（阶段 319 · 效率与交付面：三项实测 + 两条提示）
 - 实测三项：① 首图冷启动 **7.23s**——import 仅 0.4s（torch 懒加载 2.0s），成本在 CUDA ≈2s +
   EasyOCR ≈2s，**纯 OpenCV 引擎也要付**；② 24 帧静止水印视频 `--frame-step 5` **1.82×** 提速
