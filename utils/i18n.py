@@ -255,7 +255,7 @@ TRANSLATIONS: dict = {
                                    "代价是再经历一次有损编码。关闭时一律输出 PNG（无损，体积较大）。",
                 "preserve_info": "水印区 + 8px 保护带之外，输出与原图**逐字节一致**；"
                                  "实测「水印外被改动」从约 50% 降到约 1%，不影响擦除效果。"
-                                 "关闭时保持整图轻微锐化的现有观感。",
+                                 "**默认开启**；关闭后恢复旧的「整图轻微锐化」观感（会改动水印外像素）。",
                 "save_label": "保存为默认（写入 config.user_overrides.json）",
                 "save_info": "与真实超分/保留策略互不影响（合并式写入）",
                 "apply": "应用处理偏好",
@@ -401,7 +401,7 @@ TRANSLATIONS: dict = {
                 "no_editor": "⚠️ 请先上传图片并完成检测（或手动涂抹水印区域）。",
                 "no_mask": "⚠️ 尚未标记任何水印区域。\n请先点击「② 自动检测水印」，或在编辑框用画笔涂抹水印后重试。",
                 "auto_fallback": "\nℹ️ 编辑框为空，已按默认预设自动检测兜底。",
-                "refine_stats": "\n· 精修统计：检测命中 {det:,} 像素 / 编辑框 {user:,} 像素 / 你补画 {added:,} 像素。",
+                "refine_stats": "\n· 精修统计：检测命中 {det:,} 像素 / 编辑框 {user:,} 像素 / 编辑框比检测多 {added:,} 像素（含预填层边缘过渡，通常会比你实际补画的稍多）。",
                 "upscaled": "\n· 已启用真·超分：输出已放大至 {factor}×（分辨率提升，可能已回退轻量超分）。",
             },
         },
@@ -1060,8 +1060,8 @@ TRANSLATIONS: dict = {
                                    "Off = always PNG (lossless, larger).",
                 "preserve_info": "Outside the watermark mask (plus an 8px guard band) the output is "
                                  "**byte-identical** to the input; measured collateral dropped from "
-                                 "~50% to ~1% of pixels with no loss in removal. Off keeps the "
-                                 "current whole-image light-sharpen look.",
+                                 "~50% to ~1% of pixels with no loss in removal. **On by default**; "
+                                 "turning it off restores the old whole-image light-sharpen look.",
                 "save_label": "Save as default (writes config.user_overrides.json)",
                 "save_info": "Merged write; does not affect superres/retention keys",
                 "apply": "Apply preferences",
@@ -1206,7 +1206,7 @@ TRANSLATIONS: dict = {
                 "no_editor": "⚠️ Please upload an image and run detection (or paint the watermark) first.",
                 "no_mask": "⚠️ No watermark region marked yet.\nClick '② Auto-Detect' first, or paint the watermark in the editor, then retry.",
                 "auto_fallback": "\nℹ️ Editor is empty; ran auto-detection with default preset as fallback.",
-                "refine_stats": "\n· Refine stats: detection {det:,} px / editor {user:,} px / you added {added:,} px.",
+                "refine_stats": "\n· Refine stats: detection {det:,} px / editor {user:,} px / editor exceeds detection by {added:,} px (includes the prefill layer's anti-aliased edge — usually a bit more than you actually painted).",
                 "upscaled": "\n· Real super-res enabled: output upscaled to {factor}× (resolution boosted, lightweight SR may have been used as fallback).",
             },
         },

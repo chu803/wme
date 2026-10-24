@@ -47,9 +47,16 @@ def _call(src, original, mask, monkeypatch, on: bool, band: int | None = None):
     return pps.postprocess(src.copy(), original_rgb=original, mask=mask)
 
 
-def test_default_is_off_so_behavior_is_unchanged():
-    assert config.POSTPROCESS_PRESERVE_UNTOUCHED is False, (
-        "默认已变 True——本阶段只加能力、不改默认，翻默认需先出判决表并由用户拍板")
+def test_default_is_on_by_product_decision():
+    """默认 = **开**（2026-10-23 产品决策）。
+
+    318 落地时默认关（只加能力），依据是 60 用例 A/B：误伤中位 50% → 0.8–2.1%、
+    0/60 擦除度变差、60/60 ΔPSNR 改善 2.2–3.7 dB、耗时 0.99×。
+    产品定位是「去水印」，不是「顺手美化整张图」⇒ 把「你没要求的像素不动」作为默认承诺。
+    想要旧的「整图轻微锐化」观感，可在设置页关掉，或 `WME_POSTPROCESS_PRESERVE_UNTOUCHED=false`。
+    """
+    assert config.POSTPROCESS_PRESERVE_UNTOUCHED is True, (
+        "默认被改回去了：翻这个默认属对外可见决策，须先有 A/B 判决（见 docs/318 §五）")
 
 
 def test_outside_band_is_bit_exact_when_on(monkeypatch):

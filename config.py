@@ -1059,6 +1059,31 @@ DETECT_PLATE_MAX_ASPECT: Final[float] = _env_float(
 #   阶段 173：默认由 2.5 放宽到 3.2 —— 真实平台角标（如「豆包AI」徽标）实测
 #   足迹 340x128 ⇒ 宽高比 **2.66**，在原上限 2.5 下**恒被拒**（哪怕亮块完整）。
 
+# ==============================================================================
+# 【深色底牌通路 · 阶段 321】
+# ------------------------------------------------------------------------------
+# 起因（阶段 317 探针）：真实 57 个标注水印 100% 是角标，但换一种板样式
+# （**深色圆角板 + 白字**）时，`ai_logo` 检回只有 0.267——因为原来的两条候选来源
+# （白色判据 V≥140/S≤80、局部提亮）都假设"牌比底亮"。
+# 本通路是白牌判据的镜像：**暗且低饱和**的紧凑连通域 + 内部必须有**亮**墨迹（字）。
+# 与既有来源**各跑各的过滤、只并框**（阶段 176 的既定姿势，不并掩码）。
+# ==============================================================================
+DETECT_PLATE_DARK_ENABLED: Final[bool] = _env_bool("DETECT_PLATE_DARK_ENABLED", True)
+
+# 【深色牌：亮度上限】整数 0~254。牌体 V ≤ 此值（实测合成角标板 V≈24）。
+DETECT_PLATE_DARK_V_MAX: Final[int] = _env_int("DETECT_PLATE_DARK_V_MAX", 90, 0, 254)
+
+# 【深色牌：饱和度上限】整数 0~255，**比白牌的 S_MAX 宽**（默认 140 vs 80）。
+#   实测（阶段 321）：alpha=150 的半透明深板压在彩色照片上，牌体 S 中位可达 **116**
+#   ⇒ 沿用白牌的 80 会把整块牌拒掉。深色通路靠"暗 + 紧凑 + 有亮字"区分，饱和度可放宽。
+DETECT_PLATE_DARK_S_MAX: Final[int] = _env_int("DETECT_PLATE_DARK_S_MAX", 140, 0, 255)
+
+# 【深色牌：亮墨迹占比下限】浮点 0~1。牌内"比牌体亮得多"的像素（白字）占比下限，
+#   与白牌的 ink 判据镜像（白牌看深字，深牌看亮字）。
+DETECT_PLATE_DARK_INK_MIN: Final[float] = _env_float(
+    "DETECT_PLATE_DARK_INK_MIN", 0.05, 0.0, 1.0
+)
+
 # 【白牌判据：掩码闭运算核】整数 0~40（阶段 173 新增，默认 21）。
 #   背景：板上有深色字形 / 头像时，`(V>=V_MIN)&(S<=S_MAX)` 的亮像素被墨迹**切成碎片**
 #   ⇒ 连通域 bbox 只覆盖牌的一部分（实测 10 张真实豆包角标图上，检测掩码仅覆盖
@@ -1928,13 +1953,13 @@ SUPPORTED_OUTPUT_FORMATS: Final[tuple[str, ...]] = ("PNG", "JPG", "WEBP", "TIFF"
 # 【默认导出格式】
 DEFAULT_OUTPUT_FORMAT: Final[str] = _env_str("DEFAULT_OUTPUT_FORMAT", "PNG").upper()
 
-# 【输出格式跟随输入】布尔，默认 False（保持既有「一律 PNG」的行为）。
+# 【输出格式跟随输入】布尔，**默认 True**（2026-10-23 产品决策，依据见下）。
 #   实测（阶段 319，2048² 真图、-q 95）：PNG 输出是输入的 **4.65×**（7.68MB vs 1.65MB），
 #   JPG 1.13×、WebP **1.00×**；阶段 316 的 17 文件混合批量整批 62.4MB → 84.0MB（×1.35）。
-#   开启后：JPEG 进 → JPEG 出、WebP 进 → WebP 出（体积分别降到 1.13× / 1.00×），
-#   PNG 进仍出 PNG（无损不变）。**未开启时逐字节等于旧行为**（本阶段只加能力，不改默认）。
+#   默认开后：JPEG 进 → JPEG 出、WebP 进 → WebP 出；PNG 进仍出 PNG（无损场景不受影响）。
+#   理由：产品是去水印工具，不该顺手把成品体积翻 4.6 倍；需要无损可在设置页关掉或显式 `-f PNG`。
 #   代价：JPEG/WebP 输入会再经历一次有损编码（处理本身已重编码一次，无代际叠加）。
-OUTPUT_FMT_FOLLOW_INPUT: Final[bool] = _env_bool("OUTPUT_FMT_FOLLOW_INPUT", False)
+OUTPUT_FMT_FOLLOW_INPUT: Final[bool] = _env_bool("OUTPUT_FMT_FOLLOW_INPUT", True)
 
 # 【默认导出画质】取值 1 ~ 100，仅对 JPG 与 WebP 生效。
 #   95 是「肉眼几乎看不出损失」与「文件不至于过大」的平衡点。
@@ -2507,11 +2532,13 @@ POSTPROCESS_SUPERRES_AMOUNT: Final[float] = _env_float("POSTPROCESS_SUPERRES_AMO
 # 根因不是 bug：阶段 60 明确裁决「掩码内不锐化、掩码外照常锐化」（unsharp 会放大填充区
 # 残留），所以「把你没要求的地方也锐化一遍」是**有意设计**。本开关提供另一种契约：
 # **掩码 + 外扩带之外，输出与原图逐字节一致**。
-# 默认 False = 完全保持现行交付观感不变（本阶段只做能力与 A/B 判决，不改默认）。
+# **默认 True**（2026-10-23 产品决策）：60 用例 A/B 显示误伤中位 50% → 0.8–2.1%、
+# 0/60 擦除度变差、ΔPSNR 全数改善、耗时 0.99×。产品是「去水印」而非「顺手美化整张图」，
+# 故把「你没要求的像素不动」作为默认承诺；想要旧的整图轻微锐化观感可在设置页关掉。
 # ==============================================================================
 # 【总开关】布尔。True 时后处理结束后把「带外之外」还原为 original_rgb 的像素。
 #   ⚠ 需**原图 + 掩码**同时在场才生效（缺任一 ⇒ 静默 no-op，与真·超分同一既有惯例）。
-POSTPROCESS_PRESERVE_UNTOUCHED: Final[bool] = _env_bool("POSTPROCESS_PRESERVE_UNTOUCHED", False)
+POSTPROCESS_PRESERVE_UNTOUCHED: Final[bool] = _env_bool("POSTPROCESS_PRESERVE_UNTOUCHED", True)
 
 # 【保护带宽度】整数（像素）。掩码向外保留多少像素仍走后处理结果。
 #   取 8 ≈ `MASK_FEATHER_DEFAULT`(5) + 边缘融合余量：羽化与边界融合本身要跨掩码边界写像素，

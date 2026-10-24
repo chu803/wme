@@ -1636,6 +1636,13 @@ def _plate_boxes_in_patch(
         if lift_patch is None:
             return []
         bin_c = lift_patch.astype(np.uint8)
+    elif mask_source == "dark":
+        # 阶段 321：深色底牌的镜像判据（暗 + 低饱和）。
+        hsv = cv2.cvtColor(rgb_patch, cv2.COLOR_RGB2HSV)
+        v = hsv[:, :, 2].astype(np.int16)
+        s = hsv[:, :, 1].astype(np.int16)
+        bin_c = ((v <= config.DETECT_PLATE_DARK_V_MAX) &
+                 (s <= config.DETECT_PLATE_DARK_S_MAX)).astype(np.uint8)
     else:
         hsv = cv2.cvtColor(rgb_patch, cv2.COLOR_RGB2HSV)
         v = hsv[:, :, 2].astype(np.int16)
@@ -1652,7 +1659,12 @@ def _plate_boxes_in_patch(
     #   占比不高时才闭运算（`DETECT_PLATE_CLOSE_MAX_FILL`）。
     #   核大小按图像长边等比（`DETECT_PLATE_CLOSE_FRAC`），否则小图上会把
     #   「32x25 的小白牌」与底图一起并掉（阶段 86 记载的「闭运算毁检出」正是此因）。
-    if (config.DETECT_PLATE_CLOSE_FRAC > 0
+    # 阶段 321：深色通路**跳过闭运算**。
+    #   闭运算的用途是桥接「被**深色**字形切开的**亮**牌」；深色牌的墨迹是**亮**字，
+    #   闭运算会把深色牌与周围暗部（阴影/窗框/桌面）并成一片 ⇒ 触碰搜索区边界被整块丢弃
+    #   （实测 clean_08：41×41 核把 177×68 的牌并成跨区大块，深色通路产出 0 个框）。
+    if (mask_source != "dark"
+            and config.DETECT_PLATE_CLOSE_FRAC > 0
             and _fill <= config.DETECT_PLATE_CLOSE_MAX_FILL):
         _long = float(area_total) ** 0.5
         _k = max(1, int(round(config.DETECT_PLATE_CLOSE_FRAC * _long)))
@@ -1691,9 +1703,15 @@ def _plate_boxes_in_patch(
         ref = float(np.median(sub[comp]))
         if ref <= 0.0:
             continue
-        ink = float((sub <= ink_ratio * ref).mean())
-        if ink < ink_min:
-            continue
+        if mask_source == "dark":
+            # 深色牌上的"墨迹"是**亮字**：镜像判据（亮于牌体 1/ink_ratio 倍以上）。
+            ink = float((sub >= ref / max(ink_ratio, 1e-6)).mean())
+            if ink < config.DETECT_PLATE_DARK_INK_MIN:
+                continue
+        else:
+            ink = float((sub <= ink_ratio * ref).mean())
+            if ink < ink_min:
+                continue
         boxes.append((px + x, py + y, bw, bh))
     return boxes
 
@@ -1759,6 +1777,11 @@ def detect_corner_logo(
                     patch, px, py, area_total, plate_min_side,
                     lift_patch=_lift[py:py + ph, px:px + pw],
                     mask_source="lift")
+            # 阶段 321：深色底牌（深色圆角板 + 亮字）——与上面两条来源各跑各的、只并框。
+            if config.DETECT_PLATE_DARK_ENABLED:
+                _boxes += _plate_boxes_in_patch(
+                    patch, px, py, area_total, plate_min_side,
+                    mask_source="dark")
             for (bx, by, bw, bh) in _boxes:
                 regions.append(DetectionRegion(
                     x=bx, y=by, w=bw, h=bh, kind=KIND_CORNER_LOGO,
