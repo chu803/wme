@@ -367,6 +367,24 @@ def test_scope_note_template_has_no_literal_type_names():
             assert token not in tpl, f"scope.note（{lang}）手抄了类型名「{token}」：{tpl}"
 
 
+def test_scope_note_explains_why_not_committed():
+    """阶段 324：「不承诺」必须带上**理由**，否则用户只能把它读成「还没做」。
+
+    两种理由是实测出来的，不是修辞：
+      · 实测过上限（oracle 真值掩码下 `faint_tiled` 中位收益 0.026，6/15 张反而更差）；
+      · 没有真实样本可验证（真实图集 57 条 GT 100% 是角标，平铺类零真值）。
+    文案留在 `scope.note` **同一个键**里——`test_scope_note_template_has_no_literal_type_names`
+    只扫这个键，另开一个键就等于绕过「不得手抄类型名」守卫。
+    """
+    from utils.i18n import TRANSLATIONS
+
+    for lang, pairs in (("zh-CN", ("上限", "缺真实标注样本")),
+                        ("en-US", ("ceiling", "no real labelled samples"))):
+        tpl = TRANSLATIONS[lang]["scope"]["note"]
+        for token in pairs:
+            assert token in tpl, f"{lang} 的 scope.note 丢了「{token}」这个理由"
+
+
 def test_scope_note_zh_mentions_every_committed_type():
     from utils.i18n import set_language, t_in
     set_language("zh-CN")

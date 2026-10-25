@@ -824,6 +824,8 @@ TRANSLATIONS: dict = {
                 "⚠️ **适用范围**：本工具**承诺处理** {types}；"
                 "**明确不承诺** {others}等样式——后者对应预设仍可选用，"
                 "但效果不保证，也不计入质量门禁的结论。"
+                "（不承诺有两种：一种我们**实测过上限**——定位全对也几乎没有净收益；"
+                "一种只是**缺真实标注样本**，尚未定论。）"
             ),
         },
         # 阶段 169：报告类交付物（HTML/PDF 修复报告）文案双语化；
@@ -1627,7 +1629,11 @@ TRANSLATIONS: dict = {
                 "⚠️ **Scope**: this tool **commits to** {types}; "
                 "it is **not committed to** {others} and similar styles — "
                 "their presets remain selectable, but results are not guaranteed "
-                "and are excluded from the quality gate conclusions."
+                "and are excluded from the quality gate conclusions. "
+                "(Two different reasons sit behind that: for some styles we have "
+                "measured the ceiling — removal gains almost nothing even with "
+                "perfect localisation; for others we have no real labelled samples "
+                "yet, so nothing is settled.)"
             ),
         },
         # Stage 169: report deliverable (HTML/PDF repair report) strings, bilingual.
