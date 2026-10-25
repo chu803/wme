@@ -51,13 +51,16 @@ def _runner(rc_map):
 # ---------------------------------------------------------------------------
 
 def test_default_steps_are_pytest_undef_scan_docker_static():
-    """默认步骤 = pytest + undef_scan + docker_static。
+    """默认步骤 = pytest + undef_scan + docker_static + corner_signal_gate。
 
-    阶段 C5：容器静态一致性（docker_consistency_check）**不依赖 torch、秒级**，
-    故放默认步骤（随 CI 子集一起跑），而非 --gates（需 torch 的重门禁）。
+    阶段 325 把 `corner_signal_gate` 从 `--gates` 提进默认：它是七道效果门禁里唯一在
+    **CI 最小依赖**（无 torch/easyocr）下实测 rc=0、≈10s 的一道，且数据集随仓库分发 ⇒
+    放默认就等于 CI/publish/test.bat/test.sh 经**同一入口**自动获得这道守卫。
+    ⚠ 反过来不做的另一条路是「往 ci.yml 里另写一条命令」——那是 192 阶段打掉的入口副本，
+    `test_entry_surfaces_call_the_same_unified_entry` 正防它。
     """
     names = [s.name for s in rac.build_steps()]
-    assert names == ["pytest", "undef_scan", "docker_static"]
+    assert names == ["pytest", "undef_scan", "docker_static", "corner_signal_gate"]
 
 
 def test_fast_mode_uses_ci_equivalent_marker_selection():
@@ -77,9 +80,11 @@ def test_full_mode_has_no_marker_filter():
 
 def test_gates_flag_appends_gate_steps():
     names = [s.name for s in rac.build_steps(gates=True)]
-    assert names == ["pytest", "undef_scan", "docker_static",
+    assert names == ["pytest", "undef_scan", "docker_static", "corner_signal_gate",
                      "clean_bench_probe", "quality_gate", "real_gate", "perf_probe",
-                     "media_gate", "removal_truth_gate", "corner_signal_gate"]
+                     "media_gate", "removal_truth_gate"]
+    # 325：corner_signal_gate 只在默认段出现一次——`--gates` 连默认一起跑，写两遍就是跑两遍。
+    assert names.count("corner_signal_gate") == 1
 
 
 def test_real_gate_step_uses_strict_scope():

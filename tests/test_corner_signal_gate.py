@@ -182,8 +182,33 @@ def test_wired_into_run_all_checks_gates():
     assert "corner_signal_gate" in names, names
 
 
-def test_not_in_default_steps():
+def test_in_default_steps():
+    """阶段 325 的翻转：本门禁从 `--gates` 提进**默认步骤**，CI 才拦得住角标路由退化。
+
+    判决依据（不是偏好）：把 torch/torchvision/easyocr 全部屏蔽后实测 **rc=0、10.2s**，
+    且 `benchmark_real/**` 随仓库分发（321 个受控文件）⇒ 它是七道效果门禁里唯一能在
+    CI 最小依赖口径下跑的一道。旧断言「默认必须不含它」随之作废——留在 `--gates` 就等于
+    「角标路由」这条结论在任何自动链路上都不被检查（见 docs/325）。
+    """
     from scripts import run_all_checks as rac
 
     names = [s.name for s in rac.build_steps(full=False, gates=False, root=_ROOT)]
-    assert "corner_signal_gate" not in names, names
+    assert "corner_signal_gate" in names, names
+
+
+def test_not_duplicated_when_gates_requested():
+    """`--gates` 会连默认段一起跑 ⇒ 门禁清单里不得再出现第二份（跑两遍白等 10 秒）。"""
+    from scripts import run_all_checks as rac
+
+    names = [s.name for s in rac.build_steps(full=False, gates=True, root=_ROOT)]
+    assert names.count("corner_signal_gate") == 1, names
+
+
+def test_heavy_gates_stay_out_of_default_steps():
+    """反向：重门禁仍不进默认（它们的红线是「OCR 在位」口径标定的，CI 跑只会假红）。"""
+    from scripts import run_all_checks as rac
+
+    names = [s.name for s in rac.build_steps(full=False, gates=False, root=_ROOT)]
+    for heavy in ("real_gate", "quality_gate", "clean_bench_probe", "media_gate",
+                  "removal_truth_gate", "perf_probe"):
+        assert heavy not in names, f"{heavy} 不该进默认步骤：{names}"

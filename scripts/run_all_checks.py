@@ -24,11 +24,19 @@
 #                        只读 Dockerfile* / .dockerignore / requirements*.txt，零依赖、
 #                        秒级；守解释器错配 / CUDA 版本不匹配 / 依赖单一真值来源等
 #                        「确定性构建失败」。本机无 docker CLI，故只做静态门禁）。
+#   ②-c corner_signal_gate —— 角标路由门禁（阶段 322b 建、**325 起进默认步骤**）：
+#                        真实图集 × 生产信号 `_corner_watermark_signal`，命中不得掉线、
+#                        非角标必须零误命中。它是七道效果门禁里唯一能在 **CI 最小依赖**下跑的一道
+#                        （实测屏蔽 torch/torchvision/easyocr 后仍 rc=0、10.2s；数据集随仓库分发），
+#                        故放这里而不是 `--gates`——CI/publish/test.bat/test.sh 经**同一入口**自动获得，
+#                        不在 ci.yml 里另写命令（那是 `test_entry_surfaces_...` 防的入口副本）。
+#                        缺数据集/OpenCV 时该脚本自身返回 2 ⇒ 聚合层按「跳过」放行，不判失败。
 #   ③ 门禁步骤       —— 仅 `--gates` 时追加（需 torch / 耗时）：
 #                        clean_bench_probe（干净图误报）· quality_gate（合成红线）
 #                        · real_gate --strict-scope（真实图红线 + 漂移）
 #                        · perf_probe（检测阶段 P95 回归护栏）
 #                        · media_gate（PDF/视频链路；阶段 315 补齐全源验证）
+#                        · removal_truth_gate（修复侧像素真值；阶段 322a）
 #
 # 退出码（与门禁家族契约一致）
 # ----------------------------
@@ -131,6 +139,13 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
         Step("docker_static",
              [sys.executable, os.path.join(root, "scripts", "docker_consistency_check.py")],
              note="容器静态一致性（解释器/CUDA/依赖单一真值来源；零依赖、秒级）"),
+        # 阶段 325：这是七道 --gates 里唯一能在 CI 口径下跑的一道——
+        # 只要 numpy + opencv-headless（实测把 torch/torchvision/easyocr 全部屏蔽后仍 rc=0、10.2s），
+        # 数据集又随仓库分发。放进默认步骤 ⇒ CI / publish / test.bat / test.sh 经**同一入口**自动获得
+        # 这道效果类守卫；**不往 ci.yml 里另写一条命令**（那正是 test_entry_surfaces_... 防的入口副本）。
+        Step("corner_signal_gate",
+             [sys.executable, os.path.join(root, "scripts", "corner_signal_gate.py")],
+             note="角标信号门禁（真实图集 × 生产信号；min 依赖可跑、约 10 秒；缺数据集时 rc=2 放行）"),
     ]
     if gates:
         steps += [
@@ -159,12 +174,8 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
             Step("removal_truth_gate",
                  [sys.executable, os.path.join(root, "scripts", "removal_truth_probe.py"), "--gate"],
                  note="修复侧真值门禁（真照片自带构造保证的像素真值；检回/擦除度/净伤害/误伤四条红线）"),
-            # 阶段 322b：角标路由（450 标定、321 补深色牌）此前只有「只打印」的诊断脚本。
-            # 实测扩模板库**买不到召回**（17 模板与 9 模板同为 38 命中、却多 1 个误命中），
-            # 于是把力气改成钉住已有结论：命中不得掉线、非角标必须零误命中。快（≈8 秒）。
-            Step("corner_signal_gate",
-                 [sys.executable, os.path.join(root, "scripts", "corner_signal_gate.py")],
-                 note="角标信号门禁（真实图集 × 生产信号；防角标路由静默失效）"),
+            # 阶段 322b 建的 `corner_signal_gate` **不在这里重复**（阶段 325 起它是默认步骤，
+            # `--gates` 会连默认一起跑 ⇒ 写两遍就是跑两遍）。
         ]
     return steps
 

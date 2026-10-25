@@ -61,8 +61,8 @@
   `removal_truth_probe --gate` **rc=2** + 人话理由 ⇒ 正确跳过、不会假绿（322a 守卫的实战验证）。
   数据集确认随仓库分发（`git ls-files benchmark_real` = 321 文件，含 images/ 与 clean/）。
 - 其余六道**不该**顺手加：红线基线是在「OCR 在位」口径下标定的，无 OCR 的 runner 上数字会变但那不是
-  产品回归 ⇒ 只会造成 CI 常红或逼人重锚。**建议（需授权，属发布链改动）**：`ci.yml`/`publish.yml`
-  各加一步 `python scripts/corner_signal_gate.py`（代价 ≈10–15s/次）。
+  产品回归 ⇒ 只会造成 CI 常红或逼人重锚。**已实施**：`corner_signal_gate` 提进 `run_all_checks` **默认步骤**（第 4 步，+≈10 秒），`ci.yml`/`publish.yml`/`test.bat`/`test.sh` 一行都不用改即自动获得这道守卫。
+  原建议「往 ci.yml 另加一条命令」被自己否掉——那正是阶段 192 打掉的**入口副本**（`test_entry_surfaces_call_the_same_unified_entry` 防它）。风险面：`aggregate()` 只把 rc=1 判失败 ⇒ 缺数据集的机器是 ⏭ 跳过、不是假绿；`benchmark_real/images` 109 个受控文件（无 LFS） ⇒ push 后 CI 就有图。另实测把 torch/torchvision/easyocr **全部屏蔽**后仍 rc=0、10.2s。
 - 自我更正：本轮曾把 320f 已按「不动阈值 + 诚实文案」处置完的「掩码编辑器往返 +33%」当成未决缺陷上报；
   先 grep 项目记忆清单才发现（LESSONS #307 那条纪律的正向用例），并已修掉记忆里那条过期措辞。
 
