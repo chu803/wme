@@ -33,9 +33,9 @@
  走的是**用户路径**：`process_image(auto_preset=True)`，预设由推荐器决定、引擎由 auto 决定，
  不强制、不给掩码。这样量到的就是真实交付质量，而不是给模型开小灶。
 
- 退出码：**恒 0（纯诊断，第一版不设红线）**。
- 理由与 `media_gate` 一致——没有历史基线就画红线，第一天就会常红、然后被人关掉。
- 跑一段时间、把 `--json` 产出攒成基线后，再谈红线与 `run_all_checks` 接入。
+ 退出码：**0 通过 / 1 踩红线 / 2 依赖或资产缺失**（阶段 322a 起）。
+ 317 那一版是「恒 0 的纯诊断」，理由是没有历史基线就画红线会第一天常红；
+ 三轮 60 用例数字稳定后已升成门禁（红线定义见下方「阶段 322a/323」常量区，取舍理由见 docs/322a、docs/323）。
 ==============================================================================
 """
 from __future__ import annotations
@@ -69,6 +69,7 @@ GATE_LIMIT = 15            # 门禁固定用前 15 张干净真照片（排序�
 RECALL_FLOOR_DELTA = 0.05  # R1 检回中位不得比基线低 0.05（绝对容差）
 GAIN_FLOOR_DELTA = 0.05    # R2 擦除度中位不得比基线低 0.05
 GAIN_ABS_FLOOR = 0.0       # R2b faint_tiled/grid 的擦除度**不得 < 0**（净伤害红线）
+NET_HARM_WORST = -0.25     # R2c（阶段 323）：**任何一张图**都不得被擦坏超过水印强度的 25%
 COLLATERAL_MAX = 5.0       # R3 误伤中位 ≤ 5.0%（「只动水印区」承诺的守卫）
 NET_HARM_CASES = ("faint_tiled", "grid")
 
@@ -198,6 +199,9 @@ def _gate_medians(rows: list) -> dict:
             "n": len(rs),
             "det_recall": round(float(np.median([x["det_recall"] for x in rs])), 4),
             "removal_gain": round(float(np.median(gains)), 4) if gains else None,
+            # 阶段 323：中位数会**藏掉最坏那一张**（15 例里 6 例负功时中位仍可以是正的），
+            # 所以同时留一个最坏值给 R2c。
+            "worst_gain": round(float(min(gains)), 4) if gains else None,
             "collateral_pct": round(float(np.median([x["collateral_pct"] for x in rs])), 3),
         }
     return out
@@ -226,11 +230,35 @@ def _gate_problems(medians: dict, baseline: dict) -> list:
             if case in NET_HARM_CASES and g < GAIN_ABS_FLOOR:
                 problems.append(
                     f"R2b {case} 擦除度 {g} < 0（净伤害红线：不许擦完比不擦更差）")
+        # R2c（阶段 323）：单图最坏值。中位数过关 ≠ 没有一张图被擦坏——
+        # 323 实测 faint_tiled 中位 +0.010 的同时，最差一张是 **−0.191**（15 例里 6 例负功）。
+        w = cur.get("worst_gain")
+        if w is not None and w < NET_HARM_WORST:
+            problems.append(
+                f"R2c {case} 单图最坏擦除度 {w} < {NET_HARM_WORST}"
+                "（有一张照片被擦坏得超过红线，而中位数把它藏住了）")
         if cur["collateral_pct"] > COLLATERAL_MAX:
             problems.append(
                 f"R3 {case} 误伤中位 {cur['collateral_pct']}% > {COLLATERAL_MAX}%"
                 "（只动水印区承诺）")
     return problems
+
+
+def _gate_margins(medians: dict) -> list:
+    """红线余量（每类一行）。阶段 323：余量必须每次打印——R2b 只有千分点，
+    不写出来就会被读成「绿 = 有富余」，然后在一次无关改动后突然常红。"""
+    lines = []
+    for case in sorted(medians):
+        m = medians[case]
+        bits = []
+        if m.get("removal_gain") is not None:
+            bits.append(f"擦除度余量 {round(m['removal_gain'] - GAIN_ABS_FLOOR, 4)}"
+                        f"{'' if case in NET_HARM_CASES else '（不看绝对线）'}")
+        if m.get("worst_gain") is not None:
+            bits.append(f"最坏单图余量 {round(m['worst_gain'] - NET_HARM_WORST, 4)}")
+        bits.append(f"误伤余量 {round(COLLATERAL_MAX - m['collateral_pct'], 2)}%")
+        lines.append(f"  {case:<13} " + " | ".join(bits))
+    return lines
 
 
 def run(photos: list, cases: dict, engine: str, json_path: str | None,
@@ -321,6 +349,9 @@ def run(photos: list, cases: dict, engine: str, json_path: str | None,
             print(f"  ❌ {p}")
         return 1
     print("\n✅ 修复侧门禁通过（检回/擦除度未回退、无净伤害、误伤在承诺内）")
+    print("红线余量（越小越脆，改动默认值前先看到这里）：")
+    for line in _gate_margins(medians):
+        print(line)
     return 0
 
 
@@ -418,8 +449,9 @@ def main(argv: list | None = None) -> int:
             return 1
         payload = {"generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
                    "engine": args.engine, "limit": GATE_LIMIT,
-                   "note": "阶段 322a 基线：类型中位数；红线=检回/擦除度 −0.05、"
-                           "faint_tiled/grid gain≥0、误伤中位≤5%",
+                   "note": "阶段 322a 基线（323 补 worst_gain 与 R2c）：类型中位数 + 最坏单图；"
+                           "红线=检回/擦除度 −0.05、faint_tiled/grid gain≥0、"
+                           "任意图 worst_gain≥−0.25、误伤中位≤5%",
                    "by_case": medians}
         with open(BASELINE_PATH, "w", encoding="utf-8") as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)

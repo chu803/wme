@@ -1,31 +1,35 @@
 {
-  "generated_at": "2026-10-25T04:28:59Z",
+  "generated_at": "2026-10-25T05:52:57Z",
   "engine": "auto",
   "limit": 15,
-  "note": "阶段 322a 基线：类型中位数；红线=检回/擦除度 −0.05、faint_tiled/grid gain≥0、误伤中位≤5%",
+  "note": "阶段 322a 基线（323 补 worst_gain 与 R2c）：类型中位数 + 最坏单图；红线=检回/擦除度 −0.05、faint_tiled/grid gain≥0、任意图 worst_gain≥−0.25、误伤中位≤5%",
   "by_case": {
     "corner_logo": {
       "n": 15,
       "det_recall": 0.267,
       "removal_gain": 0.532,
+      "worst_gain": 0.061,
       "collateral_pct": 0.8
     },
     "edge_text": {
       "n": 15,
       "det_recall": 0.992,
       "removal_gain": 0.939,
+      "worst_gain": 0.507,
       "collateral_pct": 1.09
     },
     "faint_tiled": {
       "n": 15,
       "det_recall": 0.05,
       "removal_gain": 0.01,
+      "worst_gain": -0.191,
       "collateral_pct": 2.09
     },
     "grid": {
       "n": 15,
       "det_recall": 0.015,
       "removal_gain": 0.002,
+      "worst_gain": -0.036,
       "collateral_pct": 1.39
     }
   }

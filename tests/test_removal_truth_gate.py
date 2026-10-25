@@ -15,6 +15,7 @@ import json
 import os
 import sys
 
+import numpy as np
 import pytest
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -26,16 +27,22 @@ from scripts import removal_truth_probe as rtp  # noqa: E402
 CASES = ("corner_logo", "edge_text", "faint_tiled", "grid")
 
 
-def _medians(recall=0.40, gain=0.30, collateral=1.5) -> dict:
-    """四个类型都给一份「与基线持平」的中位数（构造判据输入，不跑管线）。"""
+def _medians(recall=0.40, gain=0.30, collateral=1.5, worst=None) -> dict:
+    """四个类型都给一份「与基线持平」的中位数（构造判据输入，不跑管线）。
+
+    `worst_gain` 默认与中位数同值（=「没有更差的图」）；要看 R2c 的用例传 `worst=` 压低它。
+    """
     return {c: {"n": 15, "det_recall": recall, "removal_gain": gain,
+                "worst_gain": gain if worst is None else worst,
                 "collateral_pct": collateral} for c in CASES}
 
 
 def _baseline(gain_faint=0.01, gain_grid=0.002) -> dict:
     base = _medians()
     base["faint_tiled"]["removal_gain"] = gain_faint
+    base["faint_tiled"]["worst_gain"] = gain_faint
     base["grid"]["removal_gain"] = gain_grid
+    base["grid"]["worst_gain"] = gain_grid
     return {"by_case": base}
 
 
@@ -100,13 +107,63 @@ def test_net_harm_line_scoped_to_declared_cases():
 
 
 # ---------------------------------------------------------------------------
+# ①b R2c：单图最坏净伤害（阶段 323 —— 中位数会藏掉最差那一张）
+# ---------------------------------------------------------------------------
+
+def test_worst_gain_is_the_min_not_the_median():
+    """`_gate_medians` 必须同时给出最坏值：323 实测 faint_tiled 中位 +0.010 而最差一张 −0.191。"""
+    rows = [{"valid": True, "case": "faint_tiled", "det_recall": 0.05,
+             "removal_gain": g, "collateral_pct": 1.0}
+            for g in (-0.191, -0.087, 0.010, 0.117, 0.200)]
+    med = rtp._gate_medians(rows)["faint_tiled"]
+    assert med["removal_gain"] == 0.010, med
+    assert med["worst_gain"] == -0.191, med
+
+
+def test_r2c_fires_when_one_photo_is_damaged_badly():
+    cur = _medians()
+    cur["edge_text"]["worst_gain"] = rtp.NET_HARM_WORST - 0.05
+    problems = rtp._gate_problems(cur, _baseline())
+    assert any(p.startswith("R2c") and "edge_text" in p for p in problems), problems
+
+
+def test_r2c_does_not_fire_at_the_boundary():
+    cur = _medians()
+    cur["faint_tiled"]["worst_gain"] = rtp.NET_HARM_WORST
+    assert not any(p.startswith("R2c") for p in rtp._gate_problems(cur, _baseline()))
+
+
+def test_median_ok_but_worst_bad_is_still_red():
+    """两条线互相独立：中位守住 0（R2b 过）也绝不放行一张被擦烂的图（R2c 必须报）。"""
+    cur = _medians()
+    cur["grid"]["worst_gain"] = -0.40            # 中位仍是 0.002 ≥ 0
+    problems = rtp._gate_problems(cur, _baseline())
+    assert any(p.startswith("R2c") for p in problems), problems
+    assert not any(p.startswith("R2b") for p in problems), problems
+
+
+def test_worst_floor_is_meaningful_not_symmetrical():
+    """地板必须是负的、又不能宽到没意义（现值最差 −0.191 ⇒ −0.25 留 0.059 余量）。"""
+    assert -0.5 < rtp.NET_HARM_WORST < 0, rtp.NET_HARM_WORST
+    assert rtp.NET_HARM_WORST <= -0.15, "红线必须明显严于现值，否则一次抖动就常红"
+
+
+def test_margins_are_printed_per_case():
+    """余量必须每次跑都打出来：R2b 只有千分点，不写出来就会被读成「绿=有富余」。"""
+    lines = rtp._gate_margins(_medians(gain=0.01, collateral=2.0))
+    assert len(lines) == len(CASES), lines
+    assert all("最坏单图余量" in l and "误伤余量" in l for l in lines), lines
+    joined = "\n".join(lines)
+    assert "0.01" in joined, joined          # faint_tiled 的 R2b 余量要看得见
+
+
+
+# ---------------------------------------------------------------------------
 # ② 「什么都没做」必须算进中位数（阶段 322a 首轮实测抓到的哑巴口）
 # ---------------------------------------------------------------------------
 
 def test_noop_row_measures_zero_not_missing():
     """输出==输入 时 measure 必须给出 擦除度 0 / 误伤 0 / 检回 0（这正是 skipped 分支的语义）。"""
-    import numpy as np
-
     clean = (np.arange(64 * 64 * 3, dtype=np.int32).reshape(64, 64, 3) % 200).astype(np.uint8)
     marked = clean.copy()
     marked[8:16, 8:16] = 250                       # 造一个「水印」
@@ -155,6 +212,8 @@ def test_committed_baseline_is_self_consistent():
     for c in rtp.NET_HARM_CASES:
         assert by[c]["removal_gain"] >= rtp.GAIN_ABS_FLOOR, f"{c} 基线已是净伤害"
     for c in CASES:
+        assert "worst_gain" in by[c], f"{c} 基线缺 worst_gain（323 之后的口径）：{by[c]}"
+        assert by[c]["worst_gain"] >= rtp.NET_HARM_WORST, f"{c} 基线已踩 R2c"
         assert by[c]["collateral_pct"] <= rtp.COLLATERAL_MAX, f"{c} 基线已超误伤承诺"
         assert by[c]["n"] >= rtp.GATE_LIMIT // 2, f"{c} 基线样本太少：{by[c]['n']}"
 
