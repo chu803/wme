@@ -633,7 +633,8 @@ TRANSLATIONS: dict = {
                 "file_label": "① 上传视频",
                 "info_init": "_尚未上传视频。_",
                 "step_label": "② 抽帧步长",
-                "step_info": "每隔几帧重新找一次水印位置。台标类固定水印设 3~5 可提速数倍",
+                "step_info": "每隔几帧重新找一次水印位置。固定台标设 3~5：实测约 1.8× 提速"
+                             "（24 帧样本，step=5，画质指标不变）；移动/滚动水印请保持 1",
                 "max_label": "③ 最多处理帧数",
                 "max_info": "防呆上限。30fps 视频：300 帧 ≈ 10 秒画面",
                 "reuse_label": "复用上一帧的水印位置（推荐）",
@@ -1438,7 +1439,9 @@ TRANSLATIONS: dict = {
                 "file_label": "① Upload Video",
                 "info_init": "_No video uploaded._",
                 "step_label": "② Frame Step",
-                "step_info": "Re-detect watermark every N frames. Fixed logos (3~5) speed up a lot",
+                "step_info": "Re-detect the watermark every N frames. Fixed logos at 3~5 gave "
+                             "~1.8x in our 24-frame test (step=5, no quality drop); "
+                             "keep 1 for moving/scrolling watermarks",
                 "max_label": "③ Max Frames",
                 "max_info": "Safety cap. 30fps video: 300 frames ≈ 10s",
                 "reuse_label": "Reuse Last Frame's Position (recommended)",

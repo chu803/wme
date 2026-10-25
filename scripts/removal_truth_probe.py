@@ -60,6 +60,18 @@ COLLATERAL_PCT_MIN = 2  # 「 collateral 有改动」的最小可见差
 DILATE = 24            # truth 外扩多少才算「用户没要求动」
 STRENGTH_MIN = 3.0     # 水印强度低于此值时 removal_gain 无意义（分母太小）
 
+# ---- 阶段 322a：门禁模式（--gate）------------------------------------------------
+# 317/321 的 60 用例已跑过三轮，数字稳定，可以把「擦得干净吗」从"有数字"升级为"有守卫"。
+# 红线按「类型中位数 × 绝对容差」组织（与 media_gate 的红线家族同一口价；先不做漂移层，
+# 数据攒够再升级——同 315 的既定路径）。
+BASELINE_PATH = os.path.join(_ROOT, "benchmark_real", "removal_truth_baseline.json")
+GATE_LIMIT = 15            # 门禁固定用前 15 张干净真照片（排序稳定，保证可复现）
+RECALL_FLOOR_DELTA = 0.05  # R1 检回中位不得比基线低 0.05（绝对容差）
+GAIN_FLOOR_DELTA = 0.05    # R2 擦除度中位不得比基线低 0.05
+GAIN_ABS_FLOOR = 0.0       # R2b faint_tiled/grid 的擦除度**不得 < 0**（净伤害红线）
+COLLATERAL_MAX = 5.0       # R3 误伤中位 ≤ 5.0%（「只动水印区」承诺的守卫）
+NET_HARM_CASES = ("faint_tiled", "grid")
+
 
 def _load_maker():
     """按路径加载 `scripts/make_demo_assets`（scripts/ 不在分发包里，不能用包导入）。"""
@@ -142,8 +154,87 @@ def measure(clean: np.ndarray, marked: np.ndarray, res: np.ndarray,
     return d
 
 
+def _has_ocr() -> bool:
+    """EasyOCR 是否可用（只查可导入性，不加载模型，故开销≈0）。"""
+    try:
+        return importlib.util.find_spec("easyocr") is not None
+    except (ImportError, ValueError):
+        return False
+
+
+def _skip_reason() -> str | None:
+    """门禁模式的依赖/资产检查（缺 ⇒ 退出码 2，不得假绿成 0）。"""
+    try:
+        import cv2  # noqa: F401
+    except Exception as exc:  # noqa: BLE001
+        return f"OpenCV 不可用：{exc}"
+    if not _has_ocr():
+        # 阶段 322a 实测：用**没装 easyocr 的解释器**跑，`edge_text` 检回中位从 0.992 掉到 0.0、
+        # `faint_tiled` 擦除度从 +0.010 掉到 −0.030——数字仍「自洽」，但量的不是交付品。
+        # ⇒ 文字检测不在位时这是**环境不合格**（2），不是产品不合格（1），更不是通过（0）。
+        return "EasyOCR 不可用：门禁口径要求文字检测在位（请确认用的是项目虚拟环境的解释器）"
+    if not os.path.isdir(CLEAN_DIR):
+        return f"缺干净真照片目录：{CLEAN_DIR}"
+    if not glob.glob(os.path.join(CLEAN_DIR, "clean_*.jpg")):
+        return "clean/ 下没有 clean_*.jpg"
+    try:
+        _load_maker()
+    except Exception as exc:  # noqa: BLE001
+        return f"水印合成器不可用：{exc}"
+    return None
+
+
+def _gate_medians(rows: list) -> dict:
+    """按类型聚合中位数（门禁判据的输入）。"""
+    by: dict = {}
+    for r in rows:
+        if not r.get("valid"):
+            continue
+        by.setdefault(r["case"], []).append(r)
+    out: dict = {}
+    for case, rs in by.items():
+        gains = [x["removal_gain"] for x in rs if x["removal_gain"] is not None]
+        out[case] = {
+            "n": len(rs),
+            "det_recall": round(float(np.median([x["det_recall"] for x in rs])), 4),
+            "removal_gain": round(float(np.median(gains)), 4) if gains else None,
+            "collateral_pct": round(float(np.median([x["collateral_pct"] for x in rs])), 3),
+        }
+    return out
+
+
+def _gate_problems(medians: dict, baseline: dict) -> list:
+    """纯判据函数：当前中位数 vs 基线中位数 → 红线问题列表（可单测）。"""
+    problems: list = []
+    base = baseline.get("by_case") or {}
+    for case in sorted(base):
+        cur = medians.get(case)
+        if cur is None:
+            problems.append(f"R0 类型 {case} 本轮没有有效用例（基线里有 {base[case].get('n')} 例）")
+            continue
+        b = base[case]
+        if cur["det_recall"] < b["det_recall"] - RECALL_FLOOR_DELTA:
+            problems.append(
+                f"R1 {case} 检回中位 {cur['det_recall']} < 基线 {b['det_recall']} − {RECALL_FLOOR_DELTA}")
+        g, bg = cur["removal_gain"], b["removal_gain"]
+        if g is None or bg is None:
+            problems.append(f"R2 {case} 擦除度无法计算（cur={g} baseline={bg}）")
+        else:
+            if g < bg - GAIN_FLOOR_DELTA:
+                problems.append(
+                    f"R2 {case} 擦除度中位 {g} < 基线 {bg} − {GAIN_FLOOR_DELTA}")
+            if case in NET_HARM_CASES and g < GAIN_ABS_FLOOR:
+                problems.append(
+                    f"R2b {case} 擦除度 {g} < 0（净伤害红线：不许擦完比不擦更差）")
+        if cur["collateral_pct"] > COLLATERAL_MAX:
+            problems.append(
+                f"R3 {case} 误伤中位 {cur['collateral_pct']}% > {COLLATERAL_MAX}%"
+                "（只动水印区承诺）")
+    return problems
+
+
 def run(photos: list, cases: dict, engine: str, json_path: str | None,
-        verbose: bool) -> int:
+        verbose: bool, gate: bool = False, write_baseline: bool = False) -> int:
     from services.auto_pipeline import process_image
     import cv2
 
@@ -160,9 +251,26 @@ def run(photos: list, cases: dict, engine: str, json_path: str | None,
             t0 = time.time()
             core = process_image(marked, mode="auto", engine=engine, auto_preset=True)
             sec = round(time.time() - t0, 1)
-            if core.get("status") != "success":
+            status = core.get("status")
+            if status == "skipped":
+                # **必须计入而不是丢弃**：空掩码 = 系统什么都没做 = 输出就是输入。
+                # 若把它当「无效用例」排除，检测器一旦集体失明，门禁只会看到样本数变少、
+                # 中位数却仍然漂亮 ⇒ R1 被反向喂成绿球（阶段 322a 首轮实测抓到）。
+                m = measure(clean, marked, marked, None)
+                m.update({"photo": os.path.basename(p), "case": name, "case_cn": cn,
+                          "preset_hint": preset, "seconds": sec,
+                          "preset_used": core.get("recommended_preset") or "-",
+                          "used_ocr": bool(core.get("used_ocr")),
+                          "note": "未检出（跳过，输出=输入）"})
+                rows.append(m)
+                if verbose:
+                    print(f"  [{idx}/{len(photos)}] {os.path.basename(p):<14} {name:<12} "
+                          f"未检出 ⇒ 擦除度 {m.get('removal_gain')} "
+                          f"误伤 {m.get('collateral_pct')}% 检回 0.0 耗时 {sec}s")
+                continue
+            if status != "success":
                 rows.append({"photo": os.path.basename(p), "case": name,
-                             "valid": False, "reason": f"管线未成功：{core.get('status')}",
+                             "valid": False, "reason": f"管线未成功：{status}",
                              "seconds": sec})
                 continue
             res = core["result_rgb"]
@@ -174,7 +282,10 @@ def run(photos: list, cases: dict, engine: str, json_path: str | None,
                       "preset_hint": preset, "seconds": sec,
                       # 键名以 process_image 的真实返回为准（阶段 317 实测：没有 "preset" 键，
                       # 推荐结果在 "recommended_preset"；写错键名会静默得到 "auto" 而非报错）。
-                      "preset_used": core.get("recommended_preset") or "-"})
+                      "preset_used": core.get("recommended_preset") or "-",
+                      # used_ocr：同一份数字是「交付品」还是「降级链路」的唯一可回溯标记
+                      # （阶段 322a 预演用过没装 easyocr 的解释器，检回 0.992→0.0 却看不出来）。
+                      "used_ocr": bool(core.get("used_ocr"))})
             rows.append(m)
             if verbose:
                 print(f"  [{idx}/{len(photos)}] {os.path.basename(p):<14} {name:<12} "
@@ -191,6 +302,25 @@ def run(photos: list, cases: dict, engine: str, json_path: str | None,
                        "engine": engine, "dilate": DILATE,
                        "truth_min": TRUTH_MIN, "rows": rows}, f, ensure_ascii=False, indent=2)
         print(f"JSON 已写入：{json_path}")
+    if not gate:
+        return 0
+    # ---- 门禁模式（阶段 322a）：与基线比对，红线任一破 ⇒ 退出码 1 ----
+    medians = _gate_medians(rows)
+    try:
+        baseline = json.load(open(BASELINE_PATH, encoding="utf-8"))
+    except FileNotFoundError:
+        if write_baseline:
+            print(f"\n基线尚不存在 ⇒ 本轮作为首份基线（--write-baseline）：{BASELINE_PATH}")
+            return 0
+        print(f"\n❌ 缺基线文件：{BASELINE_PATH}（用 --gate --write-baseline 生成）")
+        return 1
+    problems = _gate_problems(medians, baseline)
+    if problems:
+        print("\n红线未过：")
+        for p in problems:
+            print(f"  ❌ {p}")
+        return 1
+    print("\n✅ 修复侧门禁通过（检回/擦除度未回退、无净伤害、误伤在承诺内）")
     return 0
 
 
@@ -214,7 +344,7 @@ def print_table(rows: list) -> None:
               f"{md(rc):>12}{md(pr):>12}"
               f"{round(float(np.median([x['delta_psnr'] for x in by[case]])), 2):>8}"
               f"{round(float(np.median([x['seconds'] for x in by[case]])), 1):>7}")
-    undetected = [r for r in rows if r.get("note") == "未检出任何水印"]
+    undetected = [r for r in rows if str(r.get("note", "")).startswith("未检出")]
     invalid = [r for r in rows if not r.get("valid")]
     if undetected:
         print(f"\n未检出水印的用例 {len(undetected)} 个："
@@ -225,6 +355,9 @@ def print_table(rows: list) -> None:
 
 
 def main(argv: list | None = None) -> int:
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()   # 门禁打印 ✅/❌，GBK 管道下会 UnicodeEncodeError（console_encoding 守卫）
+
     ap = argparse.ArgumentParser(description="修复侧真值探针（真实照片 + 构造保证的像素级真值）")
     ap.add_argument("--limit", type=int, default=5, help="用几张干净真照片（默认 5）")
     ap.add_argument("--cases", default="corner_logo,edge_text,faint_tiled,grid",
@@ -233,7 +366,25 @@ def main(argv: list | None = None) -> int:
                     help="修复引擎（默认 auto = 用户实际会得到什么）")
     ap.add_argument("--json", dest="json_path", default=None, help="把逐用例明细写成 JSON")
     ap.add_argument("--quiet", action="store_true", help="只打汇总表，不打逐用例行")
+    ap.add_argument("--gate", action="store_true",
+                    help="门禁模式：固定 15 图 × 4 类型，与 benchmark_real/removal_truth_baseline.json "
+                         "比对红线（检回/擦除度回退、净伤害、误伤承诺）；退出码 0/1/2")
+    ap.add_argument("--write-baseline", action="store_true",
+                    help="（配合 --gate）把本轮中位数写成新基线后退出 0")
     args = ap.parse_args(argv)
+
+    if args.gate:
+        # 门禁口径固定，保证可复现：忽略 --limit/--cases/--engine 的自定义。
+        reason = _skip_reason()
+        if reason:
+            print(f"跳过（依赖/资产缺失）：{reason}")
+            return 2
+        args.limit = GATE_LIMIT
+        args.cases = "corner_logo,edge_text,faint_tiled,grid"
+        args.engine = "auto"
+        # 写基线需要逐用例明细 ⇒ 未显式给 --json 时落到 cache/（已 gitignore）。
+        args.json_path = args.json_path or os.path.join(
+            _ROOT, "cache", "removal_truth_gate_rows.json")
 
     if not os.path.isdir(CLEAN_DIR):
         print(f"跳过：缺干净真照片目录 {CLEAN_DIR}")
@@ -250,8 +401,30 @@ def main(argv: list | None = None) -> int:
         print(f"跳过：用例名都不认识，可选 {sorted(mk.CASES)}")
         return 0
     print(f"修复侧真值探针 · 真照片 {len(photos)} 张 × 水印类型 {len(cases)} 种 "
-          f"= {len(photos) * len(cases)} 个用例 | 引擎={args.engine}")
-    return run(photos, cases, args.engine, args.json_path, not args.quiet)
+          f"= {len(photos) * len(cases)} 个用例 | 引擎={args.engine}"
+          + (" | 门禁模式" if args.gate else ""))
+    rc = run(photos, cases, args.engine, args.json_path, not args.quiet,
+             gate=args.gate, write_baseline=args.write_baseline)
+    if args.gate and args.write_baseline and rc == 0:
+        # 基线 = 本轮（配置必须是当前交付默认：只动水印区开、跟随输入开、引擎 auto）。
+        try:
+            rows = json.load(open(args.json_path, encoding="utf-8"))["rows"]
+        except (OSError, KeyError, ValueError) as exc:
+            print(f"❌ 写基线失败：读不到逐用例明细（{exc}）")
+            return 1
+        medians = _gate_medians(rows)
+        if not medians:
+            print("❌ 写基线失败：没有可用明细（请同时传 --json）")
+            return 1
+        payload = {"generated_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
+                   "engine": args.engine, "limit": GATE_LIMIT,
+                   "note": "阶段 322a 基线：类型中位数；红线=检回/擦除度 −0.05、"
+                           "faint_tiled/grid gain≥0、误伤中位≤5%",
+                   "by_case": medians}
+        with open(BASELINE_PATH, "w", encoding="utf-8") as f:
+            json.dump(payload, f, ensure_ascii=False, indent=2)
+        print(f"基线已写入：{BASELINE_PATH}")
+    return rc
 
 
 if __name__ == "__main__":

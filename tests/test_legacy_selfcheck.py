@@ -131,6 +131,8 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/detector_mask_dilate_audit.py": "S 掩码膨胀审计",
     "scripts/e2e_real_probe.py": "S 端到端修复侧门禁（慢）",
     "scripts/jpeg_robustness.py": "S JPEG 鲁棒性诊断",
+    "scripts/make_corner_templates.py": "S 角标模板库生成/A/B 标定（真跑 88 图 NCC 扫描，慢；"
+                                        "阶段 322b 的负结果取证工具，不进交付路径）",
     "scripts/make_demo_assets.py": "S 合成资产生成",
     "scripts/make_real_compare_crops.py": "S 对比图裁剪",
     "scripts/mask_param_audit.py": "S 掩码参数标定审计",
@@ -143,15 +145,18 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/real_asset_preflight.py": "S 真实资产入库预检",
     "scripts/real_benchmark_decision.py": "S 真实基准决策",
     "scripts/real_gate.py": "S 真实图质量门禁",
-    # 阶段 317：真照片 × 自带合成水印跑**检测+修复全链**（15 图×4 类 ≈10 分钟），
-    # 且第一版是纯诊断（无基线不画红线，同 media_gate 的理由）⇒ 归 S 类豁免。
-    "scripts/removal_truth_probe.py": "S 修复侧真值探针（真跑全链，慢，纯诊断）",
+    # 阶段 317 新建时是纯诊断；阶段 322a 升成门禁（--gate + 基线红线），慢的理由不变：
+    # 要真跑 15 图×4 类的检测+修复全链。判据由 tests/test_removal_truth_gate.py 守，
+    # 端到端执行由 `run_all_checks --gates` 守。
+    "scripts/removal_truth_probe.py": "S 修复侧真值门禁（真跑全链，慢；判据单测 + 全链跑 --gates）",
     "scripts/run_benchmark.py": "S 合成基准跑分",
     "scripts/run_real_benchmark.py": "S 真实基准跑分",
     "scripts/scale_robustness.py": "S 尺度鲁棒性诊断",
     "scripts/validate_selector.py": "S 选点校验工具",
     # --- 阶段 183 补登记（此前 180/181 新增后漏登记 ⇒ 「含 __main__ 未登记」守卫常红）---
     "scripts/clean_bench_probe.py": "S 干净图误报门禁（检测器推理，慢；语义同 real_gate 一族）",
+    # 阶段 322b：角标信号门禁要真读 108 张图跑生产信号（≈8 秒，无模型但 IO+Sobel 不小）。
+    "scripts/corner_signal_gate.py": "S 角标信号门禁（真实图集跑推荐信号；判据单测 + --gates 端到端）",
     "scripts/_verify_clean_probe.py": "S clean_bench_probe 的本地等价验证器（写并清理 .verify_tmp/）",
     # ⚠ 阶段 190：`benchmark_real/**` 已在 `SKIP_DIRS` 内（它是**数据集**目录，不是源码），
     #   其下的 `clean/_gen_synthetic.py` 因此不再进入审计视野 ⇒ 原豁免条目已成幽灵，移除。
