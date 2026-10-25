@@ -68,7 +68,7 @@ mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 
 - Docker（C5）：本机无 docker CLI，镜像从未真 build（仅静态契约 + 一致性门禁）；`Dockerfile.gpu` P0 已修 python/torch 错配。
 
 ## 健康度与战略
-源码 ~33.2k + 测试 ~22.5k；**2504 用例 / 219 文件**（沙箱 14 FAILED 全为删除护栏 `SAFE_DELETE_BULK_CONFIRM_REQUIRED` 假红，隔离全过、父提交同败、非回归；正常机器预期全绿）；45 模块全审计（276–290 收官）。
+源码 **36.4k**（core+services+ui+utils+cli/api/config/main，不含 scripts/tests）+ 测试 **48.3k**（tests/test_*.py）；**3359 用例 / 242 文件 / 284 篇文档**（326 实测刷新，口径见记分卡 `scale_note`）（沙箱 14 FAILED 全为删除护栏 `SAFE_DELETE_BULK_CONFIRM_REQUIRED` 假红，隔离全过、父提交同败、非回归；正常机器预期全绿）；45 模块全审计（276–290 收官）。
 技术内核强、商品外壳缺。P1 数据质量 → P2 产品化性能 → P3 生态。护城河=全本地离线 + 免手涂 8 预设 + 图/PDF/视频全源 + 合规定位。记分卡 `docs/quality/product_scorecard.json`：overall **B-** / eng **A** / core **B-** / prod **C+** / eco **D**。
 - ⚠️ **cu121→cu128 声明对齐早已完成（305 复核证伪）**：此前「声明文件钉 cu121/torch 2.3.1、待处理」是**误记**。`requirements-gpu.txt` 与 `requirements.txt` 已同钉 `torch==2.9.1`，前者走 `--index-url .../cu128`；`Dockerfile.gpu` 基础镜像 `nvidia/cuda:12.8.1-runtime-ubuntu22.04`；`docker_consistency_check.py` 的 **E2（CUDA 12.8 ↔ cu128 匹配）+ W1（torch 2.9.1 一致）全绿** ⇒ 阶段 207 已收口，声明与运行环境一致，新人按声明装即 cu128。
 - **剩余开放项**（截至 307，wme 侧自主可推进工作已彻底耗尽）：① ✅ full 阶段 perf 基线标定（307，RTX 5060 真机 P95 8.397s 落盘 `perf_baseline_gpu_default.json`，超分 OFF）；② ✅ API 侧并发实测（306，真机 RTX 5060 验证默认 `API_MAX_CONCURRENCY=4`/`API_ASYNC_MAX_WORKERS=2` 合理，无需改动）；③ C5 真 build（需 docker CLI，本机缺失）。注：D1 GPU、cu121 声明、API 并发三项此前系误判阻塞，305/306 已证伪收口。

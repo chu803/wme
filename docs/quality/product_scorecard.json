@@ -1,8 +1,8 @@
 {
   "project": "AI 智能水印擦除工作台 (AI Watermark Eraser Workbench)",
   "version": "1.0.0",
-  "assessed_at": "2026-10-13",
-  "assessment_stage": 300,
+  "assessed_at": "2026-10-25",
+  "assessment_stage": 326,
   "purpose": "自我质检记分卡（机器可读）。供每个阶段后刷新，量化「向龙头迈进」的进度。本版为对 116 版（2026-09-25）的刷新，并修复阶段 205 历史重写导致的 .gitignore 外壳回归。",
   "honesty": {
     "competitor_data": "未受控横评：竞品能力取自厂商官网/第三方评测/开源仓库公开信息，非同条件受控测量；仅作能力矩阵定位，绝不当作实测质量分。",
@@ -29,14 +29,15 @@
     "ecosystem": "D"
   },
   "scale": {
-    "src_loc": 33200,
-    "test_loc_approx": 26000,
-    "test_cases": 2504,
-    "test_files": 219,
-    "docs": 246,
-    "scripts": 32,
+    "src_loc": 36382,
+    "test_loc_approx": 48257,
+    "test_cases": 3359,
+    "test_files": 242,
+    "docs": 284,
+    "scripts": 49,
     "audited_modules": 45,
-    "runtime": "torch 2.9.1+cu128 (RTX 5060 Laptop 8151MiB)；本机 Python 另装 CPU 版；requirements 已统一 2.9.1+cu128（116 时记为 stale 2.3.1，已消除漂移）"
+    "runtime": "torch 2.9.1+cu128 (RTX 5060 Laptop 8151MiB)；本机 Python 另装 CPU 版；requirements 已统一 2.9.1+cu128（116 时记为 stale 2.3.1，已消除漂移）",
+    "scale_note": "阶段 326（2026-10-25）实测刷新，复现命令：docs=`ls docs/*.md | wc -l`；test_files=`ls tests/test_*.py | wc -l`；test_cases=`pytest --collect-only -q` 各文件计数求和（3359，含参数化）；src_loc=core+services+ui+utils 全部 .py 加 cli/api/config/main.py（**不含 scripts/ 与 tests/**）；test_loc_approx=tests/test_*.py。audited_modules 未重测，沿用 45（无可机械复测的定义，见 docs/326 §四）。"
   },
   "dimensions": [
     {
@@ -121,9 +122,9 @@
       "name": "工程与质量体系",
       "grade": "A",
       "metrics": {
-        "test_cases": 2504,
-        "test_files": 241,
-        "docs": 280,
+        "test_cases": 3359,
+        "test_files": 242,
+        "docs": 284,
         "audited_modules": 45,
         "gates": [
           "scripts/quality_gate.py",
@@ -142,7 +143,8 @@
         "license": "LICENSE 专有（与源码头部 All Rights Reserved 一致）",
         "packaging": "pyproject.toml + build.spec(PyInstaller) + Dockerfile/Dockerfile.gpu + docker-compose.yml 齐备",
         "injection_counterexamples": true,
-        "margin_monitor": "259 check_redline_margin_health advisory（14 守卫）"
+        "margin_monitor": "259 check_redline_margin_health advisory（14 守卫）",
+        "counts_measured_at": "2026-10-25（阶段 326）"
       },
       "note": "注入式反例 + 门禁家族 + AUDITED_SINCE 审计体系 + 5j 深度续审链（276-290 收官，45 模块全审）+ 跨进程 i18n 污染 conftest 治本。工程标准远超同类开源（IOPaint 已归档停更）。"
     },
