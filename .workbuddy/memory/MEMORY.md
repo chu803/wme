@@ -29,7 +29,7 @@ mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 
 - 重锚须 `--update --force-update` 双开（单独 `--force-update` 只判决不落盘）。**2026-10-19 已获授权双开执行**：baseline 由 0.5960→0.7700（P0-3）→**0.7809**（P0-4 救援式自播种，终值）落盘；不带 `--update` 复跑确认零漂移、全绿（RG_DRIFT_RC=0）。
 
 ## 门禁家族
-`quality_gate` + `real_gate`(30图) + `e2e_real_probe`(10图×4类) + `mask_param_audit` + `clean_bench_probe` + `prompted_area_gate` + `perf_probe` + `docker_consistency_check` + `crop_quality_probe` + `media_gate`(315) + `removal_truth_gate`(322a：真照片 × 构造真值，检回/擦除度/误伤三红线，基线 `benchmark_real/removal_truth_baseline.json`) + `corner_signal_gate`(322b：角标路由命中≥36/49、非角标误命中必须 0)。退出码 0/1/2（real_gate +3=环境错误；**修复侧/角标两道：缺 easyocr/资产 ⇒ 2，不是 0**）；`--update/--refresh` 须接 `baseline_guard`；脚本 print 非 GBK 须 `force_utf8_stdio()`；`--gates` 全 10 步 ≈35 分钟。
+`quality_gate` + `real_gate`(30图) + `e2e_real_probe`(10图×4类) + `mask_param_audit` + `clean_bench_probe` + `prompted_area_gate` + `perf_probe` + `docker_consistency_check` + `crop_quality_probe` + `media_gate`(315) + `removal_truth_gate`(322a：真照片 × 构造真值，检回/擦除度/误伤三红线，基线 `benchmark_real/removal_truth_baseline.json`) + `corner_signal_gate`(322b：角标路由命中≥36/49、非角标误命中必须 0)。退出码 0/1/2（real_gate +3=环境错误；**修复侧/角标两道：缺 easyocr/资产 ⇒ 2，不是 0**）；`--update/--refresh` 须接 `baseline_guard`；脚本 print 非 GBK 须 `force_utf8_stdio()`；`--gates` 全 10 步 ≈25–30 分钟。
 
 ## 性能归因（GPU=RTX 5060 Laptop sm_120 / 7.93GiB / torch 2.9.1+cu128）
 - **GPU 真可用（305 更正）**：「沙箱/本机是 CPU torch」是**伪前提**——canonical venv 实为 torch 2.9.1+cu128、RTX 5060 Laptop sm_120 / 7.93GiB、EasyOCR 与 LaMa 均真在 cuda:0。判据用**真实 CUDA matmul 与 CPU 参考比对**（max|Δ|=7.2e-05），不信 `is_available()` 布尔自证。
