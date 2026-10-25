@@ -1,6 +1,6 @@
 # 更新日志 / CHANGELOG
 
-> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 284 份（2026-10-25 阶段 326 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX）。
+> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 286 份（2026-10-25 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
 > 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.2`。
 
 ## [1.0.2] - 2026-10-18
@@ -51,6 +51,30 @@
 - 新增 `docs/302-资产重建清单.md`：`models/big-lama.pt` 不入库（阶段 205 瘦身），固化下载源/大小校验/断点续传/备份建议。
 
 ## [Unreleased]
+
+### 修复（阶段 329 · CI/发布链的门禁退出码被管道吞掉）
+- `ci.yml` 与 `publish.yml` 的门禁步骤都写成 `python scripts/run_all_checks.py 2>&1 | tee gate_output.txt`，
+  而两个文件**都没声明 `shell:`** ⇒ GitHub 默认 `sh -e`（**不带 pipefail**）⇒ 管道退出码取 `tee` 的 0。
+  本机用真实命令复现：`sh -e` 下本该返回 2 的 `--list` 被读成 **0**；`bash -eo pipefail` 下整步以 2 失败。
+- 后果：`publish.yml` 里那句「**不过门禁不发布**」在此配置下**不成立**；CI 步骤永远绿；
+  两步的失败诊断（`if: failure()` 写 Summary + 建 issue）**永远不会触发**。
+  上游佐证：actions/runner#1212、github/docs#18933、codeinthehole TIL。
+- 修法（两处同形，双保险）：`shell: bash` + 脚本体内 `set -eo pipefail`。
+- 守卫 `test_piped_gate_step_cannot_swallow_the_exit_code`（参数化两个文件）：含 `| tee` 的 `run:` 行
+  必须在 ±6 行内同时出现 `shell: bash` 与 `pipefail`。**先红**（精确指到 `ci.yml:65`/`publish.yml:60`）**后绿**；
+  `yaml.safe_load` 两文件解析通过。未验证：本机无 `act`，GH runner 上的实际行为要 push 后看一次 Actions。
+
+### 修复（阶段 328 · 统一入口把「环境错误」聚合成通过）
+- `real_gate` 约定退出码 **3 = 环境错误**（区别于 1 质量不合格 / 2 跳过），而 `aggregate()` 只把
+  `rc==1` 当失败 ⇒ 3 落到 `return 0`，出现「那一步印 🚧/❌、总结句印 ✅ 全部通过」的自相矛盾输出。
+- 语义补成四档并**默认拒绝未知码**：优先级 `1 > 3 > 约定外(算1) > 2 > 0`；
+  127/崩溃一类现在按失败处理（说不清的结果不是通过）。措辞抽成 `VERDICTS`/`STEP_MARKS` 唯一真值来源——
+  顺手修掉一个潜伏崩溃：总结句原先用 `{0,1,2}[total]` 取值，任何一步返回 3 都会让入口 **KeyError**。
+- TDD：先加 6 条聚合断言 ⇒ **5 条红**（旧实现分别返回 0）＝缺陷活证据；再加端到端反例
+  （假 runner 驱动真实 `run_steps`：`real_gate→3` ⇒ 总码 3 且输出不得含「全部通过」；`undef_scan→127` ⇒ 1）
+  与结构守卫（两张措辞表的键必须恰为 `{0,1,2,3}`）。`tests/test_run_all_checks.py` 37 → **41 例**。
+- 消费者全核过：两个 workflow、`test.sh`（`if …; then`）、`test.bat` 都按「非零即失败」解释 ⇒ 语义变化正是想要的；没有任何代码解析那句总结文本。
+
 
 ### 变更（阶段 327 · 文档卫生：已决事项不再读起来像未决，零代码改动）
 - `docs/P0-真实水印图采集清单与提示词.md` 的**目的句**还写着「解除 `real_gate` 的 `ai_logo` 红灯」，

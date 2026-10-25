@@ -31,13 +31,13 @@
   "scale": {
     "src_loc": 36382,
     "test_loc_approx": 48257,
-    "test_cases": 3359,
+    "test_cases": 3369,
     "test_files": 242,
-    "docs": 284,
+    "docs": 286,
     "scripts": 49,
     "audited_modules": 45,
     "runtime": "torch 2.9.1+cu128 (RTX 5060 Laptop 8151MiB)；本机 Python 另装 CPU 版；requirements 已统一 2.9.1+cu128（116 时记为 stale 2.3.1，已消除漂移）",
-    "scale_note": "阶段 326（2026-10-25）实测刷新，复现命令：docs=`ls docs/*.md | wc -l`；test_files=`ls tests/test_*.py | wc -l`；test_cases=`pytest --collect-only -q` 各文件计数求和（3359，含参数化）；src_loc=core+services+ui+utils 全部 .py 加 cli/api/config/main.py（**不含 scripts/ 与 tests/**）；test_loc_approx=tests/test_*.py。audited_modules 未重测，沿用 45（无可机械复测的定义，见 docs/326 §四）。"
+    "scale_note": "阶段 326（2026-10-25）实测刷新，复现命令：docs=`ls docs/*.md | wc -l`；test_files=`ls tests/test_*.py | wc -l`；test_cases=`pytest --collect-only -q` 各文件计数求和（3369，含参数化；329 后复测）；src_loc=core+services+ui+utils 全部 .py 加 cli/api/config/main.py（**不含 scripts/ 与 tests/**）；test_loc_approx=tests/test_*.py。audited_modules 未重测，沿用 45（无可机械复测的定义，见 docs/326 §四）。"
   },
   "dimensions": [
     {
@@ -122,9 +122,9 @@
       "name": "工程与质量体系",
       "grade": "A",
       "metrics": {
-        "test_cases": 3359,
+        "test_cases": 3369,
         "test_files": 242,
-        "docs": 284,
+        "docs": 286,
         "audited_modules": 45,
         "gates": [
           "scripts/quality_gate.py",

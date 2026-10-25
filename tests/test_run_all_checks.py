@@ -174,9 +174,42 @@ def test_pytest_basetemp_is_project_local_not_system_temp(monkeypatch):
     ([0, 1], 1),                # 任一失败 ⇒ 失败
     ([1, 0], 1),
     ([2, 1], 1),                # 失败优先于跳过
+    # ---- 阶段 328：环境错误（3）与「非约定退出码」不得被聚合成 0 ----
+    ([0, 3], 3),                # real_gate 缺依赖 ⇒ 环境错误，绝不能算「全部通过」
+    ([3, 0], 3),
+    ([1, 3], 1),                # 质量失败优先于环境错误
+    ([2, 3], 3),                # 环境错误优先于跳过
+    ([0, 127], 1),              # 崩溃 / 解释器缺失 ⇒ 失败（默认拒绝未知码）
+    ([0, 4], 1),                # 其它非约定码同样算失败
 ])
 def test_aggregate_semantics(rcs, expected):
     assert rac.aggregate(rcs) == expected
+
+
+def test_environment_error_is_never_reported_as_pass():
+    """阶段 328 的真 bug：`real_gate` 用退出码 3 表达「缺依赖」，旧聚合层把它算成 0。
+
+    后果不是「红一次」，而是**同一份输出自相矛盾**——那一步印 ❌/🚧，总结句却印
+    「✅ 全部通过（退出码 0）」，而 `publish.yml` 跑的就是这条命令 ⇒ 环境坏了也能发版。
+    这里同时钉三件事：总码不是 0、总结措辞不含「全部通过」、未知码默认失败。
+    """
+    code, lines, _rep = rac.run_steps(
+        rac.build_steps(gates=True),
+        runner=_runner({"real_gate": 3}), echo=lambda *a, **k: None)
+    assert code == 3, f"环境错误必须聚合成 3，实得 {code}"
+    assert not any("全部通过" in ln for ln in lines), lines
+
+    code2, _, _ = rac.run_steps(
+        rac.build_steps(), runner=_runner({"undef_scan": 127}), echo=lambda *a, **k: None)
+    assert code2 == 1, f"约定外的码（127）默认按失败处理，实得 {code2}"
+
+
+def test_verdict_and_mark_tables_cover_all_documented_codes():
+    """退出码四档都有措辞：漏一档就是 KeyError 或印成「✅ 全部通过」。"""
+    assert set(rac.VERDICTS) == {0, 1, 2, 3}, rac.VERDICTS
+    assert set(rac.STEP_MARKS) == {0, 1, 2, 3}, rac.STEP_MARKS
+    assert "全部通过" not in rac.VERDICTS[3]
+    assert "全部通过" not in rac.VERDICTS[1]
 
 
 def test_run_steps_aggregates_and_reports():
@@ -205,6 +238,35 @@ def test_failure_prints_tail_output():
     assert any("末尾输出" in ln for ln in lines)
     assert any("boom" in ln for ln in lines)
 
+
+
+# ---------------------------------------------------------------------------
+# ③-b 工作流里的「管道吞退出码」守卫（阶段 329）
+# ---------------------------------------------------------------------------
+
+#: 用 `| tee` 收集门禁输出的工作流文件。
+GATED_PIPE_FILES = [".github/workflows/ci.yml", ".github/workflows/publish.yml"]
+
+
+@pytest.mark.parametrize("rel", GATED_PIPE_FILES)
+def test_piped_gate_step_cannot_swallow_the_exit_code(rel):
+    """**门禁步骤走管道时必须开 pipefail**，否则 `run_all_checks` 的退出码被 `tee` 吞成 0。
+
+    实测（本机复现，与上游报告一致）：GitHub 未声明 `shell:` 时默认是 `sh -e`，
+    **不带 pipefail** ⇒ `sh -e -c 'false | tee /dev/null'` 整步退出码 **0**，
+    `bash -eo pipefail` 才是 1。也就是说「不过门禁不发布」这句注释，
+    在补 pipefail 之前**并不成立**。判据取「就近上下文」：管道行的 ±6 行内
+    必须同时出现 `shell: bash` 与 `pipefail`——两者都留（双保险，不依赖 runner 怎么拼 shell）。
+    """
+    lines = (_ROOT / rel).read_text(encoding="utf-8").splitlines()
+    offenders = []
+    for i, ln in enumerate(lines):
+        if ln.strip().startswith("run:") and "|" in ln and "tee" in ln:
+            ctx = " ".join(lines[max(0, i - 6):i + 6])
+            if "pipefail" not in ctx or "shell: bash" not in ctx:
+                offenders.append(f"第 {i + 1} 行：{ln.strip()}")
+    assert not offenders, (
+        f"{rel} 有门禁步骤走管道却没开 pipefail ⇒ 退出码会被吞成 0，CI/发布形同装饰：{offenders}")
 
 # ---------------------------------------------------------------------------
 # ④ 同源层：CI 必须调用同一入口

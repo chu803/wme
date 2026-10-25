@@ -38,11 +38,15 @@
 #                        · media_gate（PDF/视频链路；阶段 315 补齐全源验证）
 #                        · removal_truth_gate（修复侧像素真值；阶段 322a）
 #
-# 退出码（与门禁家族契约一致）
+# 退出码（与门禁家族契约一致，四档）
 # ----------------------------
-#   0 = 全部通过
-#   1 = 有任一步骤判「未通过」
+#   0 = 全部通过（至少一步真通过，且无失败/环境错误）
+#   1 = 有任一步骤判「质量未通过」；**或出现约定集合之外的码**（127、崩溃等一律算失败）
 #   2 = 跳过（`--list` 只列步骤；或所有步骤都判「跳过」）
+#   3 = 有步骤判「环境错误」（如 `real_gate` 缺关键依赖）——**不是通过**
+#
+#   ⚠ 阶段 328：旧实现只把 1 当失败 ⇒ 环境错误(3) 会被聚合成 0，
+#     于是同一份输出里那行是 ❌、总结句却是「✅ 全部通过」，而 `publish.yml` 跑的就是这条命令。
 #
 # ⚠ 环境要点（阶段 183/187 教训，已为此固化）
 #   · pytest 一律用**项目内** `--basetemp`：受限环境下 `%TEMP%` 的临时目录清理会触发
@@ -180,14 +184,40 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
     return steps
 
 
-def aggregate(rcs: list) -> int:
-    """把各步骤退出码聚合成总退出码（0 通过 / 1 有失败 / 2 全跳过）。
+#: 总结句措辞的唯一真值来源（阶段 328：环境错误必须被说出来，不能被印成「全部通过」）。
+STEP_MARKS = {0: "✅", 1: "❌", 2: "⏭", 3: "🚧"}
 
-    语义：**失败优先**；只有「全部步骤都跳过」时才返回 2。
+
+VERDICTS = {
+    0: "✅ 全部通过",
+    1: "❌ 有步骤未通过",
+    2: "⏭ 全部跳过",
+    3: "🚧 环境错误（缺依赖/资产），未做判定 —— **不是通过**",
+}
+
+
+def aggregate(rcs: list) -> int:
+    """把各步骤退出码聚合成总退出码。
+
+    语义：**失败优先**，且**默认拒绝未知码**。四档含义（与门禁家族契约一致）：
+
+      * ``1`` 有步骤判「质量不合格」（最高优先级）
+      * ``3`` 有步骤报「环境错误」（如 `real_gate` 缺关键依赖）——**绝不能当通过**
+      * ``2`` 全部步骤都「跳过」（依赖/资产缺失，无事可守）
+      * ``0`` 至少一步真通过且无上述情形
+
+    阶段 328 修的正是这里：旧实现只把 ``rc == 1`` 当失败 ⇒ ``real_gate`` 用退出码 3
+    表达「环境错误」时会被聚合成 **0**，同一份输出里那行是 ❌、总结句却是「✅ 全部通过」，
+    而发布链跑的就是这条命令（`publish.yml`）。凡不在约定集合 {0,1,2,3} 内的码
+    （127 找不到解释器、崩溃、被信号杀掉）一律按失败处理：**说不清的结果不是通过**。
     """
     if not rcs:
         return 2
     if any(rc == 1 for rc in rcs):
+        return 1
+    if any(rc == 3 for rc in rcs):
+        return 3
+    if any(rc not in (0, 2) for rc in rcs):
         return 1
     if all(rc == 2 for rc in rcs):
         return 2
@@ -230,7 +260,7 @@ def run_steps(steps: list, *, root: str = _ROOT, runner=None, echo=None):
         rc = getattr(proc, "returncode", 1)
         dt = time.time() - started
         rcs.append(rc)
-        mark = {0: "✅", 1: "❌", 2: "⏭"}.get(rc, "❌")
+        mark = STEP_MARKS.get(rc, "❌")
         lines.append(f"{mark} {st.name:20s} rc={rc}  {dt:6.1f}s  {st.note}")
         report.append({"name": st.name, "rc": rc, "seconds": round(dt, 1),
                        "argv": list(st.argv)})
@@ -276,7 +306,7 @@ def main(argv: "list | None" = None) -> int:
     for ln in lines:
         print(ln)
     print()
-    verdict = {0: "✅ 全部通过", 1: "❌ 有步骤未通过", 2: "⏭ 全部跳过"}[total]
+    verdict = VERDICTS.get(total, "❌ 有步骤返回了约定外的退出码")
     print(f"{verdict}（退出码 {total}）")
     return total
 
