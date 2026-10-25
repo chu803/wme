@@ -158,7 +158,7 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
             # 此前只有探针、无人拦截 ⇒ 用像素级真值补上第四道红线。
             Step("removal_truth_gate",
                  [sys.executable, os.path.join(root, "scripts", "removal_truth_probe.py"), "--gate"],
-                 note="修复侧真值门禁（真照片自带构造保证的像素真值；检回/擦除度/误伤三条红线）"),
+                 note="修复侧真值门禁（真照片自带构造保证的像素真值；检回/擦除度/净伤害/误伤四条红线）"),
             # 阶段 322b：角标路由（450 标定、321 补深色牌）此前只有「只打印」的诊断脚本。
             # 实测扩模板库**买不到召回**（17 模板与 9 模板同为 38 命中、却多 1 个误命中），
             # 于是把力气改成钉住已有结论：命中不得掉线、非角标必须零误命中。快（≈8 秒）。
