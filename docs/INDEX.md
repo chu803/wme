@@ -659,6 +659,24 @@ R0 覆盖闭合三条。升门禁的机械成本全在**数据侧**：中文名�
 
 - `324-平铺类修复上界spike.md`
 
+### 325 · 七道门禁其实不在任何自动链路上（2026-10-25，核实 + 一条待授权建议）
+
+`ci.yml` 与 `publish.yml` 都只跑 `python scripts/run_all_checks.py`（**没有 `--gates`**）
+⇒ CI 上跑的是「CI 等价子集 + 两个静态扫描」，七道效果/真值门禁在任何自动链路上**都不跑**；
+`publish.yml` 注释里的「tag → 门禁 → build」，实际门禁口径 = CI 等价子集。这不是新缺陷，但 322a/322b
+新加两道后，「门禁」一词与自动链路的差距又变大，必须显式记一笔。
+实测哪道能进 CI：用 `find_spec` 打桩伪装成 min 依赖（无 torch/easyocr）环境 ⇒
+新加的 42 例守卫全绿；`corner_signal_gate` **rc=0（≈10s）**；`removal_truth_probe --gate` **rc=2**
+并给人话理由（不会假绿，322a 那条守卫的实战验证）。数据集确实随仓库分发（`git ls-files benchmark_real`
+= 321 个文件，含 `images/` 与 `clean/`）⇒ CI checkout 就有图。
+其余六道**不该**顺手加：它们的红线基线是在「OCR 在位」口径下标定的，放到无 OCR 的 runner 上
+数字会变但那不是产品回归 ⇒ 结果只会是 CI 常红或逼人重锚。
+**建议（需点头，属发布链改动）**：`ci.yml` / `publish.yml` 各加一步 `python scripts/corner_signal_gate.py`，
+代价每次约 10–15s。另记一次自我更正：本轮曾把 320f 已处置的「掩码 +33%」当未决缺陷上报，
+先 grep 清单才发现——已把项目记忆里那条过期措辞改掉。
+
+- `325-七道门禁不在自动链路上.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`
