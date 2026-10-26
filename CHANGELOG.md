@@ -52,6 +52,18 @@
 
 ## [Unreleased]
 
+### 测试（阶段 344 · 入口里唯一反复变红的用例：就绪判据从 TCP 提到真实 HTTP 往返）
+- `test_api_security299::test_post_without_token_401` 今天两次在完整入口变红、隔离跑两次全绿
+  （记录在案的「全量偶发红＝夹具竞态」，不放宽断言）。旧 `_wait_ready` 只做一次 TCP 连接就返回，
+  而 `listen` backlog 会替应用接受连接 ⇒ 端口通 ≠ `serve_forever()` 已在 accept；
+  3400 条用例并跑时随后那个真 POST 就撞上 `ConnectionError`。
+- **第一版修错了**：一律改成发一个真请求探之后**隔离跑反而更红**（`实际 429`）——
+  限流夹具 `rl_server` 是 1/min·burst 1，建服务时也走同一个 `_wait_ready`
+  ⇒ **探针把唯一那个令牌用掉了**（探针不是只读的：它会碰限流、计数、配额、缓存、日志、幂等键）。
+- 最终形态：探针**开关化**，只在限流宽松的 `secure_server`(100000/min) 与 `open_server`(默认) 开启，
+  `rl_server` 保持 TCP-only。验证：隔离 + 6 个 CPU 竞争者下 `test_api_security299 + test_api` 均 rc=0。
+  **产品代码一行未动**；教训落 LESSONS #324（含流程判据：这类"更严谨"的改动必须先在真实约束下跑一遍再提交）。
+
 ### 修复（阶段 343 · 导出按钮「点了没反应」＝反馈停在半路）
 - `ui/tab_media.py` 的导出对比帧图 / 帧拼图所有失败路径都 `return None`，而 `outputs` 只接一个
   `gr.File` ⇒「没反应」与「成功」完全不可区分；`run_video` 还会往同一组件写 `None` 清掉上次导出。
