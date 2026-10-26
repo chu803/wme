@@ -700,37 +700,55 @@ def run_batch(
     # 阶段 193（D2）：整批处理耗时 = 从「开始跑队列」到「队列结束」的墙钟时间。
     # 不含前面的文件收集 / 入队（毫秒级准备），只量真正的修复工作量。
     _t0 = _time.perf_counter()
-    for _finished_task in queue.run(_processor, on_update=_on_update):
-        s = queue.summary()
-        frac = s["progress"]
-        progress(frac, t("batch.progress_done", done=s["finished"], total=s["total"]))
-        yield frac, "\n".join(log_lines[-200:]), list(gallery), _status_md(s), _agg_stats_md()
+    try:
+        for _finished_task in queue.run(_processor, on_update=_on_update):
+            s = queue.summary()
+            frac = s["progress"]
+            progress(frac, t("batch.progress_done", done=s["finished"], total=s["total"]))
+            yield frac, "\n".join(log_lines[-200:]), list(gallery), _status_md(s), _agg_stats_md()
 
-    s = queue.summary()
-    summary_line = t(
-        "batch.summary",
-        done=s["done"], failed=s["failed"],
-        cancelled=s["cancelled"], total=s["total"],
-    )
-    log_lines.append(summary_line)
-    # 阶段 193（D2）：把整批耗时拼进产物，与单图页 _compose_status 共用 format_elapsed 接缝。
-    log_lines.append(format_elapsed(_time.perf_counter() - _t0, key="batch.msg.elapsed"))
-    # 阶段 26：智能推荐预设分布（仅在开启推荐且有分布时展示）。
-    if auto_preset and _preset_counts:
-        _dist = t("batch.list_sep").join(
-            f"{_preset_display(k)}×{v}" for k, v in _preset_counts.items()
+        s = queue.summary()
+        summary_line = t(
+            "batch.summary",
+            done=s["done"], failed=s["failed"],
+            cancelled=s["cancelled"], total=s["total"],
         )
-        log_lines.append(t("batch.log_preset_dist", dist=_dist))
-    yield 1.0, "\n".join(log_lines[-200:]), list(gallery), _status_md(s), _agg_stats_md()
+        log_lines.append(summary_line)
+        # 阶段 193（D2）：把整批耗时拼进产物，与单图页 _compose_status 共用 format_elapsed 接缝。
+        log_lines.append(format_elapsed(_time.perf_counter() - _t0, key="batch.msg.elapsed"))
+        # 阶段 26：智能推荐预设分布（仅在开启推荐且有分布时展示）。
+        if auto_preset and _preset_counts:
+            _dist = t("batch.list_sep").join(
+                f"{_preset_display(k)}×{v}" for k, v in _preset_counts.items()
+            )
+            log_lines.append(t("batch.log_preset_dist", dist=_dist))
+        yield 1.0, "\n".join(log_lines[-200:]), list(gallery), _status_md(s), _agg_stats_md()
+    finally:
+        # 阶段 336：批次结束（含异常、含前端提前关闭生成器）必须把「当前队列」清空，
+        # 否则 `cancel_batch()` 会对着空队列声称「已发送取消信号」。
+        _CURRENT_QUEUE = None
 
 
 def cancel_batch():
-    """取消当前批次的剩余任务。"""
+    """取消当前批次的剩余任务。
+
+    阶段 336：旧实现只判 `_CURRENT_QUEUE is not None`，而它**从不置回 None** ⇒
+    批跑结束后按「取消」（或快捷键 Shift+C）仍然回一句「⏹ 已发送取消信号…」，
+    对着一个已经空了的队列声称做了事——对外可见的假陈述。
+    现在两处一起收：跑完在 `finally` 里置回 None；再按队列**真实状态**判
+    （没有 pending/running 就等于「没有正在运行的批量」，用既有的 `cancel_none` 文案，不新增键）。
+    """
     global _CURRENT_QUEUE
-    if _CURRENT_QUEUE is not None:
-        _CURRENT_QUEUE.cancel()
-        return t("batch.msg.cancel_done")
-    return t("batch.msg.cancel_none")
+    q = _CURRENT_QUEUE
+    if q is None:
+        return t("batch.msg.cancel_none")
+    s = q.summary()
+    if not ((s.get("pending") or 0) + (s.get("running") or 0)):
+        # 队列已排空（跑完 / 已取消过）：说真话，别声称发了信号。
+        _CURRENT_QUEUE = None
+        return t("batch.msg.cancel_none")
+    q.cancel()
+    return t("batch.msg.cancel_done")
 
 
 def on_gallery_select(evt: gr.SelectData):

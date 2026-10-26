@@ -52,6 +52,20 @@
 
 ## [Unreleased]
 
+### 修复（阶段 336 · 批跑结束后按「取消」谎称「已发送取消信号」）
+- `ui/tab_batch._CURRENT_QUEUE` 批跑开始时赋值、**从不置回 None**，取消处理器（含快捷键 `Shift+C`）只判
+  `is not None` ⇒ 批跑结束后再按取消仍回「⏹ 已发送取消信号，未开始的任务将不再处理…」，
+  对着一个空队列声称做了事。与 330–335 同族：说不清的输出，这次说的是「我做了什么」。
+- 修法两处一起收（缺一处仍退化）：① 生成器跑队列那段包 `try/finally`，`finally` 清空句柄
+  （正常结束 / 异常 / 前端提前关闭三种都覆盖）；② `cancel_batch()` 改看队列真实状态
+  （`pending + running == 0` ⇒ 用既有 `batch.msg.cancel_none` 说真话），**不新增 i18n 键**。
+- 守卫 `tests/test_batch_cancel336.py`（5 例）：跑前取消；**排空后取消不得声称发信号、且不得调 `cancel()`**；
+  有 pending 必须真取消（断言 `is_cancelled()`）且跑完再按必须**改口**；生成器源码必须含
+  `finally: _CURRENT_QUEUE = None`（防退化）。反例闭合：worktree 跑修复前 ⇒ **3 红 / 2 绿**。
+- 写测试时自己踩两坑（对 `queue_worker` 语义的假设错，非产品错）：`run()` 是**生成器**，不消费等于没跑；
+  `cancel()` 只置队列级标志，任务状态要等 `run()` 消费时才变 CANCELLED ⇒ 断言应看 `is_cancelled()`
+  而不是 `summary()["cancelled"]`。**断言要按被测对象的真实语义写。**
+
 ### 修复（阶段 335 · 产品写图还在用 `cv2.imwrite`，中文路径下静默写空却返回路径）
 - 本机实测：`cv2.imwrite(<含中文目录>/结果.png, arr)` **返回 False 且一字节都不写**（不抛错）。
   仓内早已知道（`save_image` 用 `imencode + open()` 绕开、`compare_service.py:389` 写成显式规则），
