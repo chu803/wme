@@ -12,6 +12,7 @@
 from __future__ import annotations
 
 import os
+import re
 import sys
 from pathlib import Path
 
@@ -348,6 +349,65 @@ def test_piped_gate_step_cannot_swallow_the_exit_code(rel):
                 offenders.append(f"第 {i + 1} 行：{ln.strip()}")
     assert not offenders, (
         f"{rel} 有门禁步骤走管道却没开 pipefail ⇒ 退出码会被吞成 0，CI/发布形同装饰：{offenders}")
+
+
+#: 全部工作流文件（机械枚举，不手抄清单——331 的教训：手抄的枚举自己也是分布式的）。
+WORKFLOW_FILES = sorted(str(p.relative_to(_ROOT)).replace("\\", "/")
+                        for p in (_ROOT / ".github" / "workflows").glob("*.yml"))
+
+
+def _workflow_steps(text: str) -> list:
+    """把工作流文本切成「步骤」列表，每项是该步骤的文本行。
+
+    只认 `steps:` 之后、缩进 6 空格的 `- ` 条目——本仓库两个工作流都是这个形态，
+    且刻意**不引 PyYAML**：CI 装的是 `requirements-min.txt`，不能把守卫建在可选依赖上。
+    """
+    steps, cur, in_steps = [], None, False
+    for ln in text.splitlines():
+        if ln.strip() == "steps:":
+            in_steps = True
+            continue
+        if not in_steps:
+            continue
+        if re.match(r"^      - ", ln):
+            if cur:
+                steps.append(cur)
+            cur = [ln]
+        elif cur is not None:
+            if re.match(r"^\S|^ {1,4}\S", ln):      # 退回顶层 ⇒ steps 段结束
+                break
+            cur.append(ln)
+    if cur:
+        steps.append(cur)
+    return steps
+
+
+@pytest.mark.parametrize("rel", WORKFLOW_FILES)
+def test_every_workflow_step_has_an_id(rel):
+    """**每个步骤都要有 `id`**，否则失败诊断里它会静默消失。
+
+    为什么值得钉一条：CI #17 变红时我拿不到「哪一步红的」，只能等人截图。诊断步骤现在改用
+    `toJSON(steps)` 打「哪一步红了」状态表——而 `steps` 上下文**只包含有 id 的步骤**。
+    于是「新加一个步骤忘了写 id」= 那一步红了但状态表里没有它 = 诊断骗人，比没有诊断更糟。
+    同族判据见 LESSONS #312（判据要按「它看不见什么」来写）。
+    """
+    text = (_ROOT / rel).read_text(encoding="utf-8")
+    steps = _workflow_steps(text)
+    assert len(steps) >= 5, f"{rel} 只切出 {len(steps)} 个步骤，解析形态可能已变 ⇒ 守卫在空转"
+    no_id = [blk[0].strip() for blk in steps if not any(re.match(r"^ {8}id:\s*\S+", b) for b in blk)]
+    assert not no_id, f"{rel} 以下步骤缺 id ⇒ 它们变红时不会出现在诊断状态表里：{no_id}"
+    assert "toJSON(steps)" in text, f"{rel} 的诊断步骤不再读取步骤状态 ⇒ 「哪一步红了」会丢"
+    assert "哪一步红了" in text, f"{rel} 诊断输出丢了「哪一步红了」小节"
+
+
+def test_workflow_step_ids_are_unique_per_file():
+    """id 重复会让后一个覆盖前一个 ⇒ 状态表少一行且**无声**。"""
+    dup = []
+    for rel in WORKFLOW_FILES:
+        ids = re.findall(r"^ {8}id:\s*(\S+)\s*$", _ROOT.joinpath(rel).read_text(encoding="utf-8"), re.M)
+        dup += [f"{rel}:{i}" for i in set(ids) if ids.count(i) > 1]
+    assert not dup, f"步骤 id 重复：{dup}"
+
 
 # ---------------------------------------------------------------------------
 # ④ 同源层：CI 必须调用同一入口

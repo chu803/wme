@@ -35,28 +35,35 @@ jobs:
       issues: write
 
     steps:
+      # ⚠ 每个 step 都必须有 `id`（守卫：tests/test_run_all_checks.py::test_every_workflow_step_has_an_id）；
+      #   失败诊断只能从 `toJSON(steps)` 里读到**有 id 的步骤**的结果。
       - name: 拉取代码
+        id: checkout
         uses: actions/checkout@v4
 
       - name: 安装 Python
+        id: python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
           cache: pip
 
       - name: 系统依赖（OpenCV / Gradio 运行时）
+        id: system
         run: |
           sudo apt-get update
           sudo apt-get install -y --no-install-recommends \
             libgl1 libglib2.0-0 libsm6 libxext6 libxrender1
 
       - name: 安装依赖（最小集 + 测试依赖）
+        id: deps
         run: |
           python -m pip install --upgrade pip setuptools wheel
           pip install -r requirements-min.txt
           pip install -r requirements-dev.txt
 
       - name: 运行验证入口（与 CI 同一套门禁，不过门禁不发布）
+        id: entry
         # 阶段 329：同 ci.yml——不显式给 `shell: bash` + `pipefail` 时，
         # `... | tee` 会把门禁退出码吞成 0，这条「不发布」的门禁**从未真正生效**。
         shell: bash
@@ -65,6 +72,7 @@ jobs:
           python scripts/run_all_checks.py 2>&1 | tee gate_output.txt
 
       - name: 诊断：门禁失败 → FAILED 清单写入 Summary 并建 issue（供自动读取，修完可删）
+        id: diagnose
         if: failure()
         uses: actions/github-script@v7
         with:
@@ -75,22 +83,35 @@ jobs:
             const lines = out.split('\n');
             const failed = lines.filter(l => l.indexOf('FAILED') !== -1);
             const block = failed.length ? failed.join('\n') : lines.slice(-120).join('\n');
-            await core.summary.addHeading('门禁失败 · FAILED 清单', 2).addRaw('```\n' + block + '\n```').write();
+            // 同 ci.yml：第一句必须是「哪一步红了」，否则 pip/apt 失败时这里只会写 (no gate_output.txt)。
+            let stepStatus = {};
+            try { stepStatus = ${{ toJSON(steps) }} || {}; } catch (e) { stepStatus = {}; }
+            const rows = Object.entries(stepStatus)
+              .filter(([id, v]) => v && (v.conclusion || v.outcome))
+              .map(([id, v]) => `${id}: ${v.outcome || v.conclusion}`);
+            const table = rows.length ? rows.join('\n') : '(步骤状态不可用：请确认每个 step 都有 id)';
+            await core.summary
+              .addHeading('门禁失败 · 哪一步红了', 2).addRaw('```\n' + table + '\n```')
+              .addHeading('门禁失败 · FAILED 清单', 2).addRaw('```\n' + block + '\n```').write();
             try {
               await github.rest.issues.create({
                 owner: context.repo.owner, repo: context.repo.repo,
                 title: '门禁失败诊断 ' + context.sha.slice(0, 7),
-                body: '## FAILED 清单\n\ncommit `' + context.sha.slice(0, 10) + '`\n\n```\n' + block + '\n```\n\n_publish.yml 自动诊断；修复后请关闭/删除。_',
+                body: '## 哪一步红了\n\n```\n' + table + '\n```\n\n## FAILED 清单\n\ncommit `'
+                      + context.sha.slice(0, 10) + '`\n\n```\n' + block + '\n```\n\n_publish.yml 自动诊断；修复后请关闭/删除。_',
               });
             } catch (e) { core.warning('issue 创建失败，Summary 仍有清单: ' + e.message); }
 
       - name: 安装构建工具
+        id: buildtools
         run: python -m pip install --upgrade build
 
       - name: 构建 wheel + sdist
+        id: build
         run: python -m build
 
       - name: 上传构建产物（安全网：未配 PYPI_API_TOKEN 也能在 Actions 下载 wheel+sdist 本地试装）
+        id: artifact
         uses: actions/upload-artifact@v4
         with:
           name: dist
@@ -98,6 +119,7 @@ jobs:
           if-no-files-found: error
 
       - name: 发布到 PyPI
+        id: publish
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           password: ${{ secrets.PYPI_API_TOKEN }}

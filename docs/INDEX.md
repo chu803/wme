@@ -778,6 +778,27 @@ E 最终完整入口（默认环境）⇒ **4/4 步 ✅、总码 0**。顺带第
 
 - `331-跨进程编码没有唯一固定点.md`
 
+### 332 · 让 CI 自己说出「哪一步红了」（不再依赖人截图）（2026-10-26）
+
+328/329/330/331 连修四层「说不清的绿」之后，第一次真红（CI #17，45 秒）我**读不到现场**：本机无 `act`、
+pip 连不上 PyPI 复刻不了 min 环境、会话内查 GitHub API 被安全策略拦 ⇒ 唯一窗口是让人打开 Actions 截图。
+**「只有人能看懂的诊断等于没有诊断」**。旧诊断步骤只读 `gate_output.txt`，而那文件**只有 `entry` 步跑过才存在**
+⇒ 失败在 `checkout/python/system(deps)` 时它只会写一句没用的 `(no gate_output.txt)`。
+#17 只用 45 秒，`entry` 之后的任何一步都来不及 ⇒ **假设红在 `entry` 之前**（pip/apt 最像）——
+是推断不是结论，结论要由下一次红自己说。
+改法：诊断输出以「哪一步红了」状态表**开头**（`${{ toJSON(steps) }}` → `id: outcome` 逐行），
+FAILED 清单跟在后面，`ci.yml`/`publish.yml` 同形改；配套给**每个 step 补 `id`**——
+`steps` 上下文只包含有 id 的步骤，漏一个就在那张表里**静默消失**，比没有表更糟（表会骗人）。
+守卫两条：`test_every_workflow_step_has_an_id`（参数化＝**机械枚举** `workflows/*.yml`，不手抄清单；
+每个步骤须有 id、文件须仍含 `toJSON(steps)` 与「哪一步红了」、切出步骤数 `>=5` 才非空转；
+**刻意不用 PyYAML**——CI 只装 min 依赖，守卫不能建在可选依赖上）、
+`test_workflow_step_ids_are_unique_per_file`（重复 id 会让后一个盖掉前一个且无声）。
+反例可构造：内存里删掉 `id: checkout` ⇒ 抓到 `- name: 拉取代码`。本机真验：两文件 YAML 解析 OK（6/10 步全有 id）；
+把诊断 JS 抽出来用桩替 `core/github` 交 node 跑三种 payload ⇒ `entry: failure` / `deps: failure` /
+空表时老实写「步骤状态不可用」。**#17 根因仍未证实**，本阶段只保证下一次红自带答案。
+
+- `332-CI自己说出哪一步红了.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`

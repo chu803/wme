@@ -52,6 +52,26 @@
 
 ## [Unreleased]
 
+### 新增（阶段 332 · CI 自己说出「哪一步红了」）
+- **动机**：328/329/330/331 连修四层「说不清的绿」后，第一次真红（CI #17，45 秒）本机读不到现场
+  （无 `act`、pip 连不上 PyPI 复刻不了 min 环境、会话内查 GitHub API 被安全策略拦）⇒ 只能等人截图。
+  **「只有人能看懂的诊断等于没有诊断」。**
+- **旧诊断的覆盖面**：`ci.yml`/`publish.yml` 的 `if: failure()` 步骤只读 `gate_output.txt`，
+  而那文件**只有 `entry` 步真跑过才存在** ⇒ 失败发生在 `checkout/python/system/deps` 时
+  只会写一句没用的 `(no gate_output.txt)`。（#17 只用 45 秒，走不到 `entry` 之后 ⇒ 假设红在 `entry` 之前，
+  是推断不是结论，等下一次红自己说。）
+- **改法**：诊断输出**以「哪一步红了」状态表开头**（`${{ toJSON(steps) }}` ⇒ 逐行 `id: outcome`），
+  FAILED 清单跟在后面；两文件同形改，不留第二套口径。配套给**每个 step 补 `id`**——
+  `steps` 上下文只包含有 id 的步骤，漏一个就在那张表里**静默消失**，比没有表更糟（表会骗人）。
+- **守卫**：`test_every_workflow_step_has_an_id`（参数化＝**机械枚举** `workflows/*.yml`；断言每步有 id、
+  文件仍含 `toJSON(steps)` 与「哪一步红了」、切出步骤数 `>=5` 才非空转；**刻意不用 PyYAML**——
+  CI 只装 `requirements-min.txt`，守卫不能建在可选依赖上）、`test_workflow_step_ids_are_unique_per_file`。
+  反例可构造：内存里删 `id: checkout` ⇒ 抓到 `- name: 拉取代码`（守卫有牙齿）。
+- **本机真验**：两文件 `yaml.safe_load` 通过（`ci.yml` 6 步、`publish.yml` 10 步全带 id）；
+  把诊断 JS 抽出来用桩替 `core/github` 交 `node` 跑三种 payload ⇒
+  `checkout: success / entry: failure`、`deps: failure`（pip 失败那一类也能指认）、
+  空表时老实写「(步骤状态不可用：请确认每个 step 都有 id)」。
+
 ### 修复（阶段 331 · 中文 Windows 上「一条用例没跑」与「19 条假红」同时存在）
 - **现场**：真跑统一入口（不设任何环境变量＝用户双击 `test.bat` 的那个环境）⇒
   `pytest rc=1`（19 failed / 3339 passed）＋ `docker_static rc=1`（**0.1 秒**就红，什么都没检查完）。
