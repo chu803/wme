@@ -222,8 +222,11 @@ def test_run_steps_aggregates_and_reports():
 
 
 def test_run_steps_all_skipped_returns_two():
-    steps = rac.build_steps()
+    steps = [st for st in rac.build_steps() if st.name != "pytest"]
     # 用「一律返回 2」的 runner：对默认步骤集合的未来增减免疫（不再逐个点名步骤）。
+    # ⚠ pytest 必须排除在外（阶段 330）：它的 2 是「中断」不是「跳过」，
+    #   留在这里就会把这条用例本该证明的事（全跳过 ⇒ 2）改成失败 ⇒ 那是**正确的**失败，
+    #   但测不到想测的东西。pytest 自己的码由 test_pytest_nonzero_codes_... 单独钉。
     code, _lines, _rep = rac.run_steps(
         steps, runner=lambda *a, **k: _Proc(2), echo=lambda *a, **k: None)
     assert code == 2
@@ -239,6 +242,42 @@ def test_failure_prints_tail_output():
     assert any("boom" in ln for ln in lines)
 
 
+
+
+def _only(name):
+    """只取某一步，便于单点断言退出码语义。"""
+    return [st for st in rac.build_steps() if st.name == name]
+
+
+def test_pytest_nonzero_codes_are_failures_not_skips():
+    """pytest 的 2/3/4/5 语义是「中断 / 内部错 / 用法错 / 一条都没收集到」，**不是跳过**。
+
+    为什么必须收口：329 之后 CI 真的会读这个退出码了。若沿用「2=跳过」的全局约定，
+    CI 上一次**收集期 ImportError**（min 依赖缺包正是这种形态）会被入口判成
+    「⏭ 跳过 ⇒ 全部通过」，等于把最该报警的情形洗成绿。
+    """
+    for code in (2, 3, 4, 5):
+        got, lines, rep = rac.run_steps(
+            _only("pytest"), runner=_runner({"pytest": code}), echo=lambda *a, **k: None)
+        assert got == 1, f"pytest 返回 {code} 时入口应判失败，实得 {got}（{rep}）"
+        # 判定改口径时**原始码要留在日志里**：只印「判 1」会让人以为 pytest 自己报了 1。
+        assert any("❌" in ln and f"rc={code}" in ln for ln in lines), lines
+        assert rep["steps"][0]["verdict"] == 1
+
+
+def test_gate_step_skip_and_env_codes_are_preserved():
+    """反向：门禁脚本的 2/3 仍按「跳过 / 环境错误」解释，不得被拖成质量失败。
+
+    缺数据集或 OpenCV 的机器应当看得见「⏭ 没跑成」，而不是被误判为产品退化。
+    """
+    code2, _, _ = rac.run_steps(_only("corner_signal_gate"),
+                                runner=_runner({"corner_signal_gate.py": 2}),
+                                echo=lambda *a, **k: None)
+    assert code2 == 2, code2
+    code3, _, _ = rac.run_steps(_only("corner_signal_gate"),
+                                runner=_runner({"corner_signal_gate.py": 3}),
+                                echo=lambda *a, **k: None)
+    assert code3 == 3, code3
 
 # ---------------------------------------------------------------------------
 # ③-b 工作流里的「管道吞退出码」守卫（阶段 329）

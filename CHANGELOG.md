@@ -52,6 +52,22 @@
 
 ## [Unreleased]
 
+### 修复（阶段 330 · 「2 = 跳过」被当成全局约定，pytest 的收集期报错能洗成绿）
+- 统一入口只有一张全局码表（`0/1/2/3`），各步骤原始码直接进 `aggregate()`。门禁家族的约定是我们自己定的、
+  没错；但第 1 步是 pytest，它的 **2 = Interrupted（收集期报错、`-k` 选空）**、3 = Internal error，
+  入口却按「⏭ 跳过」解释 ⇒ `[2,0,0,0]` 既无 1 也无 3、也不是全 2 ⇒ **返回 0 并印「✅ 全部通过」**。
+  **一条用例都没跑，CI 也可以是绿的**（CI 装 `requirements-min.txt`，缺包最常见的形态正是导入期炸 ⇒ 2）。
+- 本机实测码表（第一次取 `$?` 取到的是 `tail` 的 0——329 同一个坑，改用文件重定向）：
+  收集期 ImportError ⇒ **2**；`-k zzz_nothing` 选空 ⇒ **2**；路径不存在 ⇒ **4**；未知参数 ⇒ **4**。
+- 修法：约定挂到步骤上。`Step` 新增 `skip_codes=(2,)` / `env_codes=(3,)`（默认值即门禁家族约定 ⇒
+  **七道门禁一行没改**），pytest 步骤显式声明两档都没有；新增纯函数 `normalize_rc()`，
+  `run_steps()` 逐步归一后才喂 `aggregate()`。原始码仍印在日志（`rc=2→判1`）并留在报告 `rc` 字段，
+  另加 `verdict` —— **判定改了口径要让读日志的人看得出是谁改的**。
+- 守卫 3 条（`tests/test_run_all_checks.py`，先红：`pytest 返回 2 时入口应判失败，实得 2`）：
+  pytest 2/3/4/5 ⇒ 总码 1 且那行含 ❌ 与原始码；**反向**钉 `corner_signal_gate` 的 2/3 仍是跳过/环境错误
+  （防修复过头把「缺资产」误判成产品退化）；`test_run_steps_all_skipped_returns_two` 排除 pytest 并写明理由。
+- CI #17 的红**仍未诊断**：本机 pip 连不上 PyPI 无法复刻 min 环境，缺的是 Actions 日志里「哪一步带 ❌」。
+
 ### 修复（阶段 329 · CI/发布链的门禁退出码被管道吞掉）
 - `ci.yml` 与 `publish.yml` 的门禁步骤都写成 `python scripts/run_all_checks.py 2>&1 | tee gate_output.txt`，
   而两个文件**都没声明 `shell:`** ⇒ GitHub 默认 `sh -e`（**不带 pipefail**）⇒ 管道退出码取 `tee` 的 0。

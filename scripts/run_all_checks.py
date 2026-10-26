@@ -47,6 +47,10 @@
 #
 #   ⚠ 阶段 328：旧实现只把 1 当失败 ⇒ 环境错误(3) 会被聚合成 0，
 #     于是同一份输出里那行是 ❌、总结句却是「✅ 全部通过」，而 `publish.yml` 跑的就是这条命令。
+#   ⚠ 阶段 330：上面四档是**判定码**，不是各步骤的原始码。每个步骤自己声明 2/3 的含义
+#     （`Step.skip_codes` / `env_codes`）：门禁脚本 2=跳过、3=环境错误；pytest 两档都没有
+#     （2=中断、3=内部错、4=用法错、5=没收集到用例 ⇒ 全是失败）。不改这一条，329 修好的
+#     CI 会把「收集期 ImportError」读成 ⏭ 跳过、再聚合成 ✅ 全部通过 —— 又一种假绿。
 #
 # ⚠ 环境要点（阶段 183/187 教训，已为此固化）
 #   · pytest 一律用**项目内** `--basetemp`：受限环境下 `%TEMP%` 的临时目录清理会触发
@@ -95,12 +99,20 @@ _COV_REPORT_DIR = "htmlcov"
 
 @dataclass
 class Step:
-    """一个可执行的检查步骤。"""
+    """一个可执行的检查步骤。
+
+    `skip_codes` / `env_codes` 声明**这个步骤自己**的退出码约定（阶段 330）：
+    门禁家族用 2=跳过、3=环境错误，但 pytest 的 2/3/4/5 全是事故（中断、内部错、
+    用法错、一条用例都没收集到）。约定不同源就不能共用一张表，否则最该报警的
+    收集期 ImportError 会被洗成「⏭ 跳过 ⇒ 全部通过」。
+    """
 
     name: str
     argv: list = field(default_factory=list)
     note: str = ""
     header: str = ""          # 打印用的额外说明
+    skip_codes: tuple = (2,)
+    env_codes: tuple = (3,)
 
 
 def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
@@ -137,7 +149,10 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
     steps = [
         Step("pytest", pytest_argv,
              note=("全量套件" if full else "CI 等价子集（跳过 torch/network）")
-                  + (f" + 覆盖率（地板 {COVERAGE_FLOOR}%）" if cov else "")),
+                  + (f" + 覆盖率（地板 {COVERAGE_FLOOR}%）" if cov else ""),
+             # 阶段 330：pytest 没有任何「跳过/环境」码——2=中断、3=内部错、
+             # 4=用法错、5=收集到 0 条用例，全是事故，一律按失败处理。
+             skip_codes=(), env_codes=()),
         Step("undef_scan", [sys.executable, os.path.join(root, "scripts", "undef_scan.py")],
              note="静态未定义名扫描（零依赖）"),
         Step("docker_static",
@@ -197,7 +212,7 @@ VERDICTS = {
 
 
 def aggregate(rcs: list) -> int:
-    """把各步骤退出码聚合成总退出码。
+    """把各步骤的**判定码**（已由 `normalize_rc` 按各自约定归一）聚合成总退出码。
 
     语义：**失败优先**，且**默认拒绝未知码**。四档含义（与门禁家族契约一致）：
 
@@ -243,6 +258,23 @@ def marker_expr_in(argv: list) -> "str | None":
     return None
 
 
+def normalize_rc(st: Step, rc: int) -> int:
+    """把「这一步自己约定的退出码」翻译成入口的统一四档（0/1/2/3）。
+
+    为什么按步骤翻译而不是全局一张表（阶段 330）：门禁家族约定 2=跳过、3=环境错误，
+    而 pytest 的 2/3/4/5 全是事故。329 之后 CI 真的开始读这个码，若沿用全局约定，
+    CI 上一次**收集期 ImportError**（min 依赖缺包正是这个形态）会被判成
+    「⏭ 跳过 ⇒ 全部通过」——把最该报警的情形洗成绿。
+    """
+    if rc == 0:
+        return 0
+    if rc in st.env_codes:
+        return 3
+    if rc in st.skip_codes:
+        return 2
+    return 1
+
+
 def run_steps(steps: list, *, root: str = _ROOT, runner=None, echo=None):
     """依次执行步骤，返回 (总退出码, 打印行, 报告)。
 
@@ -253,23 +285,26 @@ def run_steps(steps: list, *, root: str = _ROOT, runner=None, echo=None):
     runner = runner or _sp.run
     echo = echo or print
     lines, report = [], []
-    rcs = []
+    verdicts = []
     for st in steps:
         started = time.time()
         proc = runner(st.argv, cwd=root, capture_output=True, text=True)
         rc = getattr(proc, "returncode", 1)
         dt = time.time() - started
-        rcs.append(rc)
-        mark = STEP_MARKS.get(rc, "❌")
-        lines.append(f"{mark} {st.name:20s} rc={rc}  {dt:6.1f}s  {st.note}")
-        report.append({"name": st.name, "rc": rc, "seconds": round(dt, 1),
-                       "argv": list(st.argv)})
+        verdict = normalize_rc(st, rc)
+        verdicts.append(verdict)
+        mark = STEP_MARKS.get(verdict, "❌")
+        # 原始码始终印出来：判定码和脚本码不一致时，读日志的人要能看见是**谁**改的口径。
+        shown = f"rc={rc}" if verdict == rc else f"rc={rc}→判{verdict}"
+        lines.append(f"{mark} {st.name:20s} {shown:11s} {dt:6.1f}s  {st.note}")
+        report.append({"name": st.name, "rc": rc, "verdict": verdict,
+                       "seconds": round(dt, 1), "argv": list(st.argv)})
         out = (getattr(proc, "stdout", "") or "").strip()
         if rc != 0 and out:
             tail = out.splitlines()[-12:]
             lines.append("   └─ 末尾输出：")
             lines += [f"      {t}" for t in tail]
-    total = aggregate(rcs)
+    total = aggregate(verdicts)
     return total, lines, {"steps": report, "exit_code": total}
 
 
