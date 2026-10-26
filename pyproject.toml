@@ -28,7 +28,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wme-watermark-eraser"
-version = "1.0.2"
+version = "1.0.3"
 description = "AI 智能水印擦除工作台：本地离线、免手涂的 AI 图片/PDF/视频可见水印检测与修复工具"
 readme = "README.md"
 requires-python = ">=3.11"
