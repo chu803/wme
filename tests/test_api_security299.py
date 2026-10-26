@@ -106,7 +106,8 @@ def test_gate_on_rejects_bad_token(monkeypatch):
 # ---------------------------------------------------------------------------
 # 集成：安全模式开启的 live server
 # ---------------------------------------------------------------------------
-def _wait_ready(port: int, timeout: float = 10.0) -> None:
+def _wait_ready(port: int, timeout: float = 10.0,
+              http_probe: bool = False) -> None:
     """等服务线程真正开始接受连接。
 
     2026-10-23 全量实测：`serve_forever()` 线程刚 start 时立刻发请求，在慢机（当天整机比前一日慢 2.9×）
@@ -115,16 +116,39 @@ def _wait_ready(port: int, timeout: float = 10.0) -> None:
     不放宽任何断言。
     """
     deadline = time.time() + timeout
+    last = None
     while time.time() < deadline:
         try:
             with socket.create_connection(("127.0.0.1", port), timeout=0.5):
-                return
-        except OSError:
+                pass
+        except OSError as exc:
+            last = exc
             time.sleep(0.02)
-    raise AssertionError(f"测试服务 {timeout}s 内未就绪（端口 {port}）")
+            continue
+        if not http_probe:
+            return
+        # （下面的真实往返只在限流宽松的夹具里开启，理由见 _wait_ready 的调用点）
+        # TCP 连上 **不等于** 服务已经在 accept：listen backlog 会先替应用接受连接。
+        # 慢机 / 全量套件并跑时，随后那个真请求就会拿到 ConnectionError
+        # （2026-10-26 两次完整入口各红一次，都是这一条用例；隔离跑两次全绿）。
+        # ⇒ 就绪判据要走到**一次真实 HTTP 往返**（同 LESSONS #316：探针得走用户实际通道）。
+        try:
+            import http.client as _hc
+
+            conn = _hc.HTTPConnection("127.0.0.1", port, timeout=5)
+            conn.request("GET", "/api/capabilities")     # 只读且豁免鉴权，适合当探针
+            status = conn.getresponse().status
+            conn.close()
+        except OSError as exc:
+            last = exc
+            time.sleep(0.05)
+            continue
+        if status:
+            return
+    raise AssertionError(f"测试服务 {timeout}s 内未就绪（端口 {port}）：{last!r}")
 
 
-def _make_server(monkeypatch, **cfg):
+def _make_server(monkeypatch, *, http_probe: bool = False, **cfg):
     for k, v in cfg.items():
         monkeypatch.setattr(config, k, v)
     SEC.reset_rate_limiter()
@@ -132,7 +156,7 @@ def _make_server(monkeypatch, **cfg):
                                          max_concurrency=2)
     port = srv.server_address[1]
     threading.Thread(target=srv.serve_forever, daemon=True).start()
-    _wait_ready(port)
+    _wait_ready(port, http_probe=http_probe)
     return srv, port
 
 
@@ -141,7 +165,8 @@ def secure_server(monkeypatch):
     srv, port = _make_server(
         monkeypatch,
         API_AUTH_ENABLED=True, API_TOKEN="secret",
-        API_RATE_LIMIT_PER_MIN=100000, API_RATE_BURST=100000)
+        API_RATE_LIMIT_PER_MIN=100000, API_RATE_BURST=100000,
+        http_probe=True)   # 限流极松 ⇒ 多一次探针往返不影响任何断言
     yield port
     srv.shutdown()
     srv.server_close()
@@ -166,7 +191,7 @@ def open_server():
                                          max_concurrency=2)
     port = srv.server_address[1]
     threading.Thread(target=srv.serve_forever, daemon=True).start()
-    _wait_ready(port)
+    _wait_ready(port, http_probe=True)   # 默认配置限流宽松，探针不改变任何断言
     yield port
     srv.shutdown()
     srv.server_close()
