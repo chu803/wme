@@ -52,6 +52,22 @@
 
 ## [Unreleased]
 
+### 修复（阶段 345 · 视频页互斥开关：显示勾选、实际被服务层强制关闭）
+- **判决先行**：服务层 `detect_auto = bool(auto_preset) and not reuse`（`video_service.py:493`）
+  的语义是对的（阶段 27：复用掩码 = 固定水印位置，整段共用一个预设更合理）⇒ 不改它、不改 `config` 默认值；
+  **错的只是 UI 初始状态**：`v_reuse` 初始 `VIDEO_REUSE_MASK`=True（复用开着），
+  而「逐帧智能推荐」复选框初值写死 `True` ⇒ **显示勾选、实际被 `and not reuse` 强制关闭**；
+  检测模式下拉照常可点但选了被 `preset=None` 忽略；它自己的 info 写着「勾选『复用水印位置』时自动关闭」
+  ——**文案与实际相反**。唯一能纠正它的 `v_reuse.change` 只在用户动手时触发，构建期不跑。
+- 修法：纯函数 `video_recommend_defaults(reuse=None)` 按同一套语义推出
+  `{reuse, auto_preset, auto_preset_interactive}`，UI 构造处用它（复选框值与可点性、
+  检测模式下拉 `interactive=not auto_preset`）——**不新增控件、不改判定、不改默认值、
+  不改用户手动勾选后的行为**，只是把「显示」对齐到「实际」。
+- 守卫 `tests/test_video_recommend_defaults345.py`（4 例）：含**核心不变量**（把显示的初值代入服务层公式，
+  结果必须与显示一致，且「复用开着 ⇒ 推荐关」成立）、按本机真实默认值验、以及**接线守卫**
+  （初值必须来自 helper，不许再写死 `value=True`——写死就是本缺陷的形状）。HEAD 上 4 条全红。
+- 第二轮审计 7 条**全部处理完**：F1(338)/F2(340)/F3(339)/F4(345)/F5(343)/F6(342)/F7(341)。
+
 ### 测试（阶段 344 · 入口里唯一反复变红的用例：就绪判据从 TCP 提到真实 HTTP 往返）
 - `test_api_security299::test_post_without_token_401` 今天两次在完整入口变红、隔离跑两次全绿
   （记录在案的「全量偶发红＝夹具竞态」，不放宽断言）。旧 `_wait_ready` 只做一次 TCP 连接就返回，

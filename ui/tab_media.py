@@ -360,6 +360,26 @@ def on_video_uploaded(file_value) -> str:
         return t("media.video.read_exc", exc=format_exception_for_ui(exc))
 
 
+def video_recommend_defaults(reuse: "bool | None" = None) -> dict:
+    """视频页两个互斥开关的**初始状态**（阶段 345）。
+
+    阶段 27 的语义本身是对的：复用掩码（固定水印）时整段共用一个预设更合理，
+    服务层因此写死 `detect_auto = bool(auto_preset) and not reuse`。
+
+    缺陷在**UI 显示与实际不一致**：默认 `config.VIDEO_REUSE_MASK=True` ⇒ 复用开着，
+    而「逐帧智能推荐」复选框初始 `value=True`（**显示是勾上的**）
+    ⇒ 实际被服务层强制关闭；检测模式下拉也照常可点，选了也被 `preset=None` 忽略；
+    复选框自己的 info 还写着「勾选『复用水印位置』时自动关闭」——**文案与实际相反**。
+
+    ⇒ 初始状态按同一套语义推出来：**复用开着 ⇒ 推荐关着且不可点**（与 `.change` 处理器
+    在用户手动勾选复用时给出的状态完全一致），复用关着 ⇒ 推荐默认开。
+    这只是把**显示**对齐到**实际**，不改任何判定逻辑，也不改 `config` 的默认值。
+    """
+    r = bool(config.VIDEO_REUSE_MASK if reuse is None else reuse)
+    on = not r
+    return {"reuse": r, "auto_preset": on, "auto_preset_interactive": not r}
+
+
 def _build_video_browse_gallery(out_path) -> list:
     """
     处理完成后从结果视频均匀抽样若干帧，组装 gr.Gallery 值（图片数组 + 标题），
@@ -874,6 +894,8 @@ def build_media_tab():
         # 子页 B：视频
         # ======================================================================
         with gr.TabItem(t("media.video.tab"), id="media_video", elem_id="media_video"):
+            # 阶段 345：两个互斥开关的初始状态按同一套语义推出来（见 video_recommend_defaults）。
+            _vd = video_recommend_defaults()
             with gr.Row(equal_height=False):
                 with gr.Column(scale=3):
                     video_file = gr.File(
@@ -906,7 +928,7 @@ def build_media_tab():
                         )
 
                     v_reuse = gr.Checkbox(
-                        value=config.VIDEO_REUSE_MASK,
+                        value=_vd["reuse"],
                         label=t("media.video.reuse_label"),
                         info=t("media.video.reuse_info"),
                     )
@@ -926,6 +948,9 @@ def build_media_tab():
                         choices=[(_preset_choice_label(p.name, p.display), p.name)
                                  for p in list_presets()],
                         value=config.DETECT_PRESET_DEFAULT,
+                        # 阶段 345：推荐开着时下拉会被服务层忽略（preset=None）⇒ 构建期就置灰，
+                        # 免得「选了又没用」（与 auto_preset.change 的语义一致）。
+                        interactive=not _vd["auto_preset"],
                         label=t("media.video.detect_mode_label"),
                         info=t("media.video.detect_mode_info"),
                     )
@@ -935,7 +960,8 @@ def build_media_tab():
                     # 阶段 27：逐帧智能推荐开关（默认开；开启时每段视频的每个检测帧独立挑预设）。
                     # 复用掩码（固定水印）场景下推荐无意义，故勾选 reuse 时禁用本开关并强制关闭。
                     video_auto_preset = gr.Checkbox(
-                        value=True,
+                        value=_vd["auto_preset"],
+                        interactive=_vd["auto_preset_interactive"],
                         label=t("media.video.auto_preset_label"),
                         info=t("media.video.auto_preset_info"),
                     )
