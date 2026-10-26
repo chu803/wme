@@ -46,9 +46,14 @@ def test_diff_stats_exposes_outside_change_as_diagnostic():
 
     ⚠ 图必须显著大于 bbox + 2×BBOX_DILATE，否则「非水印区」被外扩框盖满，
     outside 恒为 0（64px 图就踩到过这个，不是判据错）。
+
+    阶段 346：改动幅度从 +1 提到 **+30**。「改动占比」现在按容差 8 判定
+    （重编码本身就让几乎每个像素动 ±1~3，用 >0 判定时这个数必然接近 100%，
+    是指标失真不是损伤）⇒ +1 的位移不再算「改动」，但**真实幅度**的改动必须被看见，
+    这条用例守的就是后者。
     """
     a, b = _flat(256), _flat(256)
-    b[:, :, 0] = np.clip(b[:, :, 0].astype(int) + 1, 0, 255).astype(np.uint8)
+    b[:, :, 0] = np.clip(b[:, :, 0].astype(int) + 30, 0, 255).astype(np.uint8)
     s = mg.diff_stats(a, b, (8, 8, 40, 40))
     assert s["outside_changed"] > 0.5, f"非水印区改动未被曝光：{s}"
 
