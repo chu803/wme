@@ -52,6 +52,25 @@
 
 ## [Unreleased]
 
+### 修复（阶段 343 · 导出按钮「点了没反应」＝反馈停在半路）
+- `ui/tab_media.py` 的导出对比帧图 / 帧拼图所有失败路径都 `return None`，而 `outputs` 只接一个
+  `gr.File` ⇒「没反应」与「成功」完全不可区分；`run_video` 还会往同一组件写 `None` 清掉上次导出。
+- 关键证据：`media.video.export_no_video` / `export_done` **中英双语早就在 i18n 里**，
+  全仓 grep 无任何代码引用 ⇒ 不是没想到，是**文案先就位、接线没人补**；「有文案」还会让后来人
+  误以为功能已实现。
+- 修法：两个处理器统一返回 `(文件或 None, 一句真话)`，接线 `outputs=[v_export_file, video_log]`
+  ——复用本页已有的结果日志框（`:929`），**不新增常驻组件**；四条出口各有措辞
+  （缺视频 / 成功带路径 / 服务层返回 None / 服务层抛异常被捕获 + `log.exception`）；
+  新增键只有 `media.video.export_fail`（双语对称，`validate_i18n_parity()` 实测 `[]`）。
+- 既有守卫反向钉住旧契约：`test_tab_media_audit112` 接线表写着 `(4,1)/(1,1)` ⇒ 把「没有反馈」永久化；
+  按 #81 同步到 `(4,2)/(1,2)` 并写明理由，另补更硬的判据：这两个函数**每条 return 都必须是 2 元组**
+  ⇒ 以后「失败就 return None」的分支会被直接抓住。
+- 守卫 `tests/test_export_feedback343.py` 6 例（含「三个键必须真的被引用」防回到原状）；
+  HEAD 上 **6 条全红**，修复后连同 audit112 + i18n 对称守卫全绿。
+- 第二轮审计到此：F1(338)/F2(340)/F3(339)/F5(343)/F6(342)/F7(341) **六条已修**；
+  F4（逐帧智能推荐在默认设置下恒不生效、与自己的 tooltip 矛盾）属默认值/交互语义判断，
+  按纪律先出判决再动，登记为待核。
+
 ### 修复（阶段 342 · 「导出 ZIP」把中间产物留在 exports/，谁都收不回）
 - 两条同形路径：`export_history_as_zip(fmt=...)` 逐条 `reencode_image(..., out_path=None)`、
   `ui/tab_settings.on_export_compares` 逐条 `export_compare(...)` 不传 `out_path`

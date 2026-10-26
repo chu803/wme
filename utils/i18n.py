@@ -662,6 +662,9 @@ TRANSLATIONS: dict = {
                 "export_sheet_label": "⑧ 导出帧拼图",
                 "export_no_video": "⚠️ 请先处理视频生成结果，再导出。",
                 "export_done": "✅ 已导出：{path}",
+                # 阶段 343：以前这两个键（no_video / done）**双语都写好了却没人用**，
+                # 导出按钮失败时只 return None ⇒「点了没反应」和「成功」在界面上不可区分。
+                "export_fail": "❌ 导出失败：{exc}",
                 "btn": "⑤ 开始处理视频",
                 "result_title": "### 处理结果",
                 "log_label": "处理日志",
@@ -1481,6 +1484,7 @@ TRANSLATIONS: dict = {
                 "export_sheet_label": "⑧ Export Contact Sheet",
                 "export_no_video": "⚠️ Process a video first to generate a result, then export.",
                 "export_done": "✅ Exported: {path}",
+                "export_fail": "❌ Export failed: {exc}",
                 "btn": "⑤ Start Processing Video",
                 "result_title": "### Result",
                 "log_label": "Processing Log",

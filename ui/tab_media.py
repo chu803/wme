@@ -707,20 +707,42 @@ def on_frame_gallery_select(evt: "gr.SelectData", src_value, out_value, mode):
 
 
 def export_frame_file(src_value, out_value, frame_idx, mode):
-    """导出当前对比帧的「原图 | 结果」拼接对比图（PNG），返回文件路径。"""
+    """导出当前对比帧的「原图 | 结果」拼接对比图（PNG）。
+
+    返回值：(文件路径或 None, 写进视频日志的一句真话)
+
+    阶段 343：以前失败路径一律 `return None`，而按钮只接一个 `gr.File` 组件 ⇒
+    「点了没反应」与「成功」在界面上完全不可区分。
+    更巧的是 `media.video.export_no_video` / `export_done` 两条文案**早就中英双语写好了**，
+    只是没有任何代码用它们（`grep` 全仓零引用）⇒ 反馈这件事停在半路。
+    """
     src = _normalize_file_value(src_value)
     out = _normalize_file_value(out_value)
     if not out or not _os.path.isfile(out) or not src or not _os.path.isfile(src):
-        return None
-    return export_frame_compare(src, out, int(frame_idx or 0))
+        return None, t("media.video.export_no_video")
+    try:
+        path = export_frame_compare(src, out, int(frame_idx or 0))
+    except Exception as exc:  # noqa: BLE001 —— 导出失败不许静默，要把原因说给用户
+        log.exception("导出对比帧图失败")
+        return None, t("media.video.export_fail", exc=format_exception_for_ui(exc))
+    if not path:
+        return None, t("media.video.export_fail", exc=t("media.video.compare_no_frame"))
+    return path, t("media.video.export_done", path=path)
 
 
 def export_sheet_file(out_value):
-    """导出结果视频的「帧拼图 / 联系表」（PNG），返回文件路径。"""
+    """导出结果视频的「帧拼图 / 联系表」（PNG）。返回值同 `export_frame_file`。"""
     out = _normalize_file_value(out_value)
     if not out or not _os.path.isfile(out):
-        return None
-    return export_contact_sheet(out)
+        return None, t("media.video.export_no_video")
+    try:
+        path = export_contact_sheet(out)
+    except Exception as exc:  # noqa: BLE001
+        log.exception("导出帧拼图失败")
+        return None, t("media.video.export_fail", exc=format_exception_for_ui(exc))
+    if not path:
+        return None, t("media.video.export_fail", exc=t("media.video.compare_no_frame"))
+    return path, t("media.video.export_done", path=path)
 
 
 # ==============================================================================
@@ -1056,13 +1078,15 @@ def build_media_tab():
             )
 
             # 阶段 37：导出对比帧图 / 帧拼图。
+            # 阶段 343：两个按钮都多接一个 `video_log` ⇒ 失败时用户看得见一句真话，
+            # 不再「点了没反应」。
             v_export_frame_btn.click(
                 fn=export_frame_file,
                 inputs=[video_file, video_out, v_compare_frame, v_compare_mode],
-                outputs=[v_export_file],
+                outputs=[v_export_file, video_log],
             )
             v_export_sheet_btn.click(
                 fn=export_sheet_file,
                 inputs=[video_out],
-                outputs=[v_export_file],
+                outputs=[v_export_file, video_log],
             )

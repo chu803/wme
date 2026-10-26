@@ -73,8 +73,12 @@ def test_wiring_contract():
         "run_pdf": (12, 3),
         "run_video": (16, 6),
         "run_video_compare": (4, 1),
-        "export_frame_file": (4, 1),
-        "export_sheet_file": (1, 1),
+        # 阶段 343：两个导出按钮多接一个 `video_log`。
+        # 以前失败路径只 `return None`，而输出只有一个 `gr.File` ⇒「点了没反应」和
+        # 「成功」在界面上不可区分；本表当时把 (4,1)/(1,1) 当作**契约**钉住了，
+        # 于是它反过来成了「没有反馈」这个设计的保险（同 #81：写死旧行为的断言要同步）。
+        "export_frame_file": (4, 2),
+        "export_sheet_file": (1, 2),
         "on_frame_gallery_select": (3, 2),  # evt 由 Gradio 注入，不计入 inputs
     }
     for fn, (exp_in, exp_out) in EXPECTED.items():
@@ -97,6 +101,12 @@ def test_return_arity_matches_outputs():
     # run_video 返回六元组（所有 return 都是 6 元组）—— stage-112 修复点
     vid_rets = _return_tuple_lengths(funcs["run_video"])
     assert vid_rets and set(vid_rets) == {6}, f"run_video 应恒返回 6 元组，实得 {vid_rets}"
+
+    # 阶段 343：导出按钮每条 return 都必须是 (文件, 日志) 二元组——
+    # 只 return None 的失败路径正是「点了没反应」的成因，别让某一条分支偷偷退回去。
+    for fn in ("export_frame_file", "export_sheet_file"):
+        rets = _return_tuple_lengths(funcs[fn])
+        assert rets and set(rets) == {2}, f"{fn} 应恒返回 2 元组（文件, 日志），实得 {rets}"
 
 
 def test_docstring_arity_claims():
