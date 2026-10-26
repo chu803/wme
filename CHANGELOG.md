@@ -52,6 +52,24 @@
 
 ## [Unreleased]
 
+### 修复（阶段 339 · 视频解码提前停止被报成「✅ 处理完成」）
+- `video_service` 逐帧循环 `if not ok: break` 把「读完了」与「读到坏帧」当成同一件事，
+  而 `truncated` 只在「达到帧数上限」那一支置位 ⇒ 解码中途停止时（VBR mp4/mkv 常见，
+  `CAP_PROP_FRAME_COUNT` 常虚高）写出 210/900 帧也会 `status="success"`、`truncated=False`、
+  `warnings` 空、`on_progress(1.0, "视频处理完成")` ⇒ 用户以为整段修好，实际后 3/4 画面没进结果视频。
+- 修法不改判失败（那 210 帧有效，判 `failed` 会误导），而是**把少掉的部分说出来**：
+  `not truncated and total > 0 and written < total` ⇒ 置 `truncated` 并追加一条 warning；
+  `ui/tab_media.py:522` 逐条显示 warnings ⇒ 提醒真能被看见。前置条件写全：
+  `total > 0`（有些容器读不到帧数，不能拿 0 去比）、`not truncated`（上限截断已报过，不重复追加）。
+- 守卫 `tests/test_video_truncated339.py`（3 例，`_FakeCap` 伪造「元数据 5 帧、实际交付 2 帧」）：
+  提前停止必须说 `2/5` / 帧数齐平不许凭空冒出告警 / 上限截断仍只报一次。
+  HEAD 反例 **1 红 / 2 绿**（红的是要修的，绿的两条证明没把正向路径改成新噪声、原有语义没退化）。
+  踩坑：`process_video` 第一步 `isfile(src)` ⇒ 光伪造 `VideoCapture` 不够，必须真有 src ——
+  **替身要按被测函数的真实前置条件造**。
+- 登记同源未修项：`video_service` 多处**服务层硬编码中文**（`on_progress(1.0, "视频处理完成")`、
+  `f"处理第 {idx+1}/{plan} 帧……"`、各 `warnings.append`）⇒ 英文界面的视频进度与告警仍是中文，
+  属 337「文案归 UI」尚未推到的层，本条把视频服务层明确加进该开放项。
+
 ### 修复（阶段 338 · PDF 与视频把 BGR 喂给了 RGB 管线：同一张图检测像素差 2.4 倍）
 - 契约在代码里：`load_image` 返回 `rgb`（单图/自动/批量都经它）、`core/detector` 按
   `cvtColor(rgb, RGB2GRAY)` 取灰、同文件 `video_service.extract_sampled_frames:210` 早就做了 `BGR2RGB`

@@ -752,6 +752,19 @@ def process_video(
             result.error = "视频写出后文件为空，可能是编码器不兼容当前分辨率。"
             return result
 
+        # 阶段 339：**「读到坏帧就 break」不等于「读完了」**。
+        # 以前只有帧数上限那一支会置 `truncated`，解码中途停止时（VBR 的 mp4/mkv 很常见，
+        # `CAP_PROP_FRAME_COUNT` 常常虚高）写出 210/900 帧也会一路报到「✅ 处理完成」+ 100% 进度，
+        # `truncated=False`、`warnings` 里一个字没有 ⇒ 用户以为整段都修好了，实际后 3/4 原样都没动。
+        _total = int(result.total_frames or 0)
+        if not result.truncated and _total > 0 and result.written_frames < _total:
+            result.truncated = True
+            result.warnings.append(
+                f"只写出 {result.written_frames}/{_total} 帧：解码在中途停止"
+                "（源视频可能有坏帧，或帧数元数据不准）。未写出的部分不会出现在结果视频里。"
+            )
+            log.warning("视频提前结束：%s", result.warnings[-1])
+
         result.out_path = dst
         result.status = "success"
         # 阶段 28：收尾计算逐检测帧智能推荐的平均置信度。
