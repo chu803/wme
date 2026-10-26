@@ -623,6 +623,10 @@ def evaluate_improvement(
 # 模块自检
 # ==============================================================================
 if __name__ == "__main__":
+    # 阶段 333：本文件的 `__main__` 自检会打印 ⇒/✅/⚠ 这类 GBK 编不出的字符，
+    # 中文 Windows 控制台下会把「自检通过」读成 UnicodeEncodeError + 退出码 1。
+    from utils.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     # 阶段 122：自检必须**与环境无关**。本机可能通过 `config.user_overrides.json`
     # 打开了「真实超分」（实测本环境即如此：REAL_SUPERRES_ENABLED=true / scale=2），
     # 那会让下面每一条「形状不变」断言失败（`postprocess` 在 real_superres=None 时

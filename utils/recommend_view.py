@@ -218,6 +218,10 @@ def markdown(rec) -> str:
 # 模块自检
 # ==============================================================================
 if __name__ == "__main__":
+    # 阶段 333：本文件的 `__main__` 自检会打印 ⇒/✅/⚠ 这类 GBK 编不出的字符，
+    # 中文 Windows 控制台下会把「自检通过」读成 UnicodeEncodeError + 退出码 1。
+    from utils.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     from utils.i18n import set_language
     set_language("zh-CN")  # 自检用简体中文断言。
 

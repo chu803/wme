@@ -674,6 +674,10 @@ def build_aggregate_detection_stats_markdown(items) -> str:
 
 
 if __name__ == "__main__":
+    # 阶段 333：本文件的 `__main__` 自检会打印 ⇒/✅/⚠ 这类 GBK 编不出的字符，
+    # 中文 Windows 控制台下会把「自检通过」读成 UnicodeEncodeError + 退出码 1。
+    from utils.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     # 阶段 138：自检必须在 Blocks 上下文内真正构造组件（旧版把任何异常吞成
     # 「注意」且退出码 0 —— 本机 gradio 下构造实际失败（'Slider' object has
     # no attribute 'page'）却一直显示「通过」，是哑巴自检的活案例）。

@@ -964,6 +964,13 @@ def format_exception_for_ui(exc: BaseException) -> str:
 # ==============================================================================
 
 if __name__ == "__main__":
+    # 阶段 333：自测文本含 ❌（GBK 编不出）⇒ 中文 Windows 控制台下「自测通过」会被读成 rc=1。
+    # 本模块是纯标准库依赖，故只在这块里就地取 os/sys，不污染库面。
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+    from utils.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     print("=" * 78)
     print("  异常体系自测")
     print("=" * 78)

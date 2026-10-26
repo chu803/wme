@@ -52,6 +52,26 @@
 
 ## [Unreleased]
 
+### 修复 + 订正（阶段 333 · 331 那条「约 50 个未加固」是虚高，精确判据下是 8 个、真会崩的只有 2 个）
+- **订正 #1（数字）**：331 的 50 来自粗判据「源码出现任何非 ASCII」，**注释与 docstring 也算** ⇒ 虚高。
+  换成 AST 判据「**字符串常量**（剔 docstring）含 GBK 编不出的字符」：69 未加固 → 46 命中 / 10 未加固
+  → 排除 `tests/`（pytest 自管编码；实测全仓无人把测试文件当脚本 spawn）⇒ **8 个产品文件**。
+- **订正 #2（性质）**：用 `git show HEAD:<file>` 落到 `temp/`（保 `_ROOT` 计算不变）在
+  `PYTHONIOENCODING=gbk` 下实跑 ⇒ 只有 `services/video_service.py`（**rc=1、4 次崩溃**）与
+  `services/postprocess_service.py`（rc=0 但**1 次崩溃被静默吞掉**）是**缺陷**；
+  其余 6 个（`utils/exceptions.py`、`utils/i18n.py`、`utils/recommend_view.py`、`ui/tab_history.py`、
+  `ui/components.py`、`ui/app.py`）今天不崩 ⇒ 属**预防性统一约定**，不当成 bug 报。
+  `ui/app.py` 的 `__main__` 会启动界面 ⇒ 未实跑，与 170 已加固的 `main.py`/`cli.py` 同列用户可直跑入口。
+- **判据换血**：删 331 的粗判据（其代价不是误报，而是**逼人为过守卫去改文案**），换成
+  `test_every_entrypoint_with_unencodable_string_is_hardened`（全仓一层目录；只看「是不是字符串常量」
+  不看所在函数 ⇒ 仍是 331 那个盲区的解）。写清仍看不见的两种形态：运行期 `chr()` 拼装（实测本仓不存在）、
+  两层深目录（由 `test_legacy_selfcheck` 的子进程实跑兜）。
+- **守卫自己太贵也是缺陷**：331 的读侧判据用 `ROOT.rglob("*.py")` 深走全仓 ⇒ **62.66s**（本仓有上万文件的
+  资源目录）。抽成有界遍历 `_iter_py()`（根 `*.py` + 每个顶层目录下一层）⇒ 判据一字未动，**→ 1.04s**。
+  一条要一分钟的守卫，下一个赶时间的人一定把它 skip 掉。
+- **反例闭合**：把修复前的 `video_service.py` 喂给同一套判据函数 ⇒ 抓到 `['⚠','✅']` 且未加固；
+  修复后 7 个可安全实跑的文件在 `gbk` 下全部 **rc=0、零编码崩溃**。
+
 ### 新增（阶段 332 · CI 自己说出「哪一步红了」）
 - **动机**：328/329/330/331 连修四层「说不清的绿」后，第一次真红（CI #17，45 秒）本机读不到现场
   （无 `act`、pip 连不上 PyPI 复刻不了 min 环境、会话内查 GitHub API 被安全策略拦）⇒ 只能等人截图。

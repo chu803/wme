@@ -516,6 +516,10 @@ def launch_app(app: gr.Blocks) -> int:
 
 
 if __name__ == "__main__":
+    # 阶段 333：本文件的 `__main__` 自检会打印 ⇒/✅/⚠ 这类 GBK 编不出的字符，
+    # 中文 Windows 控制台下会把「自检通过」读成 UnicodeEncodeError + 退出码 1。
+    from utils.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     # 直接运行本文件也能启动界面（等价于 python main.py）。
     _app = build_app()
     raise SystemExit(launch_app(_app))

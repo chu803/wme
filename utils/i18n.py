@@ -1897,6 +1897,10 @@ def validate_i18n_parity() -> list:
 
 
 if __name__ == "__main__":
+    # 阶段 333：本文件的 `__main__` 自检会打印 ⇒/✅/⚠ 这类 GBK 编不出的字符，
+    # 中文 Windows 控制台下会把「自检通过」读成 UnicodeEncodeError + 退出码 1。
+    from utils.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     # 自检前显式锁定 zh-CN，避免受持久化语言状态影响（与运行期默认一致）。
     set_language("zh-CN")
     assert t("app.tab.single") == "单图处理（手动涂抹）"

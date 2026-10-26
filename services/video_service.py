@@ -799,6 +799,10 @@ def build_audio_merge_command(src_video: str, processed_video: str, final_out: s
 # 走完整流程处理一遍，并校验输出视频的帧数、尺寸、帧率是否与源一致。
 # ==============================================================================
 if __name__ == "__main__":
+    # 阶段 333：本文件的 `__main__` 自检会打印 ⇒/✅/⚠ 这类 GBK 编不出的字符，
+    # 中文 Windows 控制台下会把「自检通过」读成 UnicodeEncodeError + 退出码 1。
+    from utils.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     print("=" * 70)
     print("视频服务自检")
     print("=" * 70)

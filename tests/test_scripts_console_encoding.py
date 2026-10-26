@@ -20,7 +20,6 @@ Python 按 GBK 编码输出，而脚本会 `print` `✅/❌/⚠/⇒/✓/✗/−/
 
 import ast
 import pathlib
-import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -87,36 +86,92 @@ def test_console_encoding_helper_exists():
 
 
 # ---------------------------------------------------------------------------
-# 阶段 331：把上面那条静态守卫自陈的**盲区**机械化
+# 阶段 331 补 / 333 收口：把上面那条静态守卫自陈的**盲区**机械化
 #   旧判据只看 `print(...)` 字面量里的非 GBK 字符 ⇒ 「字符串由函数构造后再打印」看不见。
 #   当天就被咬：`docker_consistency_check.py` 打印 `audit()` 造出的 `⇒`，GBK 管道下
 #   UnicodeEncodeError ⇒ rc=1，而它是统一入口的**默认第 3 步**（实测见 docs/331）。
+#   331 第一版用的判据是「源码里出现任何非 ASCII」——太粗：注释与文档字符串也会触发，
+#   会把人推向「为过守卫而乱改文案」。333 换成**精确但仍无盲区**的那一条：
+#   **AST 里的字符串常量**（剔 docstring）含 GBK 编不出的字符 ⇒ 必须加固。
 # ---------------------------------------------------------------------------
-_NON_ASCII = re.compile(r"[^\x00-\x7f]")
+
+#: 不依赖第三方 `cp936` 表：直接试编码，失败即判定为「GBK 编不出」。
+def _gbk_unencodable(text: str) -> set:
+    bad = set()
+    for ch in text:
+        try:
+            ch.encode("gbk")
+        except UnicodeEncodeError:
+            bad.add(ch)
+    return bad
 
 
-def test_every_script_entrypoint_with_non_ascii_is_hardened():
-    """`scripts/*.py`：只要有 `__main__` 且源码里出现任何非 ASCII 字符，就必须加固。
+def _docstring_nodes(tree) -> set:
+    """返回「是 docstring 的 Constant 节点 id」，用于剔除——文案注释不该逼出加固调用。"""
+    out = set()
+    for n in ast.walk(tree):
+        body = getattr(n, "body", None)
+        if not isinstance(body, list) or not body:      # Lambda 等节点的 body 是表达式，不是语句列表
+            continue
+        if isinstance(body[0], ast.Expr) \
+                and isinstance(body[0].value, ast.Constant) \
+                and isinstance(body[0].value.value, str):
+            out.add(id(body[0].value))
+    return out
 
-    判据刻意**不看字符出现在哪里**（字面量 / 被 return 的字符串 / f-string 变量都一样），
-    代价是可能为「非 ASCII 只在注释里」的脚本多要求一次加固——**误报方向是安全的**
-    （加固调用无害，漏掉才是当天那个红）。
+
+#: `tests/` 不在本判据射程内：测试由 pytest 的捕获层负责，且**没有任何地方把测试文件当脚本 spawn**
+#: （实测 `grep` 全仓无引用）。把测试也算进来只会逼人往测试文件里塞无用的加固调用。
+_ENCODING_SCAN_SKIP_DIRS = {"htmlcov", "temp", "build", "dist", ".git", "__pycache__",
+                            "scratch", ".pytest_cache", ".workbuddy", "tests"}
+
+
+def _iter_py(skip_dirs: set):
+    """**有界**遍历仓库代码：根目录 `*.py` + 每个顶层目录**下一层**的 `*.py`。
+
+    为什么不用 `rglob("*.py")`：本仓有上万文件的资源目录（`benchmark_real/`、`cache/`、
+    `htmlcov/`…），深走一次要**几分钟**——一条静态守卫不该那么贵（实测：判据一字未动，
+    整文件耗时 62.66s → 秒级）。代码包都在 `core/services/ui/utils/scripts/tests` 这一层，
+    一层已足够；若将来出现两层深的包，由 `test_legacy_selfcheck` 的子进程实跑兜底。
     """
-    offenders = []
-    checked = 0
-    for p in sorted(SCRIPTS.glob("*.py")):
+    for p in list(ROOT.glob("*.py")) + list(ROOT.glob("*/*.py")):
+        if set(p.relative_to(ROOT).parts) & skip_dirs:
+            continue
+        yield p
+
+
+def test_every_entrypoint_with_unencodable_string_is_hardened():
+    """**全仓**：有 `__main__` 且字符串常量里含 GBK 编不出的字符 ⇒ 必须做 UTF-8 加固。
+
+    为什么按「常量出现在哪里都不管」而不是只看 `print` 实参：会被打印的字符串经常**不在**
+    print 的实参里（`audit()` 的返回值、i18n 文案表、异常消息），只看 print 就是 331 那个盲区。
+    为什么仍然有边界：若某字符是用 `chr(0x21D2)` 这类**运行期拼装**出来的，静态扫描看不见——
+    那种形态在本仓不存在（实测），出现时由「子进程实跑自检」那条守卫（`test_legacy_selfcheck`）兜。
+    """
+    offenders, checked = [], []
+    for p in sorted(_iter_py(_ENCODING_SCAN_SKIP_DIRS)):
+        rel = p.relative_to(ROOT)
         src = p.read_text(encoding="utf-8", errors="replace")
         if '__name__ == "__main__"' not in src:
             continue
-        if not _NON_ASCII.search(src):
+        try:
+            tree = ast.parse(src)
+        except SyntaxError:
             continue
-        checked += 1
+        ds = _docstring_nodes(tree)
+        bad: set = set()
+        for n in ast.walk(tree):
+            if isinstance(n, ast.Constant) and isinstance(n.value, str) and id(n) not in ds:
+                bad |= _gbk_unencodable(n.value)
+        if not bad:
+            continue
+        checked.append(rel.as_posix())
         if not any(m in src for m in _HARDEN_MARKERS):
-            offenders.append(p.name)
-    assert checked >= 20, f"只扫到 {checked} 个会打印非 ASCII 的脚本入口，枚举可能已失效"
+            offenders.append(f"{rel.as_posix()}（含 {''.join(sorted(bad))[:12]}）")
+    assert len(checked) >= 20, f"只扫到 {len(checked)} 个入口，判据或目录结构已失效 ⇒ 守卫在空转"
     assert not offenders, (
-        f"以下脚本入口有 __main__ 且源码含非 ASCII，却没加固 ⇒ GBK 管道下「通过」会被读成 rc=1："
-        f"{offenders}"
+        "以下入口的字符串常量里有 GBK 编不出的字符却没加固 ⇒ 中文 Windows 控制台下"
+        f"「自检通过」会被读成 rc=1（或静默少打一段）：{offenders}"
     )
 
 
@@ -131,15 +186,8 @@ def test_text_mode_subprocess_calls_declare_encoding():
     """
     import ast
 
-    skip_dirs = {"htmlcov", "temp", "build", "dist", ".git", "__pycache__",
-                 ".pytest_cache", "scratch", ".workbuddy"}
-
-    def _files():
-        for p in ROOT.rglob("*.py"):
-            parts = set(p.relative_to(ROOT).parts)
-            if parts & skip_dirs:
-                continue
-            yield p
+    # 读侧判据**要**扫 tests/（调用点大多在测试里），所以只排除资源目录。
+    files = sorted(_iter_py(_ENCODING_SCAN_SKIP_DIRS - {"tests"}))
 
     def _fname(node):
         f = getattr(node, "func", None)
@@ -150,7 +198,7 @@ def test_text_mode_subprocess_calls_declare_encoding():
         return ""
 
     offenders, checked = [], 0
-    for p in sorted(_files()):
+    for p in files:
         try:
             tree = ast.parse(p.read_text(encoding="utf-8", errors="replace"))
         except SyntaxError:
