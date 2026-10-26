@@ -135,6 +135,85 @@ def _mask_path_for(mask_folder: str, image_path: str) -> "str | None":
     return None
 
 
+def mask_candidates(mask_folder_value, mask_files: "list | None" = None) -> dict:
+    """把「用户上传的掩码」整理成 `{文件名主干: 掩码路径}` 索引（阶段 334）。
+
+    为什么需要它：`gr.File(file_count="directory")` 返回的是**目录里的每个文件**，不是目录本身。
+    而旧写法 `(_normalize_file_value(v) or [""])[0]` 取第一个元素当目录用 ⇒
+    `_os.path.isdir(<某个 .png 的路径>)` 恒为 False ⇒ **手动掩码批量每张都报「未找到同名掩码文件」**
+    （功能整条死路，且没有任何用例会走到，因为测试都直接传目录字符串给 `_mask_path_for`）。
+
+    参数说明：
+        mask_folder_value : Gradio 返回值（会被 `_normalize_file_value` 规整）。
+        mask_files        : 已规整好的路径列表（测试或调用方可直接给）。
+
+    返回值：
+        dict[str, str]：只收 `_MASK_EXTS` 后缀的文件；同名多个时保留第一个（稳定）。
+        目录路径也会被展开成其中的掩码文件，兼容旧调用形态。
+    """
+    paths = list(mask_files or [])
+    if not paths and mask_folder_value:
+        paths = _normalize_file_value(mask_folder_value)
+    out: dict = {}
+    for p in paths:
+        if not p:
+            continue
+        # 给的是目录 ⇒ 展开一层（旧行为：整目录扫描）。
+        if _os.path.isdir(p):
+            for name in sorted(_os.listdir(p)):
+                full = _os.path.join(p, name)
+                if _os.path.isfile(full) and full.lower().endswith(_MASK_EXTS):
+                    out.setdefault(_os.path.splitext(name)[0], full)
+            continue
+        if p.lower().endswith(_MASK_EXTS):
+            out.setdefault(_os.path.splitext(_os.path.basename(p))[0], p)
+    return out
+
+
+def _mask_path_for_index(index: dict, image_path: str) -> "str | None":
+    """按「文件名主干」在掩码索引里查本图的掩码（阶段 334，替代「必须是目录」的旧判据）。"""
+    return index.get(_os.path.splitext(_os.path.basename(image_path))[0])
+
+
+def batch_input_extensions() -> tuple:
+    """批量输入的扩展名白名单 —— **唯一真值来源是 `config.SUPPORTED_INPUT_FORMATS`**（阶段 334）。
+
+    旧写法用的是 `_MASK_EXTS`（`.png/.jpg/.jpeg/.bmp/.webp`，名字与文档都写着「缩略图/掩码后缀」）
+    当输入过滤器 ⇒ `.tif/.tiff/.jpe/.jfif` 被**静默丢掉**：挑 20 张 TIFF 会得到「未选择任何图片文件」，
+    混合目录则少掉 N 张且日志里一个字都不提。而 `config.py:1937` 的输入白名单与 README §1 都写明
+    `.tif/.tiff` 是支持的（`services/validators.is_supported_input` 用的就是它）⇒ 同一件事两份口径。
+    """
+    return tuple(str(e).lower() for e in config.SUPPORTED_INPUT_FORMATS)
+
+
+def select_batch_inputs(paths) -> "tuple[list, list]":
+    """把上传路径分成「可处理的图片」与「被扩展名挡下的」。
+
+    返回值：
+        (kept, dropped)。**dropped 一定要能被调用方说出来**——旧版直接丢弃、不报告，
+        用户的文件「凭空消失」是最难自查的一类问题。
+    """
+    exts = batch_input_extensions()
+    kept, dropped = [], []
+    for p in paths:
+        (kept if str(p).lower().endswith(exts) else dropped).append(p)
+    return kept, dropped
+
+
+def cache_signature_for(params: dict) -> str:
+    """把「决定输出的全部入参」压成稳定短哈希 —— 批量去重的**命中键**（阶段 334）。
+
+    为什么不能只用文件哈希：同一张图换引擎、改灵敏度、换掩码，输出**本来就不同**，
+    旧的 `find_by_hash(file_hash)` 会把上一次的旧成品当成本次结果返回，还在日志里记成成功。
+    判据来自 `_process_one` 自己的入参快照 ⇒ **将来新增一个会影响输出的参数，签名自动变**，
+    不需要谁记得去维护一份参数清单（手写清单必然漏，同 #167/#312）。
+    """
+    import hashlib
+    import json
+    payload = json.dumps({k: params[k] for k in sorted(params)}, sort_keys=True, default=str)
+    return hashlib.sha1(payload.encode("utf-8")).hexdigest()[:16]
+
+
 def _build_editor_value(image: np.ndarray, mask: np.ndarray) -> dict:
     """
     把 (原图 + 二值掩码) 组装成 ImageEditor 的 dict 值，供 process_auto_repair 复用。
@@ -219,6 +298,7 @@ def _process_one(
     denoise: int,
     sensitivity: float,
     mask_folder: str,
+    mask_index: "dict | None" = None,
     preset: str = "general",
     auto_preset: bool = True,
     sharpen=None,
@@ -253,6 +333,15 @@ def _process_one(
         本函数复用 ui.tab_auto.process_auto_repair，确保与单图/自动页签一致。
     """
     path = task.path
+    # 阶段 334：**命中键在函数入口就地由自己的入参算**（不另存参数清单）。
+    # `locals()` 此刻恰好只有 `_process_one` 的入参 ⇒ 新增参数会自动进入签名，不会「忘了登记」。
+    # 掩码目录/文件本身排除在外：它由「实际命中的那张掩码的哈希」单独进入签名（见下），
+    # 否则「同一批掩码换个临时目录名」会白白失效。
+    _sig_params = {k: v for k, v in locals().items()
+                   if k not in ("task", "on_progress", "path", "_sig_params",
+                                "mask_folder", "mask_index", "mask_files")}
+    sig_base = cache_signature_for(_sig_params)
+
     # 1) 解码校验（损坏/超大/格式非法在此拦截，不拖垮批次）。
     try:
         meta = validate_image_file(path)
@@ -263,10 +352,19 @@ def _process_one(
 
     on_progress(0.1, t("batch.task_reading_mask"))
 
-    # 2) 缓存去重：同一张图（哈希一致）且已有成品，直接复用。
+    # 2) 手动模式：先把本图的掩码定下来（阶段 334）。
+    #    旧顺序是「先查缓存再找掩码」⇒ 掩码内容**根本没进命中键**，换了掩码仍复用旧成品。
+    mask_path = None
+    if mode == "manual":
+        mask_path = _mask_path_for_index(mask_index or {}, path) or _mask_path_for(mask_folder, path)
+        if not mask_path:
+            raise ValueError(t("batch.task_no_mask_file", name=_os.path.basename(path)))
+
+    # 3) 缓存去重：同一张图**且同一套会改变输出的参数**（含掩码内容）才复用。
     file_hash = compute_file_hash(path)
+    cache_sig = sig_base if mask_path is None else f"{sig_base}|{compute_file_hash(mask_path)}"
     if file_hash:
-        hit = _CACHE.find_by_hash(file_hash)
+        hit = _CACHE.find_by_hash(file_hash, cache_sig)
         if hit and hit.result_path and _os.path.exists(hit.result_path):
             on_progress(1.0, t("batch.task_cache_hit_msg"))
             return {
@@ -277,15 +375,13 @@ def _process_one(
                 "skipped": True,
             }
 
-    # 3) 生成掩码。
+    # 4) 生成掩码。
     image = load_image(path)
     detect_stats = None  # 阶段 23：累计本次检测的命中率统计（仅自动模式有值）。
     recommendation = None       # 阶段 26：批量智能推荐结果（仅 auto 模式 + 开启推荐时有值）。
     recommended_preset = None   # 阶段 26：推荐出的预设名。
     if mode == "manual":
-        mp = _mask_path_for(mask_folder, path)
-        if not mp:
-            raise ValueError(t("batch.task_no_mask_file", name=_os.path.basename(path)))
+        mp = mask_path
         mask_arr = load_image(mp)
         # 灰度化 + 二值化。
         if mask_arr.ndim == 3:
@@ -360,6 +456,7 @@ def _process_one(
         engine=engine,
         params=params,
         file_hash=file_hash,
+        cache_sig=cache_sig,
     )
     if rec is not None:
         _CACHE.update_result_path(rec, out_path)
@@ -443,14 +540,23 @@ def run_batch(
         )
 
     file_paths = _normalize_file_value(folder_value) + _normalize_file_value(files_value)
-    # 仅保留图片文件（按扩展名粗筛，细筛交给校验）。
-    img_paths = [p for p in file_paths if p.lower().endswith(_MASK_EXTS)]
+    # 阶段 334：输入白名单回到 `config.SUPPORTED_INPUT_FORMATS`（此前误用 `_MASK_EXTS`，
+    # 把 .tif/.tiff/.jpe/.jfif 静默丢掉）。被挡下的要写进日志，不能让文件凭空消失。
+    img_paths, dropped = select_batch_inputs(file_paths)
+    if dropped:
+        log.warning("批量输入跳过 %d 个未支持扩展名：%s", len(dropped),
+                    ", ".join(_os.path.basename(str(p)) for p in dropped[:5]))
     if not img_paths:
         yield 0.0, t("batch.msg.no_files"), [], t("batch.msg.no_files"), build_detection_stats_markdown(None)
         return
 
-    mask_folder = (_normalize_file_value(mask_folder_value) or [""])[0] if mask_folder_value else ""
-    if mode == "manual" and not mask_folder:
+    # 阶段 334：`gr.File(file_count="directory")` 返回的是**目录里的每个文件**，不是目录。
+    # 旧代码取 `[0]` 当目录用 ⇒ `isdir()` 恒假 ⇒ 手动掩码批量**每张都失败**。统一建索引，
+    # 同时保留 `mask_folder`（真给目录时仍可用，且 `_mask_path_for` 的既有测试口径不变）。
+    mask_paths = _normalize_file_value(mask_folder_value) if mask_folder_value else []
+    mask_folder = mask_paths[0] if mask_paths else ""
+    mask_index = mask_candidates(None, mask_paths)
+    if mode == "manual" and not (mask_index or mask_folder):
         yield 0.0, t("batch.msg.need_mask"), [], t("batch.msg.need_mask"), \
             build_detection_stats_markdown(None)
         return
@@ -567,6 +673,7 @@ def run_batch(
             feather=feather, threshold=threshold,
             denoise=denoise, sensitivity=sensitivity,
             mask_folder=mask_folder,
+            mask_index=mask_index,
             preset=str(preset or config.DETECT_PRESET_DEFAULT),
             auto_preset=auto_preset,
             sharpen=params.sharpen.value,

@@ -102,6 +102,10 @@ class HistoryRecord:
     # 阶段 40：PDF 记录扩展字段（图片/视频记录保持默认，互不影响旧数据）。
     page_count: int = 0
     file_size: int = 0
+    # 阶段 334：**去重命中键**。同一张图在不同参数下产出**不同结果**，只用文件哈希命中会把
+    # 上一次的旧成品当成本次要的结果返回（换引擎 / 改灵敏度 / 换掩码都算「同一张图」）。
+    # 空串 = 这条记录没登记签名（旧数据或其他页签写的）⇒ **永不参与命中**（宁可重算一次）。
+    cache_sig: str = ""
 
     def to_dict(self) -> dict:
         return {
@@ -126,6 +130,7 @@ class HistoryRecord:
             "upscaled": self.upscaled,
             "page_count": self.page_count,
             "file_size": self.file_size,
+            "cache_sig": self.cache_sig,
         }
 
     @classmethod
@@ -142,6 +147,7 @@ class HistoryRecord:
             status=d.get("status", "success"),
             file_hash=d.get("file_hash"),
             params=d.get("params", ""),
+            cache_sig=d.get("cache_sig", ""),
             kind=d.get("kind", "image"),
             video_path=d.get("video_path"),
             duration=d.get("duration", 0.0),
@@ -276,6 +282,7 @@ class CacheService:
         params: str = "",
         file_hash: Optional[str] = None,
         original_arr: Optional[np.ndarray] = None,
+        cache_sig: str = "",
     ) -> Optional[HistoryRecord]:
         """
         登记一条成功处理记录：落盘原图、生成缩略图、写入索引。
@@ -289,6 +296,8 @@ class CacheService:
             mode/engine   : 处理模式 / 引擎（记录用）。
             params        : 参数摘要字符串。
             file_hash     : 原图哈希（用于后续去重）；为空时自动从落盘原图计算。
+            cache_sig     : 阶段 334：去重命中键（见 `find_by_hash`）。为空表示「不参与命中」，
+                            因此**新接入的调用方必须显式传签名**，否则等于没写进可命中缓存。
             original_arr  : 阶段 45 新增：内存中的原图数组（RGB uint8），优先于
                             original_path 落盘，解决单图 / 自动页无文件路径的痛点。
 
@@ -322,6 +331,7 @@ class CacheService:
                 status="success",
                 file_hash=file_hash,
                 params=params,
+                cache_sig=cache_sig,
             )
             with self._lock:
                 self._records.append(rec)
@@ -543,17 +553,31 @@ class CacheService:
                 recs = [r for r in recs if q in (r.original_name or "").lower()]
         return recs
 
-    def find_by_hash(self, file_hash: str) -> Optional[HistoryRecord]:
+    def find_by_hash(self, file_hash: str,
+                     cache_sig: Optional[str] = None) -> Optional[HistoryRecord]:
         """
         按原图哈希查找最近一条成功记录（用于去重命中）。
         返回 None 表示未命中缓存。
+
+        参数说明（阶段 334）：
+            file_hash : 原图内容哈希。
+            cache_sig : **去重命中键**。传入非 None 时，只命中 `r.cache_sig == cache_sig` 的记录；
+                        记录里 `cache_sig` 为空（旧数据、或别的页签没登记签名）⇒ **不命中**。
+                        不传（None）保持旧行为，供尚未接签名的调用方使用。
+
+        为什么要加这个参数：同一张图在「换引擎 / 改灵敏度 / 换掩码」下产出**不同结果**，
+        只按文件哈希命中会把上一次的旧成品当成本次的结果返回给-user（批量页曾无条件这样命中）。
+        正确性优先于命中率：签名不匹配就多算一次，代价是时间，不是错的图。
         """
         if not file_hash:
             return None
         with self._lock:
             for r in sorted(self._records, key=lambda r: r.ts, reverse=True):
-                if r.status == "success" and r.file_hash == file_hash and r.result_path:
-                    return r
+                if r.status != "success" or r.file_hash != file_hash or not r.result_path:
+                    continue
+                if cache_sig is not None and r.cache_sig != cache_sig:
+                    continue
+                return r
         return None
 
     def get(self, record_id: str) -> Optional[HistoryRecord]:

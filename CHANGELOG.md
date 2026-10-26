@@ -52,6 +52,33 @@
 
 ## [Unreleased]
 
+### 修复（阶段 334 · 批量去重键只认文件哈希 ⇒ 换引擎/换掩码会把旧图当新结果交出去）
+- **缺陷**：`services/cache_service.find_by_hash` 只比 `status/file_hash/result_path`，
+  记录里已存的 `mode/engine/params` 一个都不看；`ui/tab_batch._process_one` 又把这段排在**掩码生成之前**
+  ⇒ 换引擎、调灵敏度、换完全不同的涂抹掩码重跑同一文件夹，每张直接复用上一次成品，
+  日志记「✅ 命中缓存，已复用历史结果」。**是把错图交给用户并声称成功**，不是省时间。
+- **修法**：`HistoryRecord` 新增 `cache_sig`（去重命中键）；`find_by_hash(file_hash, cache_sig)` 只命中签名一致者，
+  记录签名为空（旧数据 / 其他页签）⇒ **不命中**。签名由 `_process_one` **自己的 `locals()` 入参快照**派生
+  （26 个参数不手抄清单；新增影响输出的参数自动进键），手动模式改为**先定位掩码再算键**，
+  掩码文件哈希进入键。代价如实写明：修完所有历史缓存退化为「第一次要重算」，换掉的是错命中这条路。
+- **同轮另修两条形态缺陷**：
+  ① `gr.File(file_count="directory")` 返回的是目录里的**每个文件**，旧代码取 `[0]` 当目录 ⇒ `isdir()` 恒假
+  ⇒ **手动掩码批量整条功能死路**（新增 `mask_candidates()` 建 `{主干: 路径}` 索引，目录形态继续兼容）；
+  ② 批量输入白名单误用 `_MASK_EXTS` ⇒ `.tif/.tiff/.jpe/.jfif` 被**静默丢弃**（挑 20 张 TIFF 报「未选择图片」）
+  ⇒ 改从 `config.SUPPORTED_INPUT_FORMATS` 派生（单一真值来源），`select_batch_inputs()` 返回 `(kept, dropped)`
+  并把 dropped 写进 `log.warning`：**不能让用户的文件凭空消失**。
+- **守卫**：新增 `tests/test_batch_cache_key334.py`（11 例）——命中键语义（签名不符不命中 / 不传保持旧行为 /
+  持久化读回）、签名随任一输出参数变化、掩码内容进键、同参数仍该命中、TIFF 白名单、Gradio 目录形态、
+  以及「签名必须仍从 `locals()` 派生」的反退化锚。
+- **反例闭合**：`git worktree add --detach temp/wt334 HEAD` 在**修复前**代码上跑同一套用例 ⇒ **10 红 / 1 绿**；
+  唯一绿的那条是「同参数重跑该命中缓存」，正是它该有的表现，兼作「别把缓存正向价值改坏」的锚。
+  修复后 11 例全绿；定向回归（`test_tab_batch_helpers` + `test_image_history_record` + `test_cache_service_audit132`）
+  65 例全绿。
+- **测试层根因**：②③ 长期存在是因为既有单测都在函数层面喂理想形态（目录字符串、干净后缀），
+  没有一条走 Gradio 的真实返回值 ⇒ 夹具形态与真实形态不同源（#167 手抄清单的同族变体）。
+- **本轮没修**（如实列）：AVIF 降级不看 `cv2.imwrite` 返回值却回 `success`；`tab_auto`/后处理明细文案绕过 `t()`；
+  批跑完成后按「取消」谎称已发信号（`_CURRENT_QUEUE` 从不置回 None）；`tab_single`/`tab_auto` 只写不命中。
+
 ### 修复 + 订正（阶段 333 · 331 那条「约 50 个未加固」是虚高，精确判据下是 8 个、真会崩的只有 2 个）
 - **订正 #1（数字）**：331 的 50 来自粗判据「源码出现任何非 ASCII」，**注释与 docstring 也算** ⇒ 虚高。
   换成 AST 判据「**字符串常量**（剔 docstring）含 GBK 编不出的字符」：69 未加固 → 46 命中 / 10 未加固
