@@ -179,7 +179,7 @@ def test_evaluate_near_zero_uses_absolute_tolerance():
 def test_gate_end_to_end_exit0():
     res = subprocess.run(
         [sys.executable, os.path.join(_ROOT, "scripts", "prompted_area_gate.py")],
-        cwd=_ROOT, capture_output=True, text=True, timeout=600,
+        cwd=_ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=600,
     )
     assert res.returncode == 0, f"门禁未通过：\n{res.stdout}\n{res.stderr}"
     assert "通过" in res.stdout

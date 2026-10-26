@@ -245,6 +245,9 @@ def run(repair: bool = True) -> dict:
 
 
 def main() -> int:
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser(description="检测掩码膨胀量真值审计（阶段 66）")
     ap.add_argument("--no-repair", action="store_true",
                     help="跳过修复口径（只跑检测，显著更快）")

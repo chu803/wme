@@ -40,7 +40,7 @@ def _run_selftest(extra_env: "dict | None" = None):
     if extra_env:
         env.update(extra_env)
     return subprocess.run([sys.executable, _SELFTEST], cwd=_ROOT,
-                          capture_output=True, text=True, timeout=300, env=env)
+                          capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300, env=env)
 
 
 # ------------------------------------------------------------------------------

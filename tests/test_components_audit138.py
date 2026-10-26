@@ -41,7 +41,7 @@ def test_param_values_keys_match_dataclass():
 def test_selfcheck_subprocess_green():
     r = subprocess.run(
         [sys.executable, os.path.join(ROOT, "ui", "components.py")],
-        capture_output=True, text=True, cwd=ROOT, timeout=120,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=ROOT, timeout=120,
     )
     assert r.returncode == 0, f"自检失败：{(r.stderr or r.stdout or '')[-400:]}"
     assert "自检通过" in r.stdout

@@ -188,7 +188,7 @@ def test_selfcheck_runs_clean_and_no_leak():
     before = set(glob.glob(os.path.join(tmp, "tmp*.png")))
     r = subprocess.run(
         [sys.executable, os.path.join(_ROOT, "services", "quality_service.py")],
-        capture_output=True, text=True, cwd=_ROOT, timeout=600,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=_ROOT, timeout=600,
     )
     after = set(glob.glob(os.path.join(tmp, "tmp*.png")))
     leaked = after - before

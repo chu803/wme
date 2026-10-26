@@ -292,6 +292,9 @@ def _decide_winner(
 
 
 def main() -> int:
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser(description="LaMa vs OpenCV 真实图对决")
     ap.add_argument("--presets", default="general,ai_corner",
                     help="逗号分隔；每个预设分别对决（--mask-source truth 时忽略）")

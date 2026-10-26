@@ -155,7 +155,7 @@ def test_hex_tokens_is_snapshot_not_live_view():
 def test_selfcheck_runs_clean():
     r = subprocess.run(
         [sys.executable, os.path.join(_ROOT, "utils", "brand.py")],
-        capture_output=True, text=True, cwd=_ROOT, timeout=120,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=_ROOT, timeout=120,
     )
     assert r.returncode == 0, f"自检失败 rc={r.returncode}\n{r.stdout}\n{r.stderr}"
 

@@ -30,6 +30,14 @@ if ROOT not in sys.path:
 # 运行 pytest 时 sys.executable 即托管 venv 的 python，子进程复用它，环境与测试一致。
 PY = sys.executable
 
+# 阶段 331：**子进程输出口径的唯一固定点**。中文 Windows 上子进程按 GBK 编码 stdout，
+# 而 GBK 编不出 `⇒ ✅ ❌ ² −` 这类字符 ⇒ 子进程 `UnicodeEncodeError` ⇒ 退出码 1（「通过」被读成
+# 「失败」）；父进程若按 UTF-8 解码又拿到 GBK 字节 ⇒ 读线程崩 ⇒ `stdout is None` ⇒ 断言炸在
+# `NoneType + str` 这种**与真因无关**的地方。两侧都靠「谁记得加固」不可能对齐（实测：13 个脚本
+# 没加固、14 个调用点没声明编码），所以在这里一次性把**子进程**定为 UTF-8，读侧由各调用点显式声明。
+# ⚠ 这不替代产品入口自己的 `force_utf8_stdio()`：`python main.py` 直跑时没有本文件。
+os.environ.setdefault("PYTHONIOENCODING", "utf-8")
+
 
 # --------------------------------------------------------------------------- #
 # 会话级：把语言持久化文件重定向出真实目录（阶段 290 新增）
@@ -133,6 +141,11 @@ def cli_run():
             cwd=ROOT,
             capture_output=True,
             text=True,
+            # 阶段 331：`cli.py` 已自带 force_utf8_stdio() ⇒ 它发的是 UTF-8；
+            # 父进程若按 locale(GBK) 读 ⇒ 读线程崩 ⇒ stdout=None ⇒ 断言炸成
+            # 「TypeError: argument of type 'NoneType' is not iterable」（实测 7 条）。
+            encoding="utf-8",
+            errors="replace",
             timeout=timeout,
         )
 

@@ -58,6 +58,10 @@
 #   · 覆盖率必须 `.coveragerc` 里 `parallel = False`：否则 coverage 收尾 combine 会
 #     **删除**并行数据文件 ⇒ 撞护栏 ⇒ pytest INTERNALERROR、报告整体丢失（187 实测）。
 #   · 步骤一律以 `sys.executable` 调用，避免依赖 PATH 上的 python。
+#   · 子进程编码在 `run_steps()` 里成对钉死（阶段 331）：写侧 `PYTHONIOENCODING=utf-8`、
+#     读侧 `encoding="utf-8", errors="replace"`。少一半就会出现「子进程打印 ⇒ 崩 ⇒ rc=1 被判失败」
+#     或「父进程按 GBK 读 UTF-8 ⇒ 读线程崩 ⇒ stdout=None」——两者都**与产品无关**却是红。
+#     守卫：`test_run_steps_pins_the_cross_process_encoding`。
 # ==============================================================================
 from __future__ import annotations
 
@@ -284,11 +288,19 @@ def run_steps(steps: list, *, root: str = _ROOT, runner=None, echo=None):
     import subprocess as _sp
     runner = runner or _sp.run
     echo = echo or print
+    # 阶段 331：**跨进程口径必须在这里定死**，不能靠「每个脚本记得自己加固」。
+    # 中文 Windows 上子进程按 GBK 写 stdout，GBK 编不出 `⇒ ✅ ❌ ²` ⇒ 子进程 UnicodeEncodeError
+    # 退出码 1（「通过」读成「失败」）；而父进程按 locale(GBK) 读子进程的 UTF-8 ⇒ 读线程崩 ⇒
+    # `stdout is None`。实测两者今天都真的发生了（入口第 3 步 docker_static rc=1）。
+    # `PYTHONIOENCODING` 管写、`encoding=` 管读，一对才闭合；`errors="replace"` 兜住第三方库
+    # （torch/EasyOCR 的进度文案）里可能出现的任意字节，**宁可花屏也不要把绿变成红**。
+    child_env = dict(os.environ, PYTHONIOENCODING="utf-8")
     lines, report = [], []
     verdicts = []
     for st in steps:
         started = time.time()
-        proc = runner(st.argv, cwd=root, capture_output=True, text=True)
+        proc = runner(st.argv, cwd=root, capture_output=True, text=True,
+                      encoding="utf-8", errors="replace", env=child_env)
         rc = getattr(proc, "returncode", 1)
         dt = time.time() - started
         verdict = normalize_rc(st, rc)
@@ -304,6 +316,11 @@ def run_steps(steps: list, *, root: str = _ROOT, runner=None, echo=None):
             tail = out.splitlines()[-12:]
             lines.append("   └─ 末尾输出：")
             lines += [f"      {t}" for t in tail]
+        elif out:
+            # 阶段 331：**通过也要留一行证据**。此前只有失败才附打末尾输出 ⇒
+            # CI 日志里成功的那行是「✅ pytest rc=0」+ 零上下文，没人能看出它究竟跑了多少用例
+            # （331 实测：入口全绿的那次，日志里一个计数都找不到）。取最后一条非空行，不改变判定。
+            lines.append(f"   └─ {out.splitlines()[-1].strip()[:160]}")
     total = aggregate(verdicts)
     return total, lines, {"steps": report, "exit_code": total}
 

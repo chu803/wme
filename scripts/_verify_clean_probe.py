@@ -47,6 +47,9 @@ def _fresh(suffix: str) -> Path:
 
 
 def main():
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     fails = []
 
     # ① 跳过层

@@ -493,6 +493,9 @@ def _print_markdown(result: Dict[str, Any]) -> None:
 
 
 def main() -> int:
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser(description="真实图门禁（detector 评估）")
     ap.add_argument("--presets", default=",".join(DEFAULT_PRESETS),
                     help=f"逗号分隔；默认 {len(DEFAULT_PRESETS)} 个预设")

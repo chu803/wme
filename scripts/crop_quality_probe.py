@@ -54,6 +54,9 @@ def _load_rgb(p):
 
 
 def main():
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser()
     ap.add_argument("--limit", type=int, default=0, help="最多处理多少张（0=全部）")
     ap.add_argument("--min-side", type=int, default=2048, help="只处理长边>=此值的图")

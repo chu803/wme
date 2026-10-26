@@ -244,7 +244,7 @@ def test_module_selfcheck(mod, marks, request, tmp_path):
         [sys.executable, mod],
         cwd=ROOT,
         capture_output=True,
-        text=True,
+        text=True, encoding="utf-8", errors="replace",
         timeout=300,
         env=env,
     )

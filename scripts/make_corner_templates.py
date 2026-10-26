@@ -297,6 +297,9 @@ def run_stats() -> int:
 
 
 def main(argv: list | None = None) -> int:
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser(description="角标模板库扩充（阶段 322b）")
     ap.add_argument("--stats", action="store_true", help="打印新模板的结构统计")
     ap.add_argument("--emit", default=None, help="把 17 张合并库的 base64 写到该文件")

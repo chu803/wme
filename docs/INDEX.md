@@ -744,6 +744,40 @@ GH runner 上的实际行为要 push 后看一次 Actions 记录才知道。
 
 - `330-pytest退出码2被当成跳过.md`
 
+### 331 · 跨进程编码没有唯一固定点：中文 Windows 上入口 19 条假红 + 第 3 步 0.1 秒就红（2026-10-26）
+
+330 改完按纪律**真跑统一入口**（不设任何环境变量＝用户双击 `test.bat` 的环境）⇒ 整条红：
+`pytest rc=1（19 failed, 3339 passed）`、`docker_static rc=1（0.1s）`。19 条红的签名很怪：
+`TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'` ⇒ **不是产品回归，是测试拿到 `stdout=None`**。
+两个方向同时错：① 子进程写——GBK 编不出 `⇒ ✅ ❌ ²`（一行实验证实：
+`PYTHONIOENCODING=gbk python -c "print('✅')"` ⇒ rc=1）；② 父进程读——`text=True` 按 locale 解码，
+子进程发 UTF-8 就读线程崩 ⇒ `stdout=None`。阶段 170 的守卫没拦住，因为它的判据是「`print` **字面量**里的非 GBK 字符」，
+而 `docker_consistency_check` 的 `⇒` 是 `audit()` **构造**的字符串——正撞它文档里自陈的盲区，且撞在入口默认第 3 步上。
+静态枚举欠账：`scripts/` 里 13 个「有 `__main__`＋源码含非 ASCII＋没加固」，`tests/`+`scripts/` 里 14 处
+文本模式调用没声明 `encoding=`；最扎心的是 `download_model.py`——README:2170 让用户直跑它，
+它打印「✅ 模型已就绪」没加固 ⇒ **下载成功也 rc=1**。
+修法在**边界**：`conftest.py` 一处 `setdefault("PYTHONIOENCODING","utf-8")` 覆盖所有被测试 spawn 的子进程；
+`run_steps()` 对每步同时传 `env` 写侧 + `encoding="utf-8", errors="replace"` 读侧（产品路径）；
+15 个文件补就地加固（人直跑的路径）。`errors="replace"` 是刻意的——**判定层不该被显示层绑架**（阶段 146 原话）。
+`setdefault` 不削弱对抗守卫：`test_cli_survives_gbk_redirect` 用显式赋值 `= "gbk"`，hostile 环境照旧真测。
+三条新守卫：`scripts/` 非 ASCII 入口必须加固（判据不看字符出现在哪，误报方向安全，带 `checked≥20` 反空转）、
+文本模式子进程调用必须声明编码（bytes 模式正确排除）、行为级 spy 钉住入口对**每一步**都传这三个参数。
+**同一条入口跑了 5 次**：A 修复前 19 failed＋`docker_static rc=1` ⇒ B 边界修完 8 failed、其余三步全 ✅ ⇒
+C 同一份代码但整个入口在 `PYTHONIOENCODING=gbk` 下启动 ⇒ 7 failed（**hostile 环境不再改变判定**）⇒
+D 补完 `conftest.py` 的 `cli_run` ⇒ 相关 4 个文件 rc=0。
+⚠ **那份静态枚举自己也是分布式的**：第一版只扫 `tests/`+`scripts/`，漏了仓库根 `conftest.py` 的 `cli_run`
+——恰好是 7 条 `test_cli.py` 的公共出口；守卫已改成**全仓枚举**（实测全仓 23 处调用、0 处未声明）。
+B 里多出的那条 `test_api_security299::test_post_without_token_401`（`ConnectionError`）与编码无关：
+C 未复现、D 单跑全绿 ⇒ 判为并发抢占抖动（当时同机并发了 13 个脚本的 `--help` 实跑），
+fixture 已有 `_wait_ready(port)` ⇒ **不动它，只登记**。
+E 最终完整入口（默认环境）⇒ **4/4 步 ✅、总码 0**。顺带第二条同族缺陷：`run_steps()` 原先**只在失败时**
+附打末尾输出 ⇒ 成功那行是孤零零的 `✅ pytest rc=0`，日志里连「跑了多少用例」都找不到；
+现在 `rc==0` 也附打最后一行（判定不变），守卫 `test_success_still_prints_a_line_of_evidence`。
+**留下 50 个 `core/services/utils/ui` 模块自检未就地加固**（它们打印中文、GBK 编得下所以不崩），
+不一次扫平的理由与「守卫范围随加固范围一起扩」登记在文档 §六。
+
+- `331-跨进程编码没有唯一固定点.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`

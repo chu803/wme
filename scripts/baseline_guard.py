@@ -177,6 +177,13 @@ __all__ = ["Rule", "check_downward_pairs", "check_downward_refresh", "render_ref
 
 
 if __name__ == "__main__":
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    # 本模块**刻意**只依赖 typing；os/sys 只在这块里就地取，不污染库面。
+    import os as _os
+    import sys as _sys
+    _sys.path.insert(0, _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__))))
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     # 自检：纯内存断言，无文件写入。
     _rules = {
         "recall": ("min", 0.20, 0.0),

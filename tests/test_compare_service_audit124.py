@@ -68,7 +68,7 @@ def test_module_selfcheck_subprocess():
     """子进程实跑模块自检（含用例 6 钉住 F1），断言退出码 0。"""
     r = subprocess.run(
         [sys.executable, "services/compare_service.py"],
-        cwd=ROOT, capture_output=True, text=True, timeout=300,
+        cwd=ROOT, capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=300,
     )
     assert r.returncode == 0, (
         f"compare_service 自检失败（退出码 {r.returncode}）\n"

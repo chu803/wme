@@ -320,6 +320,11 @@ def cmd_list(args: argparse.Namespace) -> int:
 # 入口
 # -----------------------------------------------------------------------------#
 def main() -> int:
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    if _ROOT not in sys.path:
+        sys.path.insert(0, _ROOT)
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser(description="真实 AI 图采集入口")
     sub = ap.add_subparsers(dest="cmd", required=True)
 

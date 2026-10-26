@@ -551,6 +551,9 @@ def _run_real_dir(input_dir: str) -> int:
 
 
 def main() -> int:
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser(description="生成演示素材并量化擦除质量")
     ap.add_argument("--engine", default="auto", choices=["auto", "opencv", "lama"],
                     help="修复引擎（默认 auto：有 LaMa 用 LaMa，否则 OpenCV）")

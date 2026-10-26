@@ -52,6 +52,48 @@
 
 ## [Unreleased]
 
+### 修复（阶段 331 · 中文 Windows 上「一条用例没跑」与「19 条假红」同时存在）
+- **现场**：真跑统一入口（不设任何环境变量＝用户双击 `test.bat` 的那个环境）⇒
+  `pytest rc=1`（19 failed / 3339 passed）＋ `docker_static rc=1`（**0.1 秒**就红，什么都没检查完）。
+  19 条红的签名高度一致：`TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'`
+  ⇒ 测试拿到的是 `CompletedProcess.stdout is None`，**不是产品回归**。
+- **根因**：跨进程编码没有唯一固定点，靠「每个脚本记得加固 + 每个调用点记得声明编码」两套分布式约定。
+  两个方向本机都在真的发生：子进程按 GBK 写（GBK 编不出 `⇒ ✅ ❌ ² −` ⇒ `UnicodeEncodeError` ⇒ rc=1），
+  父进程 `text=True` 按 locale(GBK) 读已加固子进程的 UTF-8（⇒ 读线程崩 ⇒ `stdout=None`）。
+  机制一行证实：`PYTHONIOENCODING=gbk python -c "print('✅ x')"` ⇒ rc=1。
+- **为什么阶段 170 的守卫没拦住**：它只扫 `print(...)` **字面量**里的非 GBK 字符，而
+  `docker_consistency_check.py` 的 `⇒` 由 `audit()` **构造**后打印 ⇒ 正撞该守卫文档里自陈的盲区，
+  且撞在统一入口的**默认第 3 步**。静态枚举欠账：`scripts/` 里 13 个未加固入口、
+  `tests/`+`scripts/` 里 14 处文本模式调用未声明编码；`download_model.py`（README:2170 让用户直跑）
+  打印「✅ 模型已就绪」未加固 ⇒ **下载成功也会 rc=1**（已修，hostile env 实测 rc=0 且 ✅ 正常打印）。
+- **⚠ 那份枚举自己也是分布式的**：第一版没扫仓库根的 `conftest.py`，漏掉 `cli_run` fixture
+  （`conftest.py:139`）——它正是 7 条 `test_cli.py` 用例的公共出口。守卫已改成**全仓枚举**
+  （排除 `htmlcov/temp/.workbuddy` 等），实测全仓 23 处文本模式调用、0 处未声明编码。
+- **修法（在边界钉死一次）**：① `conftest.py` 一处 `os.environ.setdefault("PYTHONIOENCODING","utf-8")`
+  覆盖所有被测试 spawn 的子进程；② `run_all_checks.run_steps()` 对**每一步**同时传
+  `env=…PYTHONIOENCODING=utf-8`（写侧）与 `encoding="utf-8", errors="replace"`（读侧）——产品路径；
+  ③ 15 处调用点显式声明编码；④ 15 个文件补就地加固（人直跑路径）。
+  `errors="replace"` 刻意保留：**判定层不该被显示层绑架**（阶段 146 的「输出内容决定门禁退出码」是缺陷）。
+  `setdefault` 不削弱对抗守卫：`test_cli_survives_gbk_redirect` 用**显式赋值** `= "gbk"`，hostile 环境照旧真测。
+- **同一条入口跑 5 次的实测序列**：A 修复前 `19 failed / 3339 passed` + `docker_static rc=1`；
+  B 边界修完（`cli_run` 还没修）`8 failed / 3353 passed`，`undef_scan/docker_static/corner_signal_gate` 三步全 ✅；
+  C 与 B 同一份代码但整个入口在 `PYTHONIOENCODING=gbk` 下启动 ⇒ `7 failed / 3354 passed`（**hostile 环境不再改变判定**）；
+  D 补上 `cli_run` 后单跑 `test_cli + 三条新守卫 + test_run_all_checks + test_api_security299` ⇒ **rc=0**；
+  E 最终完整入口（默认环境）⇒ **4/4 步 ✅、总退出码 0**（pytest 步 661.8s）⇒ 本地双击 `test.bat` 不再假红。
+  B 里那条 `test_api_security299::test_post_without_token_401`（`ConnectionError`）**与编码无关**：
+  C 未复现、D 单跑全绿 ⇒ 判为并发抢占抖动（跑 B 时同机并发了 13 个脚本的 `--help` 实跑）；
+  该 fixture 已有 `_wait_ready(port)`，不是「未就绪就发请求」那类缺陷 ⇒ **不动它，只登记**。
+- **顺带第二条（同一族：说不清的绿）**：E 想留「多少条用例通过」的证据时才发现 `run_steps()` **只在失败时**
+  附打末尾输出 ⇒ CI 日志里成功那行是孤零零的 `✅ pytest rc=0`，**没人能看出它跑了多少用例**。
+  现在 `rc == 0` 也附打子进程最后一行（截断 160 字符，**判定完全不变**），守卫
+  `test_success_still_prints_a_line_of_evidence`；实跑两静态步骤确认 `└─ 全部通过…` 证据行真的出现。
+- **守卫**：`test_every_script_entrypoint_with_non_ascii_is_hardened`（判据不看字符出现在哪里，
+  误报方向安全，带 `checked≥20` 反空转）、`test_text_mode_subprocess_calls_declare_encoding`
+  （bytes 模式正确排除）、`test_run_steps_pins_the_cross_process_encoding`（spy runner 逐步断言三个参数）。
+- **诚实边界**：`core/services/utils/ui` 仍有约 50 个模块自检未就地加固（打印中文，GBK 编得下 ⇒ 不崩）；
+  经入口/测试 spawn 的已被固定点覆盖，剩下只有「人手工直跑库模块」这条 dev 路径。
+  守卫范围与加固范围**一起扩**，否则守卫一上线就红 50 条（那是为了守卫改产品，方向反了）。
+
 ### 修复（阶段 330 · 「2 = 跳过」被当成全局约定，pytest 的收集期报错能洗成绿）
 - 统一入口只有一张全局码表（`0/1/2/3`），各步骤原始码直接进 `aggregate()`。门禁家族的约定是我们自己定的、
   没错；但第 1 步是 pytest，它的 **2 = Interrupted（收集期报错、`-k` 选空）**、3 = Internal error，

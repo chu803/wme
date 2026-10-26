@@ -66,7 +66,7 @@ def test_i18n_state_not_leaked_across_processes(tmp_path):
             [sys.executable, "-m", "pytest", child, "-q", "-p", "no:cacheprovider"],
             cwd=os.getcwd(),
             capture_output=True,
-            text=True,
+            text=True, encoding="utf-8", errors="replace",
             timeout=300,
         )
         assert proc.returncode == 0, (

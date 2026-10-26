@@ -19,7 +19,7 @@ proc = subprocess.run(
     cwd=REPO,
     env=ENV,
     capture_output=True,
-    text=True,
+    text=True, encoding="utf-8", errors="replace",
     timeout=300,
 )
 print(proc.stdout)

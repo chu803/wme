@@ -121,6 +121,9 @@ def _hstack(panels: List[Any]) -> Any:
 
 
 def main() -> int:
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser(description="真实图三格对比图生成器")
     ap.add_argument("--out-dir", default=DEFAULT_OUT, help=f"输出目录（默认 {DEFAULT_OUT}）")
     ap.add_argument("--limit", type=int, default=0, help="只处理前 N 张（0 = 全部）")

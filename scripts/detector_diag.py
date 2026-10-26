@@ -237,6 +237,9 @@ def summarize(rows: list) -> str:
 
 
 def main() -> int:
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     ap = argparse.ArgumentParser(description="检测器过度检测诊断")
     ap.add_argument("--json", dest="json_path", default=None,
                     help="额外把结果导出为 JSON 文件")

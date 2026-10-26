@@ -283,6 +283,10 @@ def download_model(
 
 # 直接运行本脚本即触发下载。
 if __name__ == "__main__":
+    # 阶段 331：这是 README 让用户**直接运行**的入口，中文 Windows(GBK) 控制台上
+    # 那句「✅ 模型已就绪」会先抛 UnicodeEncodeError ⇒ 下载成功却返回退出码 1。
+    from utils.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     print("=" * 60)
     print(f"  {config.APP_NAME} — 模型下载工具")
     print("=" * 60)

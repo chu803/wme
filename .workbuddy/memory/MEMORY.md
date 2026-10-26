@@ -150,3 +150,19 @@ mask_recall **0.7700** / precision **0.0930** / recall 0.9245 / mean_iou 0.6853 
 - **logging 单例污染**：`test_utils_audit90` rotation 用例受前序 handler/真实 `logs/app.log` 污染（既有顺序污染，父提交同样失败）；修复须 conftest 级重置 + 每用例 tmp 日志目录。
 - 「mask 外 0 变化」≠ LaMa 恒等（两种模式都有固有扰动）⇒ crop 安全性以「crop 干净区扰动不差于 full」判，非 crop-vs-full=0。
 - gradio `gr.update()` 返回普通 dict；`from-import` 后 monkeypatch 须打导入方命名空间；源码子串匹配会误命中注释，须 AST。
+
+## 验证口径 · 编码（331 之后必读）
+- **别再用 `PYTHONUTF8=1` 当复现前提**：那会**掩盖** 331 修的那一类缺陷。331 的现场正是
+  「不设任何环境变量真跑入口」⇒ 19 条假红 + `docker_static` 0.1 秒红。今天起的固定点：
+  `conftest.py` 一处 `setdefault("PYTHONIOENCODING","utf-8")`（管所有被测试 spawn 的子进程）
+  ＋ `run_all_checks.run_steps()` 对每步传 `env` 写侧 + `encoding="utf-8", errors="replace"` 读侧。
+- 想证明某个入口**自带**加固，用**显式赋值**造 hostile 环境（`env["PYTHONIOENCODING"]="gbk"`），
+  不要用 unset ——`test_cli_survives_gbk_redirect` 就是这个写法，所以它没被全局默认掏空。
+- **签名速查**：`TypeError: unsupported operand type(s) for +: 'NoneType' and 'NoneType'`
+  ⇒ 父进程读线程崩 ⇒ `stdout=None` ⇒ 是**编码**问题，不是产品逻辑；先查 spawn 两侧口径。
+- 开放项（331 登记，非今天能闭合）：
+  ① `core/services/utils/ui` 约 50 个模块的 `__main__` 自检**未就地加固**（打印中文，GBK 编得下 ⇒ 暂不崩）；
+     守卫范围与加固范围要**一起扩**，否则守卫一上线就红 50 条。
+  ② `docker_consistency_check.py` 的 `return 2` 语义是「有 WARN」，入口读成「⏭ 跳过」⇒ 一句
+     「需知悉/决策」被静默吞进绿。两种改法（WARN 变 CI 红 / 加第五档 ⚠）都涉及判定口径变更，
+     **等用户拍**（330 文档 §六 列了代价表）。

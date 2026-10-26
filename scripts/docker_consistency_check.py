@@ -247,6 +247,11 @@ def audit() -> tuple:
 
 
 def main() -> int:
+    # 阶段 331：输出编码加固（GBK 管道下打印 ⇒/✅ 会 UnicodeEncodeError ⇒ 「通过」被读成退出码 1）。
+    if ROOT not in sys.path:
+        sys.path.insert(0, ROOT)     # 本脚本刻意零依赖，这一步只为拿到编码共用件
+    from scripts.console_encoding import force_utf8_stdio
+    force_utf8_stdio()
     errs, warns, oks = audit()
     for l in oks:
         print(f"  [OK]   {l}")

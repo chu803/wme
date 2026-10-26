@@ -20,6 +20,7 @@ Python 按 GBK 编码输出，而脚本会 `print` `✅/❌/⚠/⇒/✓/✗/−/
 
 import ast
 import pathlib
+import re
 
 ROOT = pathlib.Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / "scripts"
@@ -83,6 +84,94 @@ def test_console_encoding_helper_exists():
     """共用件必须存在且导出 force_utf8_stdio。"""
     import scripts.console_encoding as ce
     assert callable(ce.force_utf8_stdio)
+
+
+# ---------------------------------------------------------------------------
+# 阶段 331：把上面那条静态守卫自陈的**盲区**机械化
+#   旧判据只看 `print(...)` 字面量里的非 GBK 字符 ⇒ 「字符串由函数构造后再打印」看不见。
+#   当天就被咬：`docker_consistency_check.py` 打印 `audit()` 造出的 `⇒`，GBK 管道下
+#   UnicodeEncodeError ⇒ rc=1，而它是统一入口的**默认第 3 步**（实测见 docs/331）。
+# ---------------------------------------------------------------------------
+_NON_ASCII = re.compile(r"[^\x00-\x7f]")
+
+
+def test_every_script_entrypoint_with_non_ascii_is_hardened():
+    """`scripts/*.py`：只要有 `__main__` 且源码里出现任何非 ASCII 字符，就必须加固。
+
+    判据刻意**不看字符出现在哪里**（字面量 / 被 return 的字符串 / f-string 变量都一样），
+    代价是可能为「非 ASCII 只在注释里」的脚本多要求一次加固——**误报方向是安全的**
+    （加固调用无害，漏掉才是当天那个红）。
+    """
+    offenders = []
+    checked = 0
+    for p in sorted(SCRIPTS.glob("*.py")):
+        src = p.read_text(encoding="utf-8", errors="replace")
+        if '__name__ == "__main__"' not in src:
+            continue
+        if not _NON_ASCII.search(src):
+            continue
+        checked += 1
+        if not any(m in src for m in _HARDEN_MARKERS):
+            offenders.append(p.name)
+    assert checked >= 20, f"只扫到 {checked} 个会打印非 ASCII 的脚本入口，枚举可能已失效"
+    assert not offenders, (
+        f"以下脚本入口有 __main__ 且源码含非 ASCII，却没加固 ⇒ GBK 管道下「通过」会被读成 rc=1："
+        f"{offenders}"
+    )
+
+
+def test_text_mode_subprocess_calls_declare_encoding():
+    """**读侧**同族判据：`tests/` 与 `scripts/` 里所有 text/capture_output 的子进程调用都要写死编码。
+
+    为什么读侧也要守卫：写侧加固后子进程发 UTF-8，而父进程默认按 locale(GBK) 解码 ⇒
+    读线程抛 UnicodeDecodeError ⇒ `CompletedProcess.stdout is None` ⇒ 断言炸在
+    `NoneType + str` 这种**与真因毫无关系**的地方（当天实测 19 条红全是这一族）。
+    ⚠ 判据是**全仓**枚举而不是「只扫 tests/」：331 第一版就漏了根目录 `conftest.py` 的 `cli_run`
+    fixture —— 它是**七个** `test_cli.py` 用例的公共出口，漏一处就是七条红。
+    """
+    import ast
+
+    skip_dirs = {"htmlcov", "temp", "build", "dist", ".git", "__pycache__",
+                 ".pytest_cache", "scratch", ".workbuddy"}
+
+    def _files():
+        for p in ROOT.rglob("*.py"):
+            parts = set(p.relative_to(ROOT).parts)
+            if parts & skip_dirs:
+                continue
+            yield p
+
+    def _fname(node):
+        f = getattr(node, "func", None)
+        if isinstance(f, ast.Name):
+            return f.id
+        if isinstance(f, ast.Attribute):
+            return f.attr
+        return ""
+
+    offenders, checked = [], 0
+    for p in sorted(_files()):
+        try:
+            tree = ast.parse(p.read_text(encoding="utf-8", errors="replace"))
+        except SyntaxError:
+            continue
+        for n in ast.walk(tree):
+            if not (isinstance(n, ast.Call) and _fname(n) in ("run", "check_output", "Popen", "call")):
+                continue
+            kw = {k.arg for k in n.keywords if k.arg}
+            if not (({"text", "universal_newlines"} & kw) or "capture_output" in kw):
+                continue
+            if "encoding" in kw:
+                checked += 1
+                continue
+            if not ({"text", "universal_newlines"} & kw):
+                continue          # capture_output 但没有 text= ⇒ bytes 模式，本来就不会解码
+            checked += 1
+            offenders.append(f"{p.relative_to(ROOT).as_posix()}:{n.lineno}")
+    assert checked >= 20, f"只扫到 {checked} 处文本模式子进程调用，枚举可能已失效"
+    assert not offenders, (
+        f"以下调用点用 locale 默认编码解码子进程输出（中文 Windows=GBK）⇒ 会读出 stdout=None：{offenders}"
+    )
 
 
 def test_force_utf8_stdio_is_idempotent_and_never_raises():

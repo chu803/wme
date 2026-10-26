@@ -36,7 +36,7 @@ class _Proc:
 def _runner(rc_map):
     """构造一个按步骤名返回预设退出码的假 runner。"""
 
-    def _run(argv, cwd=None, capture_output=True, text=True):
+    def _run(argv, cwd=None, capture_output=True, text=True, **_kw):
         name = os.path.basename(argv[1] if argv[1] != "-m" else argv[2])
         name = {"pytest": "pytest", "undef_scan.py": "undef_scan",
                 "clean_bench_probe.py": "clean_bench_probe",
@@ -235,11 +235,27 @@ def test_run_steps_all_skipped_returns_two():
 def test_failure_prints_tail_output():
     steps = [rac.build_steps()[0]]
     code, lines, _rep = rac.run_steps(
-        steps, runner=lambda argv, cwd=None, capture_output=True, text=True: _Proc(1, "boom\n"),
+        steps, runner=lambda argv, cwd=None, capture_output=True, text=True, **_kw: _Proc(1, "boom\n"),
         echo=lambda *a, **k: None)
     assert code == 1
     assert any("末尾输出" in ln for ln in lines)
     assert any("boom" in ln for ln in lines)
+
+
+def test_success_still_prints_a_line_of_evidence():
+    """阶段 331：绿也要说得出「绿在哪」。
+
+    旧实现只有非零码才附打末尾输出 ⇒ 入口全绿时日志里只有「✅ pytest rc=0」＋零上下文，
+    连**跑了多少条用例**都看不到（331 真跑一次实测到了这个空洞）。判定不变，只多一行证据。
+    """
+    steps = [rac.build_steps()[0]]
+    out = "collected 3361 items\n\n...........\n3353 passed, 8 skipped in 661.81s (0:11:01)\n"
+    code, lines, _rep = rac.run_steps(
+        steps, runner=lambda argv, cwd=None, capture_output=True, text=True, **_kw: _Proc(0, out),
+        echo=lambda *a, **k: None)
+    assert code == 0
+    assert any("passed" in ln for ln in lines), lines
+    assert not any("末尾输出" in ln for ln in lines), "通过时不该按失败格式打印"
 
 
 
@@ -278,6 +294,32 @@ def test_gate_step_skip_and_env_codes_are_preserved():
                                 runner=_runner({"corner_signal_gate.py": 3}),
                                 echo=lambda *a, **k: None)
     assert code3 == 3, code3
+
+
+def test_run_steps_pins_the_cross_process_encoding():
+    """阶段 331：入口必须**同时**钉住子进程的写侧与父进程的读侧，缺一边就崩另一边。
+
+    实测（本机中文 Windows，不设 `PYTHONUTF8`）：第 3 步 `docker_static` 打印 `audit()` 构造的
+    `⇒` ⇒ 子进程按 GBK 编码失败 ⇒ rc=1「通过被读成失败」；反过来子进程已加固（UTF-8）而父进程
+    按 locale(GBK) 读 ⇒ 读线程 `UnicodeDecodeError` ⇒ `stdout=None`。
+    这条守卫防的是「以后有人加新步骤时把这两个参数删掉」——它们看着像可有可无的噪音。
+    """
+    seen = []
+
+    def _spy(argv, cwd=None, capture_output=True, text=True, **kw):
+        seen.append(dict(kw, text=text))
+        return _Proc(0, "ok\n")
+
+    steps = rac.build_steps(gates=True)
+    rac.run_steps(steps, runner=_spy, echo=lambda *a, **k: None)
+    assert len(seen) == len(steps), "每一步都要走同一份编码契约，不能只对某步生效"
+    for kw in seen:
+        assert kw.get("encoding") == "utf-8", kw
+        assert kw.get("errors") == "replace", kw
+        assert kw.get("text") is True, kw
+        env = kw.get("env") or {}
+        assert env.get("PYTHONIOENCODING") == "utf-8", (
+            f"写侧没钉住：{sorted(env)[:6]}…")
 
 # ---------------------------------------------------------------------------
 # ③-b 工作流里的「管道吞退出码」守卫（阶段 329）

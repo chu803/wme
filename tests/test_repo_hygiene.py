@@ -106,7 +106,7 @@ def test_documented_ignore_patterns_are_effective():
     def _ignored(rel: str) -> bool:
         # 用 git 自身判定（唯一真值来源），而非自己实现 glob 语义。
         r = subprocess.run(["git", "-C", _ROOT, "check-ignore", "-q", "--", rel],
-                           capture_output=True, text=True, timeout=30)
+                           capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
         return r.returncode == 0
 
     unmet = []
@@ -173,7 +173,7 @@ _ALLOWED_ROOT_DOTFILES = {
 def _is_tracked(rel: str) -> bool:
     """git 是否追踪该路径（唯一真值来源 = git 自身）。"""
     r = subprocess.run(["git", "-C", _ROOT, "ls-files", "--error-unmatch", "--", rel],
-                       capture_output=True, text=True, timeout=30)
+                       capture_output=True, text=True, encoding="utf-8", errors="replace", timeout=30)
     return r.returncode == 0
 
 

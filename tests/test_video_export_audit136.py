@@ -116,7 +116,7 @@ def test_selfcheck_cleans_tempdir():
     before = set(glob.glob(pat))
     r = subprocess.run(
         [sys.executable, os.path.join(ROOT, "services", "video_export.py")],
-        capture_output=True, text=True, cwd=ROOT, timeout=180,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=ROOT, timeout=180,
     )
     assert r.returncode == 0, f"自检失败：{(r.stderr or '')[-400:]}"
     after = set(glob.glob(pat))
@@ -132,7 +132,7 @@ def test_selfcheck_does_not_touch_project_outputs(monkeypatch):
     before = set(os.listdir(outputs)) if os.path.isdir(outputs) else set()
     r = subprocess.run(
         [sys.executable, os.path.join(ROOT, "services", "video_export.py")],
-        capture_output=True, text=True, cwd=ROOT, timeout=180,
+        capture_output=True, text=True, encoding="utf-8", errors="replace", cwd=ROOT, timeout=180,
     )
     assert r.returncode == 0
     after = set(os.listdir(outputs)) if os.path.isdir(outputs) else set()

@@ -689,6 +689,8 @@ def render_pdf_first_page(pdf_path: str | _os.PathLike, *, dpi: int | None = Non
 # 走完整流程处理一遍，并打印每一步的结论。这是验证「PDF 功能是否可用」最快的方式。
 # ==============================================================================
 if __name__ == "__main__":
+    from utils.console_encoding import force_utf8_stdio
+    force_utf8_stdio()   # 阶段 331：自检打印 ✅/⇒，GBK 管道下会把「通过」读成退出码 1
     print("=" * 70)
     print("PDF 服务自检")
     print("=" * 70)
