@@ -199,17 +199,16 @@ def _materialize_original(arr: np.ndarray, original_name: str) -> _os.PathLike:
         UPLOAD_DIR 下唯一化的 .png 路径。
     """
     ensure_dirs()
-    try:
-        import cv2  # type: ignore
-    except ImportError as exc:  # noqa: BLE001
-        raise ImportError(
-            "缺少 OpenCV 依赖（cv2）。请先执行：pip install -r requirements.txt"
-        ) from exc
     stem = sanitize_filename(_os.path.splitext(original_name)[0] or "upload", 120)
     target = make_unique_path(UPLOAD_DIR, f"{stem}.png")
-    bgr = cv2.cvtColor(arr, cv2.COLOR_RGB2BGR) if arr.ndim == 3 else arr
-    cv2.imwrite(str(target), bgr)
-    return target
+    # 阶段 335：原来用 `cv2.imwrite` 且不看返回值 ⇒ 中文目录（例如用户名含中文、
+    # 或缓存目录被设到 `D:\图片\`）下它返回 False、**一个字节都不写**，函数却返回路径，
+    # 于是历史记录登记成「成功」而「重新处理」读的那张原图其实不存在。
+    # 改走 core.image_utils.save_image（imencode + open，编码失败会抛 IOError），
+    # 不在此另写一份落盘逻辑。延迟导入也避免了 core ↔ services 的导入环。
+    from core.image_utils import save_image
+    rgb = arr if arr.ndim == 3 else np.dstack([arr, arr, arr])
+    return save_image(str(target), rgb, fmt="PNG")
 
 
 class CacheService:

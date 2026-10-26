@@ -511,8 +511,12 @@ def _save_avif(
     flat = (_flatten_on_background(arr, alpha, config.OUTPUT_FLATTEN_BG_COLOR)
             if (alpha is not None
                 and tuple(alpha.shape[:2]) == tuple(arr.shape[:2])) else arr)
-    cv2.imwrite(png_path, cv2.cvtColor(flat, cv2.COLOR_RGB2BGR))
-    return png_path
+    # 阶段 335：这里原先是 `cv2.imwrite(png_path, ...)` 且**不看返回值** ⇒
+    # 中文路径下 `cv2.imwrite` 返回 False、一个字节都不写，函数却照样 `return png_path`，
+    # 于是上层记「处理结果已保存」、调用方拿到一个**不存在的路径**。
+    # 统一走本文件已有的 `save_image`（`imencode + open(...,'wb')`，编码失败会抛 IOError），
+    # 不再在此另写一份「怎么把数组落到磁盘」的逻辑。
+    return save_image(png_path, flat, fmt="PNG")
 
 
 def _save_avif_via_pillow(

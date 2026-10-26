@@ -845,6 +845,33 @@ FAILED 清单跟在后面，`ci.yml`/`publish.yml` 同形改；配套给**每个
 
 - `334-批量去重键只认文件哈希.md`
 
+### 335 · 产品写图还在用 `cv2.imwrite`：中文路径下静默写空却把路径当成功（2026-10-26）
+
+本机实测：`cv2.imwrite(<含中文的目录>/结果.png, arr)` **返回 False 且一个字节都不写**（不抛错）。
+本仓早就知道（`save_image` 专门用 `imencode + open()` 绕开、`compare_service.py:389` 把「cv2.imwrite 不支持中文路径」
+写成显式规则），**但规则没覆盖整族**，还漏两处产品路径：
+① `core/image_utils._save_avif()` 第三级回退 `cv2.imwrite(...)` 后**无条件** `return png_path`
+⇒ 上层记「处理结果已保存」、调用方拿 `status="success"` 与一个不存在的路径；
+⚠ 诚实说明可达性：本机 `cv2.imencode(".avif")` 确实抛错，但 **Pillow 12.3 原生支持 AVIF ⇒ 分支②成功**，
+所以审计那句「requirements.txt 没有 pillow-avif-plugin ⇒ 必走分支③」**不成立** ⇒ 这是**条件性缺陷**
+（旧 Pillow / 无 libavif 的构建才暴露），测试用 monkeypatch 关掉分支①②逼出分支③。
+② `services/cache_service._materialize_original()` 同样不看返回值 ⇒ **只要缓存目录含中文就每天发生**：
+原图没落盘、历史却登记成功 ⇒「重新处理」读的那张原图不存在（这条比①更值钱）。
+修法：两处都改走已有 `save_image(path, arr, fmt="PNG")`（不另写一份落盘）；`cache_service` 用延迟导入避开
+core ↔ services 导入环，并删掉现在没用的 `import cv2` 检查。契约边界写清：AVIF 不可用**照样降级不崩**，
+新抛的是编码/写盘真失败——那种情况返回路径就是撒谎。
+守卫 6 条（ASCII/中文目录都要写出**能读回来**的图、编码失败抛错、缓存落盘、
+`core/services/ui/utils` 产品代码禁 `cv2.imwrite`，`__main__` 自检除外，目录机械枚举不手抄文件名）。
+**两次自我打脸（本阶段最值得留的）**：① 判据写错——用 `" == " in ast.dump(node.test)` 认
+`if __name__ == "__main__":`，而 `ast.dump` 里没有 `" == "`（是 `ast.Eq`）⇒ `__main__` 子树一个都没排除，
+把 4 处纯自检误报成产品缺陷，差一点为过自己的守卫去改 4 个不该改的文件；
+② 验证通道用错——读回断言用了 `cv2.imread`，它自己就因中文路径返回 None ⇒ 红在产品之外，
+改成用被测系统自己的 `load_image`。**探针要走在用户实际走的通道上。**
+反例闭合：worktree 跑修复前代码 ⇒ **4 红 / 2 绿**（绿的两条是 ASCII 正常行为，留着当锚）；
+修复后 6 全绿，定向回归 77 passed。
+
+- `335-cv2-imwrite在中文路径静默写空.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`
