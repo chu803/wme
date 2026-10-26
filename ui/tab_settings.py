@@ -143,24 +143,33 @@ def on_export_compares(gap: int) -> tuple[str, "str | None"]:
     ]
     if not recs:
         return t("settings.snap.msg.no_compare"), None
+    import tempfile
+
     paths: list[str] = []
     names: list[str] = []
-    for r in recs:
+    # 阶段 342：对比图是**打包用的中间产物**，必须写到临时目录。
+    # 以前 `export_compare(...)` 不传 `out_path` ⇒ 每张都落到 `config.EXPORT_DIR`，
+    # 点一次「导出对比图 ZIP」在 `exports/` 里留下 N 张全尺寸 PNG，而 ZIP 才是交付物；
+    # `scan_orphans` 明确不扫 exports/（用户成品目录）⇒ 孤儿清理也收不回，磁盘只会一直涨。
+    with tempfile.TemporaryDirectory(prefix="wme_cmpzip_") as work:
+        for i, r in enumerate(recs):
+            try:
+                base = sanitize_filename(_os.path.splitext(r.original_name or "image")[0], 120)
+                name = f"{base}__{r.id}.png"
+                cmp = export_compare(r.original_path, r.result_path, gap=int(gap), label=True,
+                                     out_path=_os.path.join(work, f"{i:04d}_{name}"))
+                paths.append(cmp)
+                names.append(name)
+            except Exception as exc:  # noqa: BLE001
+                log.warning("生成对比图失败 %s：%s", r.original_name, exc)
+        if not paths:
+            return t("settings.snap.msg.compare_all_fail"), None
         try:
-            cmp = export_compare(r.original_path, r.result_path, gap=int(gap), label=True)
-            paths.append(cmp)
-            base = sanitize_filename(_os.path.splitext(r.original_name or "image")[0], 120)
-            names.append(f"{base}__{r.id}.png")
+            zip_path = export_paths_as_zip(paths, names=names)
+            return t("settings.snap.msg.compare_zip_ok", n=len(paths), path=zip_path), zip_path
         except Exception as exc:  # noqa: BLE001
-            log.warning("生成对比图失败 %s：%s", r.original_name, exc)
-    if not paths:
-        return t("settings.snap.msg.compare_all_fail"), None
-    try:
-        zip_path = export_paths_as_zip(paths, names=names)
-        return t("settings.snap.msg.compare_zip_ok", n=len(paths), path=zip_path), zip_path
-    except Exception as exc:  # noqa: BLE001
-        log.exception("打包对比图失败")
-        return t("settings.snap.msg.zip_fail", exc=format_exception_for_ui(exc)), None
+            log.exception("打包对比图失败")
+            return t("settings.snap.msg.zip_fail", exc=format_exception_for_ui(exc)), None
 
 
 def on_clear_cache() -> tuple[str, "str | None"]:

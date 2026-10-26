@@ -52,6 +52,23 @@
 
 ## [Unreleased]
 
+### 修复（阶段 342 · 「导出 ZIP」把中间产物留在 exports/，谁都收不回）
+- 两条同形路径：`export_history_as_zip(fmt=...)` 逐条 `reencode_image(..., out_path=None)`、
+  `ui/tab_settings.on_export_compares` 逐条 `export_compare(...)` 不传 `out_path`
+  ⇒ 全尺寸散图落到默认目录 `config.EXPORT_DIR`（唯一化命名、永不覆盖），打完 ZIP 没人删
+  ⇒ 用户点一次导出就在 `exports/` 留下 N 个**永久**文件。
+- 清理功能结构上救不了它：`scan_orphans` 文档明写不扫 `exports/`（用户成品目录，`cache_service.py:855`），
+  那条排除本身是对的 ⇒ 唯一能修的位置是产生者自己。
+- 为什么藏这么久：`export_service.py:484`（阶段 147）注释精确知道「中间产物走默认目录」，
+  但当年的解法是把 `config.EXPORT_DIR` 临时改指向临时目录 —— **绕开的是自检，用户路径一直在污染**；
+  且**注释写着"临时产物"不等于有人负责删**（经验 169 同族）。
+- 修法：谁产生谁清理、写在函数内部 —— `with tempfile.TemporaryDirectory()` + 逐条显式 `out_path`，
+  **ZIP 必须在 with 块内写**（块一退出目录就没了，写在外面就是空包）；交付物仍只有 ZIP 落在 `exports/`。
+- 守卫 `tests/test_export_zip_orphans342.py`（3 例：转 WEBP 后只剩 ZIP / 不转格式控制组 /
+  对比图 ZIP 后只剩 ZIP），并同时断言 ZIP 条目数与后缀正确。HEAD 反例 **2 红 / 1 绿**。
+- 另一半 F5（导出帧按钮失败零反馈、`run_video` 写 None 清掉上次导出）**未修**：需要新增状态文案 +
+  输出组件，属 UI 契约变更，留在任务 #31 下半场。
+
 ### 修复（阶段 341 · 一页渲染失败就把整份 PDF 中止）
 - 逐页循环里 `if not PDF_KEEP_FAILED_PAGE: raise RuntimeError(...)` 与外层 `except RuntimeError: raise`
   配对，但那层 `try` 包住**整段逐页处理**：`_encode_page_image` 自己抛的

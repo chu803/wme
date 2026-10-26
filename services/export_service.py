@@ -480,25 +480,40 @@ def export_history_as_zip(
 
     if fmt:
         # 按目标格式逐个重新编码，收集临时产物再打包。
+        # 阶段 342：中间产物**必须写到临时目录**，不能走默认 `EXPORT_DIR`。
+        # 以前 `out_path=None` ⇒ `reencode_image` 把每条记录都落到 `exports/` 里
+        # （唯一化命名，永不覆盖），打完 ZIP 后**没人删它们** ⇒ 用户点一次「导出 ZIP
+        # （转 WEBP）」就在 `exports/` 里多出 N 张全尺寸散图；而 `scan_orphans` 明确
+        # **不扫 exports/**（那是用户成品目录，见 `cache_service.py:855`）⇒ 孤儿清理也收不回。
+        # 阶段 147 的自检早就知道这件事（当时的做法是把 `config.EXPORT_DIR` 临时改掉），
+        # 但那只是让**自检**不污染，真实用户路径一直在污染。
+        import tempfile
+
         encoded: list[str] = []
         arc_names: list[str] = []
         out_fmt = fmt.upper()
-        for r in records:
-            try:
-                new_path = reencode_image(
-                    r.result_path, fmt=out_fmt, quality=quality,
-                    out_path=None, keep_alpha=True,
-                )
-                encoded.append(new_path)
-                base = sanitize_filename(_os.path.splitext(r.original_name or "image")[0], 120)
-                arc_names.append(f"{base}__{r.id}.{out_fmt.lower()}")
-            except Exception as exc:  # noqa: BLE001 - 单条失败不中断整批
-                log.warning("历史导出重编码失败，改用原文件：%s（%s）", r.original_name, exc)
-                encoded.append(r.result_path)
-                base = sanitize_filename(_os.path.splitext(r.original_name or "image")[0], 120)
-                ext = _os.path.splitext(r.result_path)[1].lstrip(".") or "png"
-                arc_names.append(f"{base}__{r.id}.{ext}")
-        return export_paths_as_zip(encoded, names=arc_names, out_zip=out_zip)
+        with tempfile.TemporaryDirectory(prefix="wme_zip_") as _work:
+            for _i, r in enumerate(records):
+                try:
+                    _stem = _os.path.splitext(_os.path.basename(str(r.result_path)))[0] or "image"
+                    _tmp_out = _os.path.join(
+                        _work, f"{_i:04d}_{sanitize_filename(_stem, 80)}.{out_fmt.lower()}")
+                    new_path = reencode_image(
+                        r.result_path, fmt=out_fmt, quality=quality,
+                        out_path=_tmp_out, keep_alpha=True,
+                    )
+                    encoded.append(new_path)
+                    base = sanitize_filename(_os.path.splitext(r.original_name or "image")[0], 120)
+                    arc_names.append(f"{base}__{r.id}.{out_fmt.lower()}")
+                except Exception as exc:  # noqa: BLE001 - 单条失败不中断整批
+                    log.warning("历史导出重编码失败，改用原文件：%s（%s）", r.original_name, exc)
+                    encoded.append(r.result_path)
+                    base = sanitize_filename(_os.path.splitext(r.original_name or "image")[0], 120)
+                    ext = _os.path.splitext(r.result_path)[1].lstrip(".") or "png"
+                    arc_names.append(f"{base}__{r.id}.{ext}")
+            # ZIP 必须在 with 块**内**写：`export_paths_as_zip` 要读这些临时文件，
+            # 块一退出目录就被删，读不到就是空包/报错。
+            return export_paths_as_zip(encoded, names=arc_names, out_zip=out_zip)
     else:
         paths = [r.result_path for r in records]
         names = [
