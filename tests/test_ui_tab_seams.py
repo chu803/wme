@@ -262,12 +262,21 @@ def test_preset_choice_label_falls_back_when_key_missing():
 
 
 def test_media_export_helpers_reject_missing_files(tmp_path):
-    """导出前置校验：路径缺失/不存在时返回 None，绝不抛异常。"""
-    assert tm.export_sheet_file(None) is None
-    assert tm.export_sheet_file(str(tmp_path / "nope.mp4")) is None
-    assert tm.export_frame_file(None, None, 0, "concat") is None
-    assert tm.export_frame_file(str(tmp_path / "nope.mp4"),
-                                str(tmp_path / "nope2.mp4"), 0, "concat") is None
+    """导出前置校验：路径缺失/不存在时**不抛异常**，并且要说得出为什么没导出（阶段 343）。
+
+    这条以前断言的是 `is None`（单值返回）⇒ 343 把契约改成 `(文件, 日志)` 二元组后
+    它反向钉住了「失败只 return None、界面零反馈」的旧形态（同 #318/#81：
+    改行为要同步写死旧行为的夹具，而不是给实现加兼容分支）。
+    """
+    for path in (None, str(tmp_path / "nope.mp4")):
+        got, msg = tm.export_sheet_file(path)
+        assert got is None, path
+        assert msg, f"缺文件时也必须给一句真话（{path!r}）"
+
+    for pair in ((None, None), (str(tmp_path / "nope.mp4"), str(tmp_path / "nope2.mp4"))):
+        got, msg = tm.export_frame_file(pair[0], pair[1], 0, "concat")
+        assert got is None, pair
+        assert msg, f"缺文件时也必须给一句真话（{pair!r}）"
 
 
 def test_on_frame_gallery_select_without_index_or_video(monkeypatch, tmp_path):
