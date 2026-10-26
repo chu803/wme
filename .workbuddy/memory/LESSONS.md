@@ -1470,3 +1470,22 @@
      **不是**给实现加兼容分支去迁就旧夹具（LESSONS #81）。
 - **同族**：#81（改红线会连带打破写死旧值的夹具，必须全量跑）、#315（夹具形态 ≠ 真实形态）、
   #317（消费点要 grep 数出来）。
+
+## #319 · 宽口子 `except Exception` 在「拼装界面文案」附近 = 每次契约变更都变成一次静默少做：337 连带损伤
+
+- **现场**：337 把 `QualityReport.detail`（中文句子）换成键之后，`tests/test_tab_batch_branches_audit.py`
+  的替身仍带旧字段 ⇒ `detail_text()` 抛 `AttributeError`，而调用点外面是
+  `except Exception as exc: log.warning("质量评估失败（不影响结果）：%s", exc)`
+  ⇒ **用例全绿、批次照跑，只有界面悄悄少一行诊断**。在 HEAD 上用 worktree 取到了那句 warning 原文：
+  `质量评估失败（不影响结果）：'types.SimpleNamespace' object has no attribute 'detail_base_key'`。
+- **为什么这是本族里最坏的一种**：崩掉会被看见、红会被追；而「不影响结果」这句话**主动把证据降级成日志**。
+  同一形状此前只在**数据/环境**语境下才合理（原图损坏、依赖缺失）——把两类混在一个 `Exception` 里，
+  等于让编程错误搭便车。
+- **修法（不是取消降级）**：把降级范围收窄到数据/环境类，编程错误一律冒出来：
+  `except (AttributeError, NameError, TypeError): raise` 放在宽口子前面，
+  并留一条**旧形状的替身必须炸**的用例（`test_coding_error_in_quality_render_is_not_swallowed`；
+  在 HEAD 上必红、修复后绿 ⇒ 反例闭合）。
+- **配套纪律**（承 #318）：改字段/签名后，除了 grep 消费者，还要**检查每个替身是否还在描述旧形状**——
+  替身不会因为真类变化而编译失败，它只会带着旧字段安静地跑下去。
+- **同族**：#305（聚合里的排除项）、#304/#310（哑巴守卫、下游看不见）、#317（同一件事三种做法）、
+  #318（消费者要 grep 全，含测试替身）。

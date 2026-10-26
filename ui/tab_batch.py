@@ -634,6 +634,13 @@ def run_batch(
                             t("batch.log_quality", name=name, score=q.score,
                               level=level_text(q.level), detail=detail_text(q))
                         )
+                    except (AttributeError, NameError, TypeError):
+                        # 阶段 337：**编程错误不许当「评估失败」吞掉**。
+                        # 当天实测：改完 `QualityReport` 字段后，测试替身缺新字段 ⇒
+                        # AttributeError 被下面那句 `log.warning` 吞成「质量评估失败（不影响结果）」，
+                        # 用例照样全绿，而真实界面少一行诊断——静默降级正是最难发现的那种坏。
+                        # 只有**数据/环境类**异常才允许降级（原图损坏、评估依赖缺失等）。
+                        raise
                     except Exception as exc:  # noqa: BLE001
                         log.warning("质量评估失败（不影响结果）：%s", exc)
                 # 「结果对比视图」：开启时用内存拼接的 Before|After 数组作为缩略图。

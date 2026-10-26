@@ -693,3 +693,12 @@
 ## 合规声明
 
 本工具**仅限**用于去除使用者本人拥有著作权的 AI 生成内容上的可见水印。详见 `LICENSE`。
+- **连带损伤与「不许静默降级」**（同属 337）：完整入口抓到 4 条红，其中三种消费者需要处理——
+  `test_ui_tab_seams` 替身缺 `summary()`（336 新依赖，同步夹具）、`test_services_audit` 两条写死已删除的
+  `rep.detail`（改为断言「键 + 渲染句子」，**87 那条语义一个字没放宽**）、
+  以及最坏的一种：`test_tab_batch_branches_audit` 的替身仍带旧字段 ⇒ `detail_text()` 抛 AttributeError，
+  却被调用点外的 `except Exception: log.warning("质量评估失败（不影响结果）")` **吃掉**
+  ⇒ 用例全绿、批次照跑，只有界面悄悄少一行诊断（HEAD 上取到该 warning 原文）。
+  修法不是取消降级，而是**把降级范围收窄到数据/环境类**：`except (AttributeError, NameError, TypeError): raise`
+  置于宽口子之前，并留 `test_coding_error_in_quality_render_is_not_swallowed`（旧形状替身必须炸；
+  HEAD 必红、修复后绿）。判据落 LESSONS #319。

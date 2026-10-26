@@ -186,8 +186,16 @@ def _done(name, path, result):
                            error="", result=result)
 
 
-def _q(level, score, detail="d"):
-    return SimpleNamespace(level=level, score=score, detail=detail)
+def _q(level, score, detail_key="quality.detail_good"):
+    """质量报告替身：字段必须与 `services.quality_service.QualityReport` 同源（阶段 337）。
+
+    旧替身带的是 `detail="d"`（一个中文句子字段），而真类已改成「键 + 数字」。
+    替身与真类不同源时，`ui/tab_batch` 里的 `detail_text()` 会抛 AttributeError，
+    而那一行外层原本写着宽口子 `except Exception: log.warning(...)` ⇒ 测试全绿、真实界面少一行。
+    337 已把那处改为「编程错误一律上抛」，替身也必须跟着同步。
+    """
+    return SimpleNamespace(level=level, score=score, detail_key=detail_key,
+                           detail_base_key="", review_floor=0)
 
 
 def _run(tasks, *, evaluate=False, compare=False, auto_preset=False,
@@ -217,6 +225,24 @@ def _run(tasks, *, evaluate=False, compare=False, auto_preset=False,
         return yields[-1]
     finally:
         monkey.undo()
+
+
+def test_coding_error_in_quality_render_is_not_swallowed(tmp_path):
+    """宽口子只该吞「数据/环境」类异常；**缺字段这种编程错误必须冒出来**（阶段 337）。
+
+    现场：337 把 `QualityReport.detail` 换成键之后，替身还带旧字段 ⇒ `detail_text()` 抛
+    AttributeError，而调用点外面原本写着 `except Exception: log.warning("质量评估失败…")`
+    ⇒ 用例全绿、批次照跑，只有界面**悄悄少了一行诊断**。这类静默降级比崩掉更难发现，
+    所以这里用「旧形状的替身」把那条路钉住：必须炸，不许被吞。
+    """
+    def tasks(img, res):
+        return [_done("a.png", img, {"result_path": res, "status": "ok",
+                                     "stats": None, "recommendation": None,
+                                     "recommended_preset": None})]
+
+    bad = SimpleNamespace(level="good", score=88, detail="337 后已不存在的旧字段")
+    with pytest.raises(AttributeError):
+        _run(tasks, evaluate=True, quality=bad, tmp_path=tmp_path, tag="loud")
 
 
 def test_on_update_compare_thumbnail_is_array(tmp_path):

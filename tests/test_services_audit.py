@@ -37,6 +37,7 @@ import config
 from services.quality_service import (
     _gaussian_window,
     _ssim_channel,
+    detail_text,
     evaluate_quality_arrays,
 )
 from services.queue_worker import BatchQueue, TaskStatus
@@ -141,6 +142,8 @@ def test_review_level_has_consistent_detail(monkeypatch):
 
     修复前：level=review 但 detail 仍为 warn 措辞「可能修复过头」——
     用户按 review 去查「水印没修掉」，看到的却是相反的「修过头」。
+    阶段 337 之后诊断不再是句子而是键 ⇒ 同一条语义改为断言
+    「键被换成复核键 + 原诊断键被保住 + 渲染出的中文句子两者都在」。
     """
     monkeypatch.setattr(config, "QUALITY_SCORE_REVIEW", 100.0)  # 任何分都会跌破
     rng = np.random.default_rng(0)
@@ -149,19 +152,21 @@ def test_review_level_has_consistent_detail(monkeypatch):
     rep = evaluate_quality_arrays(o, junk)
 
     assert rep.level == "review", f"期望 review，实际 {rep.level}（score={rep.score}）"
-    assert "复核" in rep.detail, (
-        f"level 已被改写为 review，detail 却未同步：{rep.detail!r}"
-    )
+    assert rep.detail_key == "quality.detail_review_low_score", rep.detail_key
+    assert rep.detail_base_key, f"复核改写时原诊断键必须保住：{rep.detail_base_key!r}"
+    text = detail_text(rep)
+    assert "复核" in text, f"渲染出的句子未同步复核措辞：{text!r}"
 
 
 def test_good_level_detail_untouched():
-    """回归护栏：正常 good 场景的 detail 不应被误加「复核」字样。"""
+    """回归护栏：正常 good 场景不应被误加「复核」字样（337 后按渲染文本断言）。"""
     o = np.full((64, 64, 3), 128, dtype=np.uint8)
     f = o.copy()
     f[10:30, 10:30] = 200            # 一小块被修掉的水印
     rep = evaluate_quality_arrays(o, f)
     assert rep.level == "good", f"期望 good，实际 {rep.level} cr={rep.changed_ratio}"
-    assert "复核" not in rep.detail
+    assert rep.detail_base_key == "", f"good 场景不该带复核底稿：{rep.detail_base_key!r}"
+    assert "复核" not in detail_text(rep)
 
 
 # ==============================================================================

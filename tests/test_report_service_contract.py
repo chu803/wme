@@ -31,7 +31,8 @@ from services import report_service as rs  # noqa: E402
 
 def _q(level: str, score: float):
     """轻量质量报告替身（只需 .score / .level）。"""
-    return SimpleNamespace(score=score, level=level, detail="d")
+    return SimpleNamespace(score=score, level=level, detail_key="quality.detail_good",
+                           detail_base_key="", review_floor=0)
 
 
 def _entry(quality, name="a.png"):
