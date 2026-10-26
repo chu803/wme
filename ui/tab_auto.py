@@ -406,7 +406,15 @@ def process_auto_repair(
     if postprocess_eval:
         try:
             imp = evaluate_improvement(image, mask, raw_result, result)
-            eval_text = f"\n· 后处理提升：{imp['detail']}"
+            # 阶段 337：此前是 `f"\n· 后处理提升：{imp['detail']}"`——UI 层硬编码中文，
+            # 且 `detail` 又是服务层产的中文句子 ⇒ 英文界面整行都是中文。
+            # 服务层已返回结构化数字（score_before/score_after/delta），文案归 i18n。
+            _delta = imp["delta"]
+            eval_text = t(
+                "auto.msg.postprocess_gain",
+                before=imp["score_before"], after=imp["score_after"],
+                delta=f"{'+' if _delta >= 0 else ''}{_delta}",
+            )
         except Exception as exc:  # noqa: BLE001
             log.warning("后处理质量对比失败：%s", exc)
             eval_text = ""

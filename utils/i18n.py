@@ -403,6 +403,9 @@ TRANSLATIONS: dict = {
                 "auto_fallback": "\nℹ️ 编辑框为空，已按默认预设自动检测兜底。",
                 "refine_stats": "\n· 精修统计：检测命中 {det:,} 像素 / 编辑框 {user:,} 像素 / 编辑框比检测多 {added:,} 像素（含预填层边缘过渡，通常会比你实际补画的稍多）。",
                 "upscaled": "\n· 已启用真·超分：输出已放大至 {factor}×（分辨率提升，可能已回退轻量超分）。",
+                # 阶段 337：此前是 `f"\n· 后处理提升：{imp['detail']}"`（UI 层硬编码中文，
+                # 且 detail 又是服务层产的中文句子）⇒ 英文界面整行都是中文。
+                "postprocess_gain": "\n· 后处理提升：质量分 {before} → {after}（{delta}）",
             },
         },
         "mask_edit": {
@@ -861,6 +864,15 @@ TRANSLATIONS: dict = {
             "log_pdf_img_fail": "PDF 插入图片失败：{exc}",
             "log_pdf_fallback": "未安装 PyMuPDF，PDF 报告回退为 HTML。",
         },
+        # 阶段 337：质量诊断文案**归 UI 所有**。此前 services/quality_service 直接产中文句子
+        # （`detail`）交给界面渲染 ⇒ 英文界面出现硬编码中文。服务层现在只回**键 + 数字**。
+        "quality": {
+            "detail_good": "修复区域与原图衔接良好。",
+            "detail_warn_overshoot": "改动区域过大且结构变化明显，可能修复过头（误伤原图）。",
+            "detail_warn_structure": "与原图结构差异偏大，请留意修复区域边缘是否自然。",
+            "detail_review_few_changed": "变化像素过少，水印可能未被修掉，建议复核原图。",
+            "detail_review_low_score": "综合质量分 {score} 低于复核线 {floor}，建议人工复核；{base}",
+        },
     },
     "en-US": {
         "common": {
@@ -1211,6 +1223,7 @@ TRANSLATIONS: dict = {
                 "auto_fallback": "\nℹ️ Editor is empty; ran auto-detection with default preset as fallback.",
                 "refine_stats": "\n· Refine stats: detection {det:,} px / editor {user:,} px / editor exceeds detection by {added:,} px (includes the prefill layer's anti-aliased edge — usually a bit more than you actually painted).",
                 "upscaled": "\n· Real super-res enabled: output upscaled to {factor}× (resolution boosted, lightweight SR may have been used as fallback).",
+                "postprocess_gain": "\n· Post-processing gain: quality {before} → {after} ({delta})",
             },
         },
         "mask_edit": {
@@ -1668,6 +1681,13 @@ TRANSLATIONS: dict = {
             "log_quality_fail": "Report quality evaluation failed, skipping item: {exc}",
             "log_pdf_img_fail": "PDF image insertion failed: {exc}",
             "log_pdf_fallback": "PyMuPDF not installed; PDF report fell back to HTML.",
+        },
+        "quality": {
+            "detail_good": "The repaired area blends well with the original.",
+            "detail_warn_overshoot": "Too much was changed with clear structural differences; the repair may have overdone it (damaging the original).",
+            "detail_warn_structure": "Structure differs noticeably from the original; check whether the repaired edges look natural.",
+            "detail_review_few_changed": "Very few pixels changed; the watermark may still be there. Please re-check the original.",
+            "detail_review_low_score": "Overall quality {score} is below the review line {floor}; please review manually. {base}",
         },
     },
 }

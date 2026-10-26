@@ -96,7 +96,8 @@ def _base_entry(quality):
 @pytest.mark.parametrize("level", ["good", "warn", "review"])
 def test_en_card_html_quality_levels_no_cjk(level):
     set_language("en-US")
-    e = _base_entry(QualityReport(ssim=0.9, changed_ratio=0.1, score=70, level=level, detail="d"))
+    e = _base_entry(QualityReport(ssim=0.9, changed_ratio=0.1, score=70, level=level,
+                                  detail_key="quality.detail_good"))
     card = rs._card_html(e)
     assert not _has_cjk(card), f"en-US 质量卡（level={level}）仍含中文：{card!r}"
 

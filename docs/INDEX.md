@@ -889,6 +889,29 @@ core ↔ services 导入环，并删掉现在没用的 `import cv2` 检查。契
 
 - `336-取消按钮的假陈述.md`
 
+### 337 · 质量诊断文案的所有权：服务层产键、UI 产句子；泄漏是**双向**的（2026-10-26）
+
+修复前实跑那行（本机取证）：`en-US ⇒ 🔎 Quality: pic.png score 75 (warn) — 改动区域过大…可能修复过头（误伤原图）。`
+⇒ **英文界面拿到中文诊断**；`zh-CN ⇒ 🔎 质量评估：pic.png 分75（warn）— …` ⇒ **中文界面拿到英文原值 `warn`**。
+同一行两种泄漏并存；审计只报了前一半，后一半（反向泄漏）是读消费点时自己看出来的——`level` 从未被翻译，
+而 `report_service` 早就有正确写法 `t(f"report.quality_{level}")` ⇒ **同一件事在仓里有三种做法**。
+消费点靠 grep 数出来（审计漏了 `cli.py:539/769`）⇒ 再次印证「子代理结论没错但不完整，一律当假设」。
+修法：`QualityReport` 删 `detail`（硬编码中文句子）换成 `detail_key/detail_base_key/review_floor`
+（`detail_base_key` 是为保住**阶段 87** 的语义：跌破复核线时要同时说「低于复核线」与「原诊断」，
+否则 level=review 配「修过头」= 方向相反的报告）；渲染收敛成 `level_text()`/`detail_text()` 两个唯一实现，
+批量页与 CLI 共用；`ui/tab_auto` 改用新键 `auto.msg.postprocess_gain`，数据取服务层**已返回**的结构化字段；
+i18n 新增 `quality.detail_*` 5 键 + 该键，中英对称（`validate_i18n_parity` 既有守卫）。
+**CLI 边界如实说明**：`cli.py` 完全没有 i18n 层（不 import `t`、无 `--lang`），其自身中文标签本轮**没动**
+（那是「CLI 要不要国际化」的产品决策）；本次只让它不再把英文原值与中文句子混着打。
+判据用 LESSONS #72 那一条：**语言切换 + CJK 码点扫描**（`tests/test_quality_i18n337.py` 8 例，
+断言的是用户实际看到的那一行，不是中间字段；含「报告对象里不许再有中文字符串」与「zh 侧不许出现英文原值」）。
+反例闭合：新测试在修复前 HEAD 上**收集期即 ImportError**，故另用一次性探针在 worktree 里取「修复前」实测输出（用完即删）。
+定向回归（quality/report_service/cli_audit114/services_audit88/i18n_audit137/tab_batch 助手/334 批量键）rc=0。
+**没做整族 AST 守卫**：`services/`、`ui/` 里有大量日志中文，静态判据要么误报一片、要么要排除 `log.*`
+（排除规则本身又是手抄清单）⇒ 改用行为级判据更准；将来若做，正确切入口是「哪些字符串会流到界面」的数据流。
+
+- `337-质量诊断文案所有权与双向泄漏.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`

@@ -54,7 +54,8 @@ def _entry(name: str, quality) -> dict:
 
 
 def _q(score: int, level: str) -> QualityReport:
-    return QualityReport(ssim=0.9, changed_ratio=0.1, score=score, level=level, detail="d")
+    return QualityReport(ssim=0.9, changed_ratio=0.1, score=score, level=level,
+                         detail_key="quality.detail_good")
 
 
 def _html_summary(path: str) -> str:

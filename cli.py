@@ -69,7 +69,12 @@ if _ROOT not in _sys.path:
 
 import config
 from services.auto_pipeline import process_file
-from services.quality_service import evaluate_quality, QualityReport
+from services.quality_service import (
+    QualityReport,
+    detail_text,
+    evaluate_quality,
+    level_text,
+)
 from server import start_server
 
 # ------------------------------------------------------------------------------
@@ -531,7 +536,7 @@ def _print_result(rd: dict, args: argparse.Namespace,
         if args.evaluate and kind == "image" and rd.get("out_path"):
             q = evaluate_quality(rd["input_path"], rd["out_path"])
             quality_reports.append((name, q))
-            line += f"  [质量分 {q.score} · {q.level}]"
+            line += f"  [质量分 {q.score} · {level_text(q.level)}]"
         print(line)
         if rd.get("note"):
             print(f"      {rd['note']}")
@@ -761,7 +766,7 @@ def main(argv: list[str] | None = None) -> int:
         if flagged:
             print("需关注的结果：")
             for n, q in flagged:
-                print(f"  🔍 {n}：分 {q.score} · {q.level} —— {q.detail}")
+                print(f"  🔍 {n}：分 {q.score} · {level_text(q.level)} —— {detail_text(q)}")
     print("完成。")
     rc = _batch_exit_code(summary)
     if rc:

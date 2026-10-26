@@ -58,12 +58,43 @@ _C2 = (0.03 * 255) ** 2
 
 @dataclass
 class QualityReport:
-    """单张结果的质量评估报告。"""
+    """单张结果的质量评估报告。
+
+    阶段 337：**服务层不再产句子，只产「键 + 数字」**。此前 `detail` 是一句硬编码中文，
+    经 `ui/tab_batch` 的 `t("batch.log_quality", detail=q.detail)` 渲染 ⇒ 英文界面里
+    模板是英文、内容是中文（i18n 泄漏，LESSONS #72/#74/#114 同族）。`cli.py:764`
+    还把英文原值 `level`（good/warn/review）直接打给用户，是同一处的反向泄漏。
+    文案所有权交给 UI（`utils/i18n.py` 的 `quality.*` 与 `report.quality_*`）。
+    """
     ssim: float               # 结构相似度（0~1，越高越像原图结构）
     changed_ratio: float      # 变化像素比例（0~1）
     score: int                # 综合质量分（0~100，越高越好）
     level: str                # "good" / "warn" / "review"
-    detail: str               # 给用户的自然语言说明
+    detail_key: str           # i18n 键（诊断文案）
+    detail_base_key: str = "" # 强制复核时保留的「原诊断」键（供模板 {base} 占位）
+    review_floor: int = 0     # 复核线（供模板 {floor} 占位）
+
+
+def level_text(level: str) -> str:
+    """把 `good/warn/review` 翻成当前语言的级别词（**唯一实现**）。
+
+    阶段 337：`ui/tab_batch` 与 `cli.py` 此前把英文原值直接打给用户（中文界面里冒出 "warn"），
+    而 `services/report_service` 早就有 `t(f"report.quality_{level}")` 的正确写法 ⇒
+    同一件事三处三种做法。收敛到这一个函数，report_service 保持自己的等价写法不动
+    （它渲染进 HTML/PDF，语义相同、键相同）。
+    """
+    from utils.i18n import t
+    return t(f"report.quality_{level}")
+
+
+def detail_text(report: "QualityReport") -> str:
+    """把诊断键渲染成当前语言的句子（含强制复核时的 `{base}` 组合）。
+
+    **唯一实现**：批量页日志与 CLI 都用它，避免「一处翻译一处忘了」。
+    """
+    from utils.i18n import t
+    base = t(report.detail_base_key) if report.detail_base_key else ""
+    return t(report.detail_key, score=report.score, floor=report.review_floor, base=base)
 
 
 def _gaussian_window(size: int = 11, sigma: float = 1.5) -> np.ndarray:
@@ -238,24 +269,25 @@ def evaluate_quality_arrays(
     cr = _changed_ratio(o_rgb, r_rgb)
 
     # ---------- 综合判定 ----------
+    # 阶段 337：判定结果只给「级别 + 键 + 数字」，**不给句子**（文案归 UI/i18n）。
     if cr < config.QUALITY_REVIEW_CHANGED_MIN:
         # 几乎没改动 → 水印大概率还在。
         level = "review"
         score = round(45 + 35 * ssim)
-        detail = "变化像素过少，水印可能未被修掉，建议复核原图。"
+        detail_key = "quality.detail_review_few_changed"
     elif cr > config.QUALITY_WARN_CHANGED_MAX and ssim < config.QUALITY_SSIM_WARN:
         # 改动巨大且结构差异明显 → 过处理。
         level = "warn"
         score = round(55 + 35 * ssim)
-        detail = "改动区域过大且结构变化明显，可能修复过头（误伤原图）。"
+        detail_key = "quality.detail_warn_overshoot"
     elif ssim < config.QUALITY_SSIM_WARN:
         level = "warn"
         score = round(62 + 33 * ssim)
-        detail = "与原图结构差异偏大，请留意修复区域边缘是否自然。"
+        detail_key = "quality.detail_warn_structure"
     else:
         level = "good"
         score = round(72 + 28 * ssim)
-        detail = "修复区域与原图衔接良好。"
+        detail_key = "quality.detail_good"
 
     score = max(0, min(100, int(score)))
     # 分数跌破硬性阈值也强制标记为需复核。
@@ -264,19 +296,24 @@ def evaluate_quality_arrays(
     #   自相矛盾报告（实测：level=review + detail="改动区域过大…可能修复过头"）。
     #   用户按 review 去查「水印没修掉」，看到的却是「修过头」——两种诊断方向相反。
     #   修法：改写 level 时同步在 detail 开头声明复核原因，并保留原有诊断信息。
+    # 阶段 337 保持同一语义，只是把「拼句子」换成「换键 + 保留原键」：
+    #   `detail_base_key` 让 UI 能把原诊断塞进 `{base}` 占位，方向不一致的老毛病不会回来。
+    detail_base_key = ""
+    review_floor = 0
     if score < config.QUALITY_SCORE_REVIEW:
         level = "review"
-        detail = (
-            f"综合质量分 {score} 低于复核线 {int(config.QUALITY_SCORE_REVIEW)}，"
-            f"建议人工复核；{detail}"
-        )
+        detail_base_key = detail_key
+        detail_key = "quality.detail_review_low_score"
+        review_floor = int(config.QUALITY_SCORE_REVIEW)
 
     return QualityReport(
         ssim=round(ssim, 4),
         changed_ratio=round(cr, 4),
         score=score,
         level=level,
-        detail=detail,
+        detail_key=detail_key,
+        detail_base_key=detail_base_key,
+        review_floor=review_floor,
     )
 
 

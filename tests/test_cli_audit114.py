@@ -169,7 +169,7 @@ def test_print_result_evaluate_only_images(tmp_path, monkeypatch):
     def _fake_eval(src, out):
         calls.append((src, out))
         return QualityReport(ssim=0.99, changed_ratio=0.01, score=90,
-                             level="good", detail="ok")
+                             level="good", detail_key="quality.detail_good")
 
     monkeypatch.setattr(cli, "evaluate_quality", _fake_eval)
     # 图片：触发评估、进 quality_reports。

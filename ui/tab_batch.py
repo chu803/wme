@@ -49,7 +49,7 @@ from core.preset_recommender import recommend_preset
 from services.cache_service import CacheService, compute_file_hash, get_cache
 from services.file_service import load_for_display
 from services.queue_worker import BatchQueue, Task, TaskStatus
-from services.quality_service import evaluate_quality
+from services.quality_service import detail_text, evaluate_quality, level_text
 from services.export_service import make_compare_array
 from services.report_service import ReportSource, export_report
 from services.validators import validate_image_file
@@ -629,8 +629,10 @@ def run_batch(
                         caption = t("batch.caption_quality", name=name,
                                     score=q.score, icon=icon)
                         log_lines.append(
+                            # 阶段 337：级别与诊断都走 t()（此前把英文原值 `q.level` 与
+                            # 服务层产的中文句子 `q.detail` 直接塞进翻译模板 ⇒ 中英界面各漏一半）。
                             t("batch.log_quality", name=name, score=q.score,
-                              level=q.level, detail=q.detail)
+                              level=level_text(q.level), detail=detail_text(q))
                         )
                     except Exception as exc:  # noqa: BLE001
                         log.warning("质量评估失败（不影响结果）：%s", exc)
