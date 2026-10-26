@@ -52,6 +52,24 @@
 
 ## [Unreleased]
 
+### 修复（阶段 340 · 画廊点「第 240 帧」，对比面板渲染的是第 4 帧）
+- 两个 `index` 混用：画廊标题是 `extract_sampled_frames(..., return_indices=True)` 的**真实帧号**，
+  而 `gr.Gallery` 的 `evt.index` 是**位置**（0..5）。处理器把位置直接写进滑块
+  （滑块范围却是 `config.VIDEO_MAX_FRAMES`）并交给 `run_video_compare`（docstring 明写「抽帧序号」）
+  ⇒ 点「第 240 帧」渲染第 4 帧，而 `media.video.browse_info` 承诺「点击任一帧即可加载到下方对比面板」
+  ⇒ **看起来成功、实际给的是另一帧**。
+- HEAD 行为取证（桩捕获入参直接调旧处理器）：`点第 5 格（标题 240）实际渲染 frame_idx = 4`。
+  新用例在 HEAD 上 5 条全红，但部分是「新函数尚不存在」所致 ⇒ **以行为取证为反例主体**，不拿 ImportError 冒充证据。
+- 修法：`_VIDEO_BROWSE_INDICES` 按结果视频缓存「位置→帧号」（画廊组装时顺手记下）；
+  `_browse_frame_indices` 未命中时用**同一个** `extract_sampled_frames` 重抽（不另写抽样公式，避免第二套真值来源）；
+  纯函数 `gallery_position_to_frame`（越界/无表/非整数 ⇒ None）；处理器用映射后的帧号，
+  **拿不到映射就明说「没选中」**，不许渲染另一帧冒充。缓存的理由：抽 6 帧需解码 6 张图，点选是即时交互。
+- 守卫 `tests/test_video_browse_frame340.py`（5 例：纯映射 + 处理器用映射后帧号 + 滑块停在真实帧号 +
+  无映射不渲染 + 越界安全）。既有 `test_tab_media_audit112` 只钉 arity（3 入 2 出）修后仍绿
+  ⇒ 抓不到这条是因为**形状对了但语义错了**（#74/#167）。
+- 又记一笔替身纪律：`tab_media._normalize_file_value` 返回**字符串**（`:105`，与 `tab_batch` 的列表版不同源），
+  第一版打桩成列表 ⇒ `TypeError: _path_isfile ... not list`（339 同条教训）。
+
 ### 修复（阶段 339 · 视频解码提前停止被报成「✅ 处理完成」）
 - `video_service` 逐帧循环 `if not ok: break` 把「读完了」与「读到坏帧」当成同一件事，
   而 `truncated` 只在「达到帧数上限」那一支置位 ⇒ 解码中途停止时（VBR mp4/mkv 常见，

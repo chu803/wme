@@ -959,6 +959,27 @@ HEAD 上 worktree 反例：**2 红 / 1 绿**，且绿的正是「编码往返」
 
 - `339-视频提前结束不许报成功.md`
 
+### 340 · 画廊点「第 240 帧」，对比面板渲染的是第 4 帧（2026-10-26）
+
+两个 `index` 不是同一个东西：画廊标题用 `extract_sampled_frames(..., return_indices=True)` 的
+**真实帧号** `f["idx"]`（`ui/tab_media.py:363`），而 `gr.Gallery` 的 `evt.index` 是**位置**（0..5，
+`VIDEO_COMPARE_FRAMES=6`）；处理器直接把位置写进滑块（范围却是 `VIDEO_MAX_FRAMES`，几百）并交给
+`run_video_compare`，后者 docstring 明写「抽帧序号（0 = 首帧）」（`:604`）。
+`media.video.browse_info` 承诺「点击任一帧即可加载到下方对比面板」⇒ **看起来成功、实际给的是另一帧**
+（比崩掉糟：崩会被追，给错帧会被当正确结果用）。
+HEAD 行为取证（桩捕获入参直接调旧处理器）：`点第 5 格（标题 240）实际渲染 frame_idx = 4`
+——新用例在 HEAD 上 5 条全红，但其中一部分是「新函数还不存在」，所以**这条行为取证才是反例主体**。
+修法：`_VIDEO_BROWSE_INDICES` 按结果视频缓存「位置→帧号」，画廊组装时顺手记下；
+`_browse_frame_indices` 未命中时按**同一个** `extract_sampled_frames` 重抽（不另写抽样公式，避免第二套真值来源）；
+纯函数 `gallery_position_to_frame`（越界/无表/非整数 ⇒ None）；处理器用映射后的帧号，
+**拿不到映射就明说「没选中」**，不许渲染另一帧冒充。用缓存是因为抽 6 帧要解码 6 张图，点选是即时交互。
+守卫 5 例；既有 `test_tab_media_audit112` 只钉 arity（3 入 2 出）修后仍绿 ⇒ 抓不到这条正是因为
+**形状对了但语义错了**（#74/#167：判据要按它看不见什么写）。
+又被「替身的真实契约」绊一次：`tab_media` 的 `_normalize_file_value` 返回**字符串**（`:105`），
+第一版打桩成列表 ⇒ `TypeError: _path_isfile ... not list`（339 的同条教训第 N 次应验）。
+
+- `340-画廊位置与真实帧号混用.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`

@@ -364,6 +364,10 @@ def _build_video_browse_gallery(out_path) -> list:
     """
     处理完成后从结果视频均匀抽样若干帧，组装 gr.Gallery 值（图片数组 + 标题），
     供用户不播放视频也能快速浏览修复效果；点击任一帧可加载到抽帧对比面板。
+
+    阶段 340：顺手记下「画廊位置 → 真实帧号」的映射（见 `_browse_frame_indices`）。
+    标题写的是真实帧号（`第 {f['idx']} 帧`），而 `gr.Gallery` 的 `evt.index` 是**位置**
+    （0..n-1）——两者以前被混用，点「第 240 帧」会把滑块设成 4。
     """
     if not out_path or not _os.path.isfile(out_path):
         return []
@@ -373,10 +377,47 @@ def _build_video_browse_gallery(out_path) -> list:
         frames = extract_sampled_frames(
             out_path, n=config.VIDEO_COMPARE_FRAMES, return_indices=True
         )
+        _VIDEO_BROWSE_INDICES[str(out_path)] = [int(f["idx"]) for f in frames]
         return [(f["image"], f"第 {f['idx']} 帧") for f in frames]
     except Exception as exc:  # noqa: BLE001
         log.warning("视频浏览帧抽样失败：%s", exc)
         return []
+
+
+#: 画廊位置 → 真实帧号（按结果视频路径缓存）。
+#: 为什么用缓存而不是点一次抽一次：抽 6 帧要解码 6 张图，点选是即时交互，
+#: 每次都重抽会把一次点击变成几百毫秒的解码；而重新抽样也和画廊同源（同一个
+#: `extract_sampled_frames`），不会漂出第二套抽样公式（LESSONS #110/#114）。
+_VIDEO_BROWSE_INDICES: "dict[str, list[int]]" = {}
+
+
+def _browse_frame_indices(out_path) -> list:
+    """取某条结果视频的「位置→帧号」表；缓存未命中时按画廊同一公式抽一次。"""
+    key = str(out_path or "")
+    if not key or not _os.path.isfile(key):
+        return []
+    cached = _VIDEO_BROWSE_INDICES.get(key)
+    if cached:
+        return cached
+    _build_video_browse_gallery(key)          # 顺带填缓存
+    return _VIDEO_BROWSE_INDICES.get(key, [])
+
+
+def gallery_position_to_frame(indices: list, position) -> "int | None":
+    """把 `gr.Gallery` 的点击位置翻译成**真实帧号**；越界/无表 ⇒ None。
+
+    判据来自 339/336 同一条：界面不能把「我做的是 A」写成「B」。
+    以前这里直接把位置当帧号用 ⇒ 对比面板显示的是另一帧，而且**看起来是成功的**。
+    """
+    if indices is None or position is None:
+        return None
+    try:
+        pos = int(position)
+    except (TypeError, ValueError):
+        return None
+    if pos < 0 or pos >= len(indices):
+        return None
+    return int(indices[pos])
 
 
 def _store_video_record(res, src_path) -> None:
@@ -645,6 +686,10 @@ def on_frame_gallery_select(evt: "gr.SelectData", src_value, out_value, mode):
     并立即渲染对比图（拼接 / 滑块 / 热图）。
 
     返回值：(更新抽帧序号滑块, 对比 HTML)
+
+    阶段 340：`evt.index` 是**画廊里的位置**（0..n-1），不是帧号。
+    以前直接把它当帧号写进滑块并抽帧 ⇒ 点标题为「第 240 帧」的缩略图，
+    下面对比面板显示的是第 4 帧，而且界面看起来一切正常（比报错更糟）。
     """
     idx = getattr(evt, "index", None)
     if idx is None:
@@ -653,8 +698,12 @@ def on_frame_gallery_select(evt: "gr.SelectData", src_value, out_value, mode):
     out = _normalize_file_value(out_value)
     if not out or not _os.path.isfile(out) or not src or not _os.path.isfile(src):
         return gr.update(value=idx), t("media.video.compare_no_video")
-    html = run_video_compare(src_value, out_value, idx, mode)
-    return gr.update(value=idx), html
+    # 位置 → 真实帧号；拿不到映射时宁可明说「没选中」，也不显示另一帧冒充。
+    frame_idx = gallery_position_to_frame(_browse_frame_indices(out), idx)
+    if frame_idx is None:
+        return gr.update(), t("media.video.compare_no_frame")
+    html = run_video_compare(src_value, out_value, frame_idx, mode)
+    return gr.update(value=frame_idx), html
 
 
 def export_frame_file(src_value, out_value, frame_idx, mode):
