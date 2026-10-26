@@ -133,6 +133,19 @@ def is_pdf_file(path: str | _os.PathLike) -> bool:
 # ==============================================================================
 # 第 2 节：结果数据结构
 # ==============================================================================
+class PdfAbortOnFailedPage(RuntimeError):
+    """**专用**中止信号：只在 `config.PDF_KEEP_FAILED_PAGE=False` 且某页真的失败时才抛。
+
+    为什么不能复用裸 `RuntimeError`（阶段 341）：逐页 `try` 外面写的是
+    `except RuntimeError: raise  # 由 PDF_KEEP_FAILED_PAGE=False 主动抛出的中断`，
+    可这一层包住的是**整段**逐页处理，而 PyMuPDF 的渲染错误、
+    `_encode_page_image` 的「编码彻底失败」（`:316`）也都是 `RuntimeError`
+    ⇒ 一页坏就把整份文档中止，恰好违反同一函数里「单页异常不该毁掉整份文档」那句设计说明，
+    也无视了 `PDF_KEEP_FAILED_PAGE=True`（默认值）。
+    判据：**「我要主动中止」和「事情出错了」不能共用一个异常类型**（同 #319 的宽口子族）。
+    """
+
+
 @dataclass
 class PageResult:
     """单页的处理结果。"""
@@ -554,10 +567,10 @@ def process_pdf(
                     else:
                         result.failed_pages += 1
                         if not config.PDF_KEEP_FAILED_PAGE:
-                            raise RuntimeError(f"第 {pr.index} 页处理失败：{pr.error}")
+                            raise PdfAbortOnFailedPage(f"第 {pr.index} 页处理失败：{pr.error}")
 
-            except RuntimeError:
-                raise  # 由 PDF_KEEP_FAILED_PAGE=False 主动抛出的中断，向上传递
+            except PdfAbortOnFailedPage:
+                raise   # 只有「用户设了 keep=False」这一种情况才允许中止整份文档
             except Exception as exc:  # noqa: BLE001 —— 单页异常不该毁掉整份文档
                 log.exception("第 %d 页处理异常", pr.index)
                 pr.status = "failed"
@@ -567,6 +580,11 @@ def process_pdf(
                     out_doc.insert_pdf(doc, from_page=page_no, to_page=page_no)
                 except Exception:  # noqa: BLE001
                     log.error("第 %d 页连原样复制都失败，该页将缺失。", pr.index)
+                # 阶段 341：`PDF_KEEP_FAILED_PAGE=False` 的语义必须与失败**方式**无关——
+                # 管线返回 failed 与本页抛异常是同一件事（都算「这一页没做成」），
+                # 不能一个中止、一个静默保留，否则同一个开关给出两种解释。
+                if not config.PDF_KEEP_FAILED_PAGE:
+                    raise PdfAbortOnFailedPage(f"第 {pr.index} 页处理失败：{pr.error}") from exc
 
             pr.seconds = time.time() - page_started
             result.pages.append(pr)

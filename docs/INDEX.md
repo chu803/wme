@@ -980,6 +980,27 @@ HEAD 行为取证（桩捕获入参直接调旧处理器）：`点第 5 格（�
 
 - `340-画廊位置与真实帧号混用.md`
 
+### 341 · 一页渲染失败就把整份 PDF 中止：`except RuntimeError: raise` 抓错了对象（2026-10-26）
+
+逐页循环里 `if not PDF_KEEP_FAILED_PAGE: raise RuntimeError(...)` 与外层
+`except RuntimeError: raise`（注释写「由 keep=False 主动抛出的中断」）配对，但那层 `try` 包住的是
+**整段逐页处理**：`_encode_page_image` 自己抛的 `RuntimeError("页面图像编码彻底失败…")`（`:316`）与
+PyMuPDF 的渲染/插入错误同为 `RuntimeError` ⇒ **一页坏就中止整份文档**，而默认值是
+`PDF_KEEP_FAILED_PAGE=True`（`config.py:2055`），同一函数里还写着「单页异常不该毁掉整份文档」⇒
+代码与自己的注释、配置承诺三者互斥（20 页里第 3 页坏，用户拿到「整份失败」而不是「19 页正常 + 1 页保留原样」）。
+修法：新增专用异常 `PdfAbortOnFailedPage(RuntimeError)`（仍是 RuntimeError 子类，上游兜底不受影响），
+捕获点改成 `except PdfAbortOnFailedPage: raise` ⇒ 其它 RuntimeError 落回单页韧性（标 failed、保留原页、继续）。
+**顺手统一一个分叉**（不是审计报的）：`keep=False` 原本只在「管线返回 failed」时中止，
+「本页抛异常」那条路径根本不读这个开关 ⇒ 同一开关对两种失败方式给两种解释；现在两条路径同一判断。
+判据：配置项含义必须与**失败方式无关**，只与「这一页没做成」有关。
+反例（HEAD 实测）：三页文档第 2 页抛 RuntimeError、keep=True ⇒ HEAD `status="failed"`（整份中止），
+修复后 `"success"`、`failed_pages=1`、`skipped_pages=2`、输出 `page_count==3`（坏页原样保留、页数不塌）。
+守卫 4 例（含「专用异常仍是 RuntimeError 子类」这条防退化的锚）；既有 `test_pdf_service_audit131`/`test_pdf_history` 仍绿。
+桩又踩 339/340 同一条：第一版给 `status` 填了不存在的 `"no_watermark"` ⇒ 两页正常页被计入 `failed_pages=3`，
+差点把「测试自己错」报成产品缺陷；真实取值域在 `auto_pipeline:192`（success/skipped/failed）。
+
+- `341-一页失败中止整份PDF.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`
