@@ -174,7 +174,13 @@ def process_image(
     文件读写、网络编解码交给各入口自行处理，本函数只管像素。
 
     参数：
-        rgb        : H×W×3 的 uint8 数组（BGR，OpenCV 默认排布）。
+        rgb        : H×W×3 的 uint8 数组，**RGB 排布**（阶段 338 订正：本行原先写着
+                     「BGR，OpenCV 默认排布」，与上面摘要行的「RGB 数组」自相矛盾——
+                     而契约以代码为准：`core.image_utils.load_image` 返回 `rgb`、
+                     `core.detector` 按 `cv2.cvtColor(rgb, COLOR_RGB2GRAY)` 取灰。
+                     正是这条矛盾的注释让 PDF / 视频两个入口长期把 BGR 喂进来，
+                     实测同一张图检测像素差 2.4 倍，见 docs/338）。
+                     OpenCV 原生读到的帧/页（BGR）必须由**调用方**先转成 RGB。
         mask       : 单通道 0/255 掩码（manual 模式必备）；auto 模式传 None 即自动检测。
         mode/engine/各修复参数/灵敏度 : 与 process_file 一致（缺省取 config）。
         user_mask  : （阶段 24，仅 auto 模式生效）用户精修掩码，检测后按 mask_mode 合并。

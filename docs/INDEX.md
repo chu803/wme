@@ -912,6 +912,31 @@ i18n 新增 `quality.detail_*` 5 键 + 该键，中英对称（`validate_i18n_pa
 
 - `337-质量诊断文案所有权与双向泄漏.md`
 
+### 338 · PDF 与视频把 BGR 喂给了 RGB 管线：同一张图检测像素差 2.4 倍（2026-10-26）
+
+第二轮审计 F1，本机独立实测确认。契约在代码里：`core/image_utils.load_image` 返回 `rgb`（单图/自动/批量都经它取图）、
+`core/detector` 按 `cv2.cvtColor(rgb, COLOR_RGB2GRAY)` 取灰（权重 0.299R/0.587G/0.114B）、
+同文件 `video_service.extract_sampled_frames:210` 早就做了 `BGR2RGB` ⇒ 约定是公认的，**只有逐帧循环没遵守**。
+而 `pdf_service._page_to_array` 把 PyMuPDF 的 RGB 主动翻成 BGR、`video_service` 把 `cap.read()` 的 BGR 原样喂进管线。
+实测同一张 `ui/assets/sample_watermarked.png`：RGB ⇒ mask 4292 像素 / 6 区域 / 覆盖 1.05%；
+BGR ⇒ **10328 像素 / 7 区域 / 2.52%**（还有一次触发覆盖率上限夹紧）⇒ 同一个水印单图页擦得干净，
+PDF/视频页要么残留要么擦过头；颜色类先验（白底板 V/S、角标模板 NCC）也在错通道上算。
+**为什么肉眼看不出来（本条最关键）**：两处错互相抵消——进管线把 BGR 当 RGB（检测错），
+出管线又按 BGR 交给 `cv2.imencode`/`VideoWriter`（那确实是 BGR 约定）⇒ 成品颜色是对的，只有检测质量被悄悄拖走。
+根因里还有一条：`auto_pipeline.process_image` 的 docstring **自己就矛盾**（摘要行「RGB 数组」、参数行「BGR，OpenCV 默认排布」），
+已一并订正为「以代码为准 + 调用方负责转 RGB」。
+修法：管线内外**各只翻一次**——`_page_to_array` 返回 RGB（灰度页 `GRAY2RGB`）、`_encode_page_image` 内部唯一一次 `RGB2BGR`、
+`process_video` 读到帧即转 `frame_rgb` 且循环内 `out_frame` 全程 RGB（原来是 BGR 的 `frame` 与 RGB 的 `result_rgb` **混排**）、
+`writer.write` 前唯一一次翻回；附带修好 `render_pdf_first_page` 的首页缩略图（以前 BGR 当 RGB 交给 Gradio ⇒ R/B 反色）。
+守卫 3 例（现造纯红 PDF 页断言 R 高 B 低 / 编码往返「恰好翻一次」/ 造 3 帧纯红小视频 monkeypatch 捕获 `process_image` 入参并读回输出帧）。
+HEAD 上 worktree 反例：**2 红 / 1 绿**，且绿的正是「编码往返」——它只量颜色，而颜色本就是两处错抵消的结果，
+这个分布恰好把机理钉死。写测试又踩一坑：`cv2.imread` 读 MJPG-AVI 首帧返回 None ⇒ 必须用 `VideoCapture.read()`
+（**断言要按容器的真实读取方式来，别拿图片 API 量视频**）。
+既有 `test_pdf_service_audit131`/`test_video_service_audit113`/`test_pdf_history`/`test_video_reuse_drift_guard` 修后全绿
+⇒ 说明过去没有任何断言覆盖通道顺序，这也解释了它为什么能活这么久。
+
+- `338-PDF与视频把BGR喂给RGB管线.md`
+
 ### 特殊编号
 
 - `A1-真实图门禁框架设计.md`

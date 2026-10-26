@@ -577,6 +577,12 @@ def process_video(
             if not ok:
                 break  # 读完了（或读到坏帧），正常收尾
 
+            # 阶段 338：`cap.read()` 给的是 OpenCV 的 **BGR**，而 `process_image` 的契约是 **RGB**
+            # （本文件 `extract_sampled_frames` 早就是这么转的，见第 210 行）。
+            # 以前整段逐帧循环直接把 BGR 喂进管线 ⇒ 视频页与单图页对同一画面用不同的通道权重，
+            # 实测同一张图检测像素差 2.4 倍（详见 docs/338）。
+            frame_rgb = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
+
             if idx >= limit:
                 result.truncated = True
                 log.warning("已达帧数上限 %d，剩余帧不再处理。", limit)
@@ -589,7 +595,7 @@ def process_video(
                     f"处理第 {idx + 1}/{plan} 帧……",
                 )
 
-            out_frame = frame  # 默认原样输出，任何异常都不会导致丢帧
+            out_frame = frame_rgb  # 默认原样输出，任何异常都不会导致丢帧（**全程 RGB**，写出前才翻 BGR）
             need_detect = (idx % step == 0) or not _mask_is_usable(
                 cached_mask, (height, width)
             )
@@ -600,7 +606,7 @@ def process_video(
                     # 阶段 27：detect_auto 为真时传 preset=None 触发逐帧智能推荐；
                     #          否则用共享 preset（含 reuse 固定水印场景）。
                     core = process_image(
-                        frame,
+                        frame_rgb,
                         mode="auto",
                         engine=engine,
                         strength=strength,
@@ -673,7 +679,7 @@ def process_video(
                 else:
                     # 中间帧：直接拿缓存掩码修复，省掉检测耗时
                     core = process_image(
-                        frame,
+                        frame_rgb,
                         mask=cached_mask,
                         mode="manual",
                         engine=engine,
@@ -720,7 +726,10 @@ def process_video(
             if out_frame.shape[0] != out_h or out_frame.shape[1] != out_w:
                 out_frame = cv2.resize(out_frame, (out_w, out_h))
 
-            writer.write(out_frame)
+            # 阶段 338：管线内部一律 RGB，而 `cv2.VideoWriter` 按 BGR 解释数组 ⇒
+            # 这是本轮唯一一次翻回去（以前整条循环拿着 BGR 当 RGB 用，两处错互相抵消，
+            # 颜色看着正常、检测权重一直是反的）。
+            writer.write(cv2.cvtColor(out_frame, cv2.COLOR_RGB2BGR))
             result.written_frames += 1
 
             if config.VIDEO_VERBOSE_FRAME_LOG:

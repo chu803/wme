@@ -242,14 +242,23 @@ def _parse_pages(spec: Optional[str], total: int) -> List[int]:
 
 def _page_to_array(page, dpi: int) -> np.ndarray:
     """
-    把 PDF 的一页渲染成 OpenCV 能处理的 BGR 数组。
+    把 PDF 的一页渲染成 **RGB** 数组（阶段 338 修正通道顺序）。
 
     参数说明：
         page : PyMuPDF 的 Page 对象。
         dpi  : 渲染精度，数值越大越清晰也越慢。
 
     返回值：
-        H×W×3 的 uint8 数组（BGR 排布，与项目其余部分一致）。
+        H×W×3 的 uint8 数组（**RGB 排布**）。
+
+    ⚠ 为什么这里是 RGB 而不是 BGR（旧版返回 BGR，是个真缺陷）：
+    下游 `services/auto_pipeline.process_image` 的契约是 RGB——`core/image_utils.load_image`
+    把文件读成 `rgb` 交给单图/自动/批量三个页签，`core/detector` 内部按
+    `cv2.cvtColor(rgb, COLOR_RGB2GRAY)` 取灰度（R/G/B 权重 0.299/0.587/0.114）。
+    PDF 页以前直接喂 BGR ⇒ 同一张图在两个入口下检测到的像素不一样
+    （实测 `ui/assets/sample_watermarked.png`：RGB 4292 像素 / 覆盖率 1.05%，
+    BGR 10328 像素 / 2.52%，区域数 6→7），用户表现为「PDF 页擦不干净或擦过头」。
+    编码回字节时再翻成 BGR（`_encode_page_image`），那是 OpenCV 的输入约定，不是管线约定。
     """
     fitz = _import_fitz()
     # zoom = dpi / 72，因为 PDF 的原生坐标单位是 1/72 英寸（即 72 DPI）。
@@ -264,21 +273,29 @@ def _page_to_array(page, dpi: int) -> np.ndarray:
 
     if pix.n == 1:
         # 灰度页：补成三通道，后续流程统一按彩色处理。
-        return cv2.cvtColor(arr, cv2.COLOR_GRAY2BGR)
+        return cv2.cvtColor(arr, cv2.COLOR_GRAY2RGB)
     if pix.n == 4:
         # 带透明通道：丢弃 alpha。
         arr = arr[:, :, :3]
-    # PyMuPDF 给的是 RGB 顺序，OpenCV 习惯 BGR，需要翻转通道。
-    return cv2.cvtColor(arr, cv2.COLOR_RGB2BGR)
+    # PyMuPDF 给的本来就是 RGB 顺序，管线也按 RGB 走 ⇒ **不再翻转**（阶段 338）。
+    return arr
 
 
-def _encode_page_image(bgr: np.ndarray) -> tuple[bytes, str]:
+def _encode_page_image(rgb: np.ndarray) -> tuple[bytes, str]:
     """
     把修好的页面图像编码成字节，准备塞回 PDF。
 
+    参数说明：
+        rgb : **RGB** 数组（管线内部一律 RGB，见 `_page_to_array`）。
+
     返回值：
         (图片字节, 扩展名说明)。编码失败时自动回退 PNG，绝不抛异常中断整份文档。
+
+    说明：阶段 338 在这里补上唯一一次 `RGB2BGR`——`cv2.imencode` 按 BGR 解释数组，
+    而管线交给我们的是 RGB。以前是「喂进管线的是 BGR、编码时也当 BGR」，两处错互相抵消，
+    颜色看起来正常，但检测侧一直用着反的通道权重。
     """
+    bgr = cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR)
     fmt = (config.PDF_PAGE_IMAGE_FMT or "JPEG").upper()
     try:
         if fmt in ("JPEG", "JPG"):
@@ -463,7 +480,7 @@ def process_pdf(
 
             try:
                 # 第 1 步：渲染成图片
-                bgr = _page_to_array(page, dpi)
+                rgb = _page_to_array(page, dpi)
 
                 # 第 2 步：交给统一核心去水印
                 #   把单页内部进度压缩到整体进度条的一小段，避免进度条来回横跳。
@@ -475,7 +492,7 @@ def process_pdf(
                     on_progress(_b + _s * max(0.0, min(1.0, p)), f"第 {_n} 页：{msg}")
 
                 core = process_image(
-                    bgr,
+                    rgb,
                     mode=mode,
                     engine=engine,
                     strength=strength,

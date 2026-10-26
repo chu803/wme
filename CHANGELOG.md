@@ -52,6 +52,30 @@
 
 ## [Unreleased]
 
+### 修复（阶段 338 · PDF 与视频把 BGR 喂给了 RGB 管线：同一张图检测像素差 2.4 倍）
+- 契约在代码里：`load_image` 返回 `rgb`（单图/自动/批量都经它）、`core/detector` 按
+  `cvtColor(rgb, RGB2GRAY)` 取灰、同文件 `video_service.extract_sampled_frames:210` 早就做了 `BGR2RGB`
+  ⇒ 约定公认，**只有逐帧循环与 PDF 没遵守**：`_page_to_array` 把 PyMuPDF 的 RGB 主动翻成 BGR、
+  `process_video` 把 `cap.read()` 的 BGR 原样喂进管线。
+- 实测同一张 `ui/assets/sample_watermarked.png`：RGB ⇒ mask 4292 px / 6 区域 / 覆盖 1.05%；
+  BGR ⇒ **10328 px / 7 区域 / 2.52%** ⇒ 同一个水印单图页擦得干净、PDF/视频页残留或擦过头；
+  颜色类先验（白底板 V/S、角标模板 NCC）也在错通道上算。
+- **为什么肉眼看不出来**：两处错互相抵消——进管线把 BGR 当 RGB（检测错），出管线又按 BGR 交给
+  `cv2.imencode`/`VideoWriter`（那确实是 BGR 约定）⇒ 成品颜色对、只有检测质量被悄悄拖走。
+  根因还有一条：`auto_pipeline.process_image` 的 docstring **自己就矛盾**（摘要行「RGB 数组」、
+  参数行「BGR，OpenCV 默认排布」）⇒ 已订正为「以代码为准 + 调用方负责转 RGB」。
+- 修法：管线内外**各只翻一次**。`_page_to_array` 返回 RGB（灰度页 `GRAY2RGB`）；
+  `_encode_page_image` 入参改 `rgb` 并在函数开头做唯一一次 `RGB2BGR`；`process_video` 读到帧即转
+  `frame_rgb`、循环内 `out_frame` 全程 RGB（原来是 BGR 的 `frame` 与 RGB 的 `result_rgb` **混排**）、
+  `writer.write` 前唯一一次翻回。附带修好 `render_pdf_first_page` 首页缩略图（以前 BGR 当 RGB 交给
+  Gradio ⇒ R/B 反色）。
+- 守卫 `tests/test_channel_order338.py`（3 例）：现造纯红 PDF 页断言 R 高 B 低；编码往返断言「恰好翻一次」；
+  造 3 帧纯红小视频 + monkeypatch 捕获 `process_image` 入参断言收到 RGB，并读回输出帧断言颜色没错位。
+  HEAD 上 worktree 反例 ⇒ **2 红 / 1 绿**，绿的正是「编码往返」（它只量颜色，而颜色是两处错抵消的结果），
+  这个分布把机理钉死。踩坑：`cv2.imread` 读 MJPG-AVI 首帧返回 None ⇒ 得用 `VideoCapture.read()`。
+- 既有 `test_pdf_service_audit131` / `test_video_service_audit113` / `test_pdf_history` /
+  `test_video_reuse_drift_guard` 修后全绿 ⇒ 过去**没有任何断言覆盖通道顺序**，这解释了它为什么能活这么久。
+
 ### 修复（阶段 337 · 质量诊断文案所有权：服务层产键、UI 产句子；泄漏是双向的）
 - **修复前实测那行**：`en-US ⇒ 🔎 Quality: pic.png score 75 (warn) — 改动区域过大…可能修复过头（误伤原图）。`
   ⇒ 英文界面拿到中文诊断；`zh-CN ⇒ …分75（warn）— …` ⇒ 中文界面拿到英文原值 `warn`。
