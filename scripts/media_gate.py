@@ -32,6 +32,9 @@
  诊断（打印，**不判红**，理由见下）
    D1 非水印区改动     bbox 外扩 48px 之外的平均绝对差与改动占比
    D2 全图改动占比
+                      ⚠ 「改动占比」按容差 8 判定（见 DIFF_TOLERANCE）：重编码会让几乎每个
+                        像素动 ±1~3，用 >0 判时这个数必然接近 100%（阶段 346 实测 94.9%），
+                        那是指标失真不是损伤；容差后同一条链路是 3.0%。
    D3 逐链路耗时
 
  诚实边界（务必读）
@@ -65,6 +68,12 @@ SIDE = 1024            # 收敛尺寸（真实图为 2048²，全链路太慢）
 BBOX_INSET = 4         # R2：bbox 内缩，避开羽化边缘
 BBOX_DILATE = 48       # D1：外扩多少才算「用户没要求动」的区域
 MIN_BBOX_DIFF = 2.0    # R2 阈值（0~255 平均绝对差）
+#: D1/D2「改动占比」的容差：差值低于此值算**重编码噪声**，不算「被改」。
+#: 实测（阶段 346，同一条视频链路）：非水印区 94.9% 的像素差 >0，但 48.8% 只差 1~3 级、
+#: 45.6% 差 4~8 级，|差|>8 的只有 **3.0%**、>12 的 0.8%，均值差 **3.8/255**（肉眼不可见）
+#: ⇒ 「>0 即算改动」在**必须重新编码**的产物（视频/PDF）上必然接近 100%，
+#: 那是**指标失真**，不是损伤。以前那个数会让人要么误判成大面积误伤、要么干脆不看。
+DIFF_TOLERANCE = 8
 VIDEO_KEEP_RATIO = 0.5  # R4
 
 
@@ -144,14 +153,20 @@ def diff_stats(a_rgb: np.ndarray, b_rgb: np.ndarray, bbox: tuple) -> dict:
     ix, iy = min(w, x + BBOX_INSET), min(h, y + BBOX_INSET)
     jx, jy = max(0, min(w, x + bw - BBOX_INSET)), max(0, min(h, y + bh - BBOX_INSET))
     inner = d[iy:jy, ix:jx] if (jx > ix and jy > iy) else np.zeros((1, 1), np.float64)
-    outside = d.copy()
-    outside[max(0, y - BBOX_DILATE):min(h, y + bh + BBOX_DILATE),
-            max(0, x - BBOX_DILATE):min(w, x + bw + BBOX_DILATE)] = 0.0
+    # 阶段 346：原来 `outside` 是「整幅图、bbox 区被置零」，于是 outside_diff 其实是
+    # **全图均值被稀释后的值**，并不是「非水印区的均值」——名字与含义不符。
+    # 现在用掩码取**真正的非水印区像素**统计，名副其实。
+    outside_mask = np.ones(d.shape, dtype=bool)
+    outside_mask[max(0, y - BBOX_DILATE):min(h, y + bh + BBOX_DILATE),
+                 max(0, x - BBOX_DILATE):min(w, x + bw + BBOX_DILATE)] = False
+    outside_vals = d[outside_mask]
     return {
         "bbox_diff": float(inner.mean()) if inner.size else 0.0,
-        "outside_diff": float(outside.mean()) if outside.size else 0.0,
-        "outside_changed": float((outside > 0).mean()) if outside.size else 0.0,
-        "whole_changed": float((d > 0).mean()),
+        "outside_diff": float(outside_vals.mean()) if outside_vals.size else 0.0,
+        # 「改动占比」用容差判定（阶段 346）：重编码本身就会让几乎每个像素动 ±1~3，
+        # 用 >0 判定时视频/PDF 的这个数必然接近 100%，读起来像大面积误伤，实则不是。
+        "outside_changed": float((outside_vals > DIFF_TOLERANCE).mean()) if outside_vals.size else 0.0,
+        "whole_changed": float((d > DIFF_TOLERANCE).mean()),
     }
 
 
