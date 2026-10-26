@@ -119,21 +119,39 @@ def test_build_editor_value_structure_and_alpha():
     assert np.array_equal(layer[:, :, 3], mask)             # alpha 就是掩码
 
 
-def test_cancel_batch_two_branches(monkeypatch):
+def test_cancel_batch_three_branches(monkeypatch):
+    """取消按钮的三条分支（阶段 336 从两条变三条）。
+
+    旧夹具只给 `cancel()`，因为旧实现只判「句柄在不在」⇒ 批跑结束后按取消也会谎称
+    「已发送取消信号」。新契约要看队列真实状态，所以夹具必须提供 `summary()`；
+    这是**改行为连带打破写死旧行为的夹具**（LESSONS #81）：同步夹具，不是放宽断言。
+    """
     monkeypatch.setattr(tb, "_CURRENT_QUEUE", None)
-    assert tb.cancel_batch()  # 无队列：给出「无可取消」文案（非空即通过语义）
+    assert tb.cancel_batch()  # ① 无队列：给出「无可取消」文案（非空即通过语义）
 
     class _Q:
-        def __init__(self):
+        def __init__(self, pending=1, running=0):
             self.called = False
+            self._s = {"pending": pending, "running": running}
 
         def cancel(self):
             self.called = True
 
-    q = _Q()
+        def summary(self):
+            return dict(self._s)
+
+    # ② 有活干：真的取消，并如实回报。
+    q = _Q(pending=2)
     monkeypatch.setattr(tb, "_CURRENT_QUEUE", q)
     msg = tb.cancel_batch()
     assert q.called and msg
+
+    # ③ 队列已排空（跑完了）：不许声称发了信号，也不该调 cancel()。
+    drained = _Q(pending=0, running=0)
+    monkeypatch.setattr(tb, "_CURRENT_QUEUE", drained)
+    idle_msg = tb.cancel_batch()
+    assert not drained.called, "空队列不该调 cancel()"
+    assert idle_msg and idle_msg != msg, "空队列必须换一句真话，不能复用「已发送取消信号」"
 
 
 @pytest.mark.parametrize("index,expect_pair", [
