@@ -19,13 +19,26 @@
 # ==============================================================================
 
 # 【图像处理核心库】—— OpenCV 降级修复 + 自动检测（边缘/形态学/MSER）
-#   opencv 用 headless 版（无 GUI 依赖，体积更小，与 Gradio 服务端环境一致）；
-#   numpy 升到 2.x —— 阶段 297 验证 numpy 2.5.1 + opencv 5.0.0.93 组合稳定。
-opencv-python-headless==5.0.0.93
-numpy==2.5.1
-Pillow==12.3.0
-scikit-image==0.26.0
-scipy==1.18.1
+#   opencv 用 headless 版（无 GUI 依赖，体积更小，与 Gradio 服务端环境一致）。
+#
+# ⚠ 阶段 347：这里原先钉的是**本机 venv 的精确版本**
+#   （numpy 2.5.1 / opencv 5.0.0.93 / Pillow 12.3.0 / scikit-image 0.26.0 / scipy 1.18.1 /
+#   pydantic 2.13.4）—— 那是「对齐到已验证 venv」的改法（0cb20e3, 10-18）。
+#   后果：CI 从那次改动起**每次都红，而且都红在 26~92 秒**（跑不完入口步 ⇒ 失败在 pip install）。
+#   原因：这些版本**不是 PyPI 上的稳定发行版**（本机 opencv 5.0.0.93 是从 CI 源码树
+#   `D:\a\opencv-python` 构建的），runner 上按名字+版本号装不到 ⇒ `No matching distribution found`。
+#   ⇒ 本清单是**用户照着 README 装的清单**，钉一个装不到的版本 = 装不了。
+#
+#   现在的口径：**下界 = 上一版 CI 装成功过的版本**（#14 绿那次，2026-10-18），
+#   **上界 = 本机验证过的版本**（含 numpy 2.5.1 / opencv 5.0.0.93 等，见 requirements-verified.txt）。
+#   即：CI 装得到、用户装得到、本机那套组合仍在允许范围内。
+#   守卫：tests/test_requirements_ci_installable.py —— 清单里只允许出现「CI 装成功过的精确 pin」，
+#   其余一律用区间（把「再钉一个本机专属版本」这条路堵死）。
+opencv-python-headless>=4.10,<6
+numpy>=1.26,<3
+Pillow>=10.4,<13
+scikit-image>=0.24,<0.30
+scipy>=1.14,<2
 
 # 【Web 界面】—— 与完整版一致，界面功能不受最小依赖影响
 gradio>=6.0
@@ -43,7 +56,7 @@ py-cpuinfo==9.0.0
 # 【日志、配置与工程化工具】
 colorama==0.4.6
 python-dotenv==1.0.1
-pydantic==2.13.4
+pydantic>=2.9,<3
 
 # 注意：本清单刻意不含 torch / torchvision / opencv-contrib-python / easyocr /
 # pyinstaller。如需要这些能力，请改用 requirements.txt（完整版）或按对应说明补充。
