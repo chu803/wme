@@ -122,6 +122,9 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     # （会拖垮自检套件）。其自身有 `--check` 零副作用自检与 `tests/test_ci_env_probe.py` 守卫。
     "scripts/ci_env_probe.py": "S CI 环境等价性探针（默认模式跑全量，另见 --check）",
     "scripts/collect_real_assets.py": "S 资产收集（含网络）",
+    # 阶段 349：真实平铺/点阵水印样本的**成对性校验 + 召回测量**。
+    # 需要外部样本目录（任务 #22 的采集包），自检时没有 ⇒ 不进子进程守卫清单。
+    "scripts/grid_sample_check.py": "S 样本采集包校验器（需外部样本目录）",
     # 阶段 233 补登：该文件由**阶段 224** 新建时漏登记（当时只跑了性能子集测试，
     # 未跑到本元测试 ⇒ 我当场没发现）。其 `__main__` 是**交互式测量**（sleep 约 10 秒
     # 采样 CPU 负载）且只打印、不断言 ⇒ 不适合做子进程守卫（会拖慢套件且无可判定输出）。
