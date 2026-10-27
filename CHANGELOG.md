@@ -58,8 +58,12 @@
   `0cb20e3`「对齐依赖清单到已验证 venv 版本」——**正是第一次红的 #15**。
 - 那次把 6 个核心包钉成**本机 venv 的精确版本**（opencv-python-headless 5.0.0.93 / numpy 2.5.1 /
   Pillow 12.3.0 / scikit-image 0.26.0 / scipy 1.18.1 / pydantic 2.13.4），
-  而本机 opencv 5.0.0.93 的构建信息写着 `D:\a\opencv-python\...` ⇒ **是 opencv 自己的 CI 源码构建产物，
-  不是 PyPI 稳定版** ⇒ runner 上 `pip install` 直接 `No matching distribution found`。
+  **这些版本在 PyPI 上都有**，但实测索引页的**轮子 Python 标签**显示：`numpy 2.5.1` 只有 cp312/313/314、
+  `scipy 1.18.1` 只有 cp312~315 ⇒ **都没有 cp311 轮子**，而 CI 的矩阵是 **Python 3.11**
+  ⇒ `pip install` 必然 `No matching distribution found`。
+  （opencv 5.0.0.93 是 cp37-abi3 轮子 ⇒ 向前兼容；Pillow / scikit-image 有 cp311 ⇒ 无碍。
+  本机是 **Python 3.13**，那两个版本有 cp313 轮子 ⇒ 本机一路绿灯、**只有 CI 红**——
+  「本地装得上」不等于「CI 装得上」，这正是它能潜伏 8 天的原因。）
 - **决定性推理（不需要联网）**：清单里其余精确 pin 在那次改动里**一字未动**，而 CI #14 用它们**装成功过**
   ⇒ 可解析；嫌疑精确落在那 6 个上。
 - **不止影响 CI**：`requirements-min.txt` 同时是 README 让用户照着装的清单 ⇒ 这 8 天里照着装的用户**也装不上**。
