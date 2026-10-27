@@ -78,6 +78,10 @@ py-modules = [
     "cli",
     "config",
     "download_model",
+    # 阶段 348：漏了它 ⇒ `server.py` 的 `import job_manager` 在**安装态**必然 ModuleNotFoundError
+    # ⇒ 装出来的 `wme` / `wme-cli` / `wme-api` 三个命令一启动就崩（源码目录里跑是好的，
+    # 所以本地自测全绿也发现不了）。守卫见 tests/test_packaging_meta.py。
+    "job_manager",
     "main",
     "server",
 ]

@@ -54,6 +54,33 @@ def test_declared_py_modules_exist_on_disk():
     assert not missing, f"pyproject 声明了不存在的顶层模块：{missing}"
 
 
+#: 根级 `.py` 里**刻意不随分发发布**的（测试基础设施，不是产品代码）。
+_NOT_SHIPPED_MODULES = {
+    "conftest.py": "pytest 根级夹具，不随分发发布",
+}
+
+
+def test_every_root_module_is_declared_or_exempted():
+    """**镜像方向**的守卫：磁盘上每个根级 `.py` 都必须**已声明**或**显式豁免**。
+
+    阶段 348：`job_manager.py` 一直**没进 `py-modules`** ⇒ 装出来的 wheel 里没有它
+    ⇒ `server.py` 的 `import job_manager` 在安装态必然 `ModuleNotFoundError`
+    ⇒ `wme` / `wme-cli` / `wme-api` 三个命令**一启动就崩**。
+    源码目录里跑是好的（能 import 到仓库根），所以本地自测全绿也发现不了；
+    而既有守卫只查了「声明的都在磁盘上」，**没查「磁盘上的都在声明里」**——正是这个缺口。
+
+    ⇒ 与 `test_all_shipped_top_level_packages_are_declared`（顶层**包**的方向）配成一对。
+    """
+    declared = set(_pyproject()["tool"]["setuptools"]["py-modules"])
+    on_disk = {p.name for p in _ROOT.glob("*.py") if not p.name.startswith(".")}
+    unaccounted = sorted(on_disk - {f"{m}.py" for m in declared} - set(_NOT_SHIPPED_MODULES))
+    assert not unaccounted, (
+        f"这些根级模块未声明也未豁免 ⇒ 它们不会进 wheel，"
+        f"而别的模块 import 它们时在安装态必然 ModuleNotFoundError：{unaccounted}")
+    overlap = {f"{m}.py" for m in declared} & set(_NOT_SHIPPED_MODULES)
+    assert not overlap, f"既是豁免又不该声明：{overlap}"
+
+
 #: 带 `__init__.py` 但**刻意不随分发发布**的顶层目录（各自写明理由）。
 _NOT_SHIPPED = {
     "tests": "测试套件不随分发包发布",

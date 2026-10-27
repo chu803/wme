@@ -899,6 +899,28 @@ Pillow / scikit-image 有 cp311 ⇒ 无碍。本机是 **Python 3.13** ⇒ 那�
 
 - `347-CI红8天的真因是钉了装不到的版本.md`
 
+### 348 · 装出来的包缺 `job_manager`（三个命令一启动就崩）+ `wme-cli --help` 直接崩（2026-10-26）
+
+在「把可离线副本装到 D 盘」这件事上暴露出来的**分发缺陷**：把 wheel 装进**全新 venv** 后跑
+`wme-cli --help` ⇒ `ModuleNotFoundError: No module named 'job_manager'`。
+根因：`pyproject.toml` 的 `py-modules` 声明了 api/cli/config/download_model/main/server，**漏了 `job_manager`**，
+而 `server.py:75` 有 `import job_manager as JM` ⇒ wheel 里没有它 ⇒ **安装态**一 import 就炸，
+`wme` / `wme-cli` / `wme-api` **三个命令全部启动即崩**（README 3.3 推荐的就是这三条）。
+**为什么本地全绿**：在源码目录里跑时 `sys.path` 含仓库根 ⇒ import 得到 ⇒ 自测/门禁/本地 main.py 全正常
+——这个缺陷**只在装出来的包里存在**。既有守卫只查了「声明的都在磁盘上」，
+另一头「磁盘上的都在声明里」只覆盖顶层**包**、没覆盖顶层**模块** ⇒
+新增 `test_every_root_module_is_declared_or_exempted`，与既有那条**配成一对**（`conftest.py` 显式豁免）。
+⚠ **已发布的 1.0.1/1.0.2 也有此缺陷** ⇒ 从 PyPI 装包的用户 `wme` 命令起不来。
+缺陷二：`cli.py --help` 崩（`ValueError: unsupported format character '?' (0x2192)`）——
+help 文本里的「实测误伤 50%→约 1%」被 argparse 的 `%` 展开当成格式串 ⇒ 改成 `50%%→`；
+守卫 `tests/test_cli_help348.py` **真跑一次 `--help`**（rc=0、含 usage、且「50%」与「→」都还在）。
+**顺带第三次实证阶段 331**：写新守卫时我的测试自己又踩了「父进程按 GBK 解码子进程 UTF-8 ⇒ stdout=None」
+⇒ 新守卫显式 `encoding="utf-8", errors="replace"`。
+证据（安装态）：修复前 wheel 顶层缺 `job_manager.py` 且命令崩；修复后 wheel 顶层齐、`wme-cli --help` 打出 usage、
+安装态 import 全部模块均 ok。**连带**：`v1.0.3` 的 tag 推在本修复之前 ⇒ 需再指一次，否则上架的 1.0.3 仍带这两个缺陷。
+
+- `348-装出来的包缺顶层模块与CLI-help崩溃.md`
+
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 
 `ui/tab_batch._CURRENT_QUEUE` 批跑开始时赋值、**从不置回 None**，而取消处理器（含快捷键 Shift+C）只判

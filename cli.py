@@ -257,7 +257,7 @@ def _build_arg_parser() -> argparse.ArgumentParser:
     pp.add_argument("--preserve-untouched", dest="preserve_untouched",
                     action=argparse.BooleanOptionalAction, default=None,
                     help="只动水印区：掩码 + 8px 保护带之外，输出与原图**逐字节一致**"
-                         "（实测误伤 50%→约 1%，不增加耗时）。"
+                         "（实测误伤 50%%→约 1%%，不增加耗时）。"
                          f"不传则跟随配置（当前默认 {'开' if config.POSTPROCESS_PRESERVE_UNTOUCHED else '关'}）；"
                          "用 --no-preserve-untouched 可显式关闭")
 
