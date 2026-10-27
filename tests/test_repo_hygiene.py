@@ -151,6 +151,9 @@ _ALLOWED_ROOT_FILES = {
     # 依赖清单
     "requirements.txt", "requirements-dev.txt", "requirements-gpu.txt",
     "requirements-min.txt",
+    # 阶段 347：**记录用**的「本机已验证依赖组合」（不用于安装）。它让阶段 297 的
+    # 「对齐到已验证版本」这个结论不因改用区间而丢失，同时把「装得到」与「验证过」拆成两份。
+    "requirements-verified.txt",
     # 测试入口
     "pytest.ini", "test.bat", "test.sh",
     # 合规与说明
