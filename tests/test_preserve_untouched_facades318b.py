@@ -20,11 +20,14 @@ import sys
 
 import numpy as np
 import pytest
-import importlib.util
 
 # 阶段 358：CI 只装 requirements-min/dev（**不含 PyMuPDF**）⇒ PDF 相关用例必须**跳过**，
 # 而不是让 `process_pdf` 抛「PDF 依赖缺失」把用例打红（这条正是 358 抓到 CI 连红的第三因）。
-_HAS_FITZ = importlib.util.find_spec("fitz") is not None
+# ⚠ 探测**不能**用 `importlib.util.find_spec("fitz")`：CI 环境探针正是钩住 find_spec 来模拟
+# 「CI 上没有这个模块」⇒ 用它探测的代码会在**收集期**自己炸（我第一版就踩了，探针立刻报 ERROR）。
+from tests._optional_deps import has_fitz
+
+_HAS_FITZ = has_fitz()
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
