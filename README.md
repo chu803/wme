@@ -2186,6 +2186,22 @@ pip install wme-watermark-eraser
 pip install .
 ```
 
+> ⚠ **装完包还要装依赖**（阶段 348 实测）：`pyproject.toml` **刻意不声明 `dependencies`**
+> （避免它与 `requirements-min.txt` 两处清单慢慢漂移）⇒ `pip install` **不会**替你装
+> numpy / opencv / gradio。直接启动会 `ImportError`。补这一条：
+>
+> ```bash
+> pip install -r requirements-min.txt     # 图形界面 + OpenCV 修复 + PDF/视频链路
+> pip install -r requirements-dev.txt     # 只有要跑测试/门禁才需要
+> ```
+>
+> ⚠ **国内网络**：默认 PyPI 的文件 CDN（`files.pythonhosted.org`）常不可达，
+> 建议整包换镜像（`--index-url` 要**连依赖一起**换，混用会卡在下载轮子那一步）：
+>
+> ```bash
+> pip install -r requirements-min.txt -i https://mirrors.aliyun.com/pypi/simple/
+> ```
+
 安装后可直接用控制台命令启动（命令名详见 `pyproject.toml` 的 `[project.scripts]`，阶段 296 补齐）：
 
 ```bash
