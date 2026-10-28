@@ -52,8 +52,13 @@ jobs:
         id: system
         run: |
           sudo apt-get update
+          # ⚠ 阶段 351：Ubuntu 24.04（noble）起 glib 包名带 **t64**（`libglib2.0-0t64`），
+          # 过渡包 `libglib2.0-0` 被删 ⇒ 写死旧包名在新镜像上直接 "Unable to locate package"
+          # ⇒ 整个 job 一分钟红。按镜像里实际有哪个来挑（launchpad #2063221）。
+          GLIB=$(apt-cache show libglib2.0-0t64 >/dev/null 2>&1 && echo libglib2.0-0t64 || echo libglib2.0-0)
+          echo "使用系统包：$GLIB"
           sudo apt-get install -y --no-install-recommends \
-            libgl1 libglib2.0-0 libsm6 libxext6 libxrender1
+            libgl1 libsm6 libxext6 libxrender1 "$GLIB"
 
       - name: 安装依赖（最小集 + 测试依赖）
         id: deps
