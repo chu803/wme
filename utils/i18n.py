@@ -358,9 +358,14 @@ TRANSLATIONS: dict = {
                 "msg": {
                     "export_zip_ok": "✅ 已导出 {n} 条历史结果为 ZIP：\n`{path}`",
                     "compare_zip_ok": "✅ 已生成 {n} 张对比图并打包：\n`{path}`",
+                    # 阶段 355：导出时有条目生成失败 ⇒ 必须说出来（此前只报成功数，
+                    # ZIP 比历史页少几张却没人知道）。
+                    "compare_zip_partial": "✅ 已生成 {n} 张对比图并打包：\n`{path}`\n⚠️ 有 {failed} 张未能生成（{names}）",
                     "err": "❌ 导出失败：{exc}",
                     "no_compare": "⚠️ 没有可生成对比图的历史记录（需原图与结果都还在）。",
                     "compare_all_fail": "❌ 对比图全部生成失败，请查看日志。",
+                    # 阶段 355：「保存为默认」写盘失败必须出现在界面信息里。
+                    "save_default_failed": "⚠️ 「保存为默认」未生效：写盘失败（无写权限或值非法）。当前仅本次会话内生效。",
                     "zip_fail": "❌ 打包失败：{exc}",
                     "clear_ok": "🧹 已清空 {n} 条历史记录（成品图已保留）。",
                     "prune_ok": "🧼 已清理 {n} 条过期/超额记录。",
@@ -1210,9 +1215,11 @@ TRANSLATIONS: dict = {
                 "msg": {
                     "export_zip_ok": "✅ Exported {n} history result(s) as ZIP:\n`{path}`",
                     "compare_zip_ok": "✅ Generated and packaged {n} comparison image(s):\n`{path}`",
+                    "compare_zip_partial": "✅ Packaged {n} comparison image(s):\n`{path}`\n⚠️ {failed} could not be generated ({names})",
                     "err": "❌ Export failed: {exc}",
                     "no_compare": "⚠️ No history records available for comparison images (both original and result must exist).",
                     "compare_all_fail": "❌ All comparison images failed to generate; see the log.",
+                    "save_default_failed": "⚠️ \"Save as default\" did not take effect: writing the config failed (no write permission or invalid value). It only applies to this session.",
                     "zip_fail": "❌ Packaging failed: {exc}",
                     "clear_ok": "🧹 Cleared {n} history record(s) (result images kept).",
                     "prune_ok": "🧼 Pruned {n} expired/over-limit record(s).",

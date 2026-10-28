@@ -151,6 +151,7 @@ def on_export_compares(gap: int) -> tuple[str, "str | None"]:
     # 以前 `export_compare(...)` 不传 `out_path` ⇒ 每张都落到 `config.EXPORT_DIR`，
     # 点一次「导出对比图 ZIP」在 `exports/` 里留下 N 张全尺寸 PNG，而 ZIP 才是交付物；
     # `scan_orphans` 明确不扫 exports/（用户成品目录）⇒ 孤儿清理也收不回，磁盘只会一直涨。
+    failed: list = []
     with tempfile.TemporaryDirectory(prefix="wme_cmpzip_") as work:
         for i, r in enumerate(recs):
             try:
@@ -161,11 +162,16 @@ def on_export_compares(gap: int) -> tuple[str, "str | None"]:
                 paths.append(cmp)
                 names.append(name)
             except Exception as exc:  # noqa: BLE001
+                failed.append(r.original_name or r.id)
                 log.warning("生成对比图失败 %s：%s", r.original_name, exc)
         if not paths:
             return t("settings.snap.msg.compare_all_fail"), None
         try:
             zip_path = export_paths_as_zip(paths, names=names)
+            if failed:
+                return (t("settings.snap.msg.compare_zip_partial", n=len(paths),
+                           failed=len(failed), names=", ".join(failed[:3]),
+                           path=zip_path), zip_path)
             return t("settings.snap.msg.compare_zip_ok", n=len(paths), path=zip_path), zip_path
         except Exception as exc:  # noqa: BLE001
             log.exception("打包对比图失败")
@@ -223,6 +229,7 @@ def apply_superres_config(
         ]
 
     # 可选：持久化为默认（仅白名单内键；缺权限等失败不影响实时生效）。
+    _persist_warn = ""
     # 合并式写入：只更新真实超分三键，不会抹掉已保存的保留策略。
     if save_default:
         try:
@@ -236,8 +243,10 @@ def apply_superres_config(
                 # 不消费返回值 ⇒「保存为默认」写盘失败将完全无痕（下方 except 永不触发）。
                 log.warning("持久化真实超分默认未生效：save_user_overrides 返回 False"
                             "（无写权限或值非法）。")
+                _persist_warn = t("settings.snap.msg.save_default_failed")
         except Exception as exc:  # noqa: BLE001
             log.warning("持久化真实超分默认失败：%s", exc)
+            _persist_warn = t("settings.snap.msg.save_default_failed")
 
     snap = build_snapshot_md()
     info = t(
@@ -246,6 +255,8 @@ def apply_superres_config(
         scale=config.REAL_SUPERRES_SCALE,
         backend=config.REAL_SUPERRES_BACKEND,
     )
+    if _persist_warn:
+        info = f"{info}\n{_persist_warn}"
     return _superres_refresh_updates() + [snap, info]
 
 
