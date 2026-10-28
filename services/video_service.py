@@ -57,6 +57,7 @@ from core.superres import get_superres_backend, SuperResBackend
 from services.auto_pipeline import process_image
 from utils.path_helper import make_unique_path, ensure_parent_dir
 from utils.logger import get_logger
+from utils.i18n import t
 
 log = get_logger("services.video")
 
@@ -465,19 +466,18 @@ def process_video(
 
     # ---------- 前置校验 ----------
     if not _os.path.isfile(src):
-        result.error = f"找不到文件：{src}"
+        result.error = t("media_svc.video_not_found", src=src)
         log.error(result.error)
         return result
 
     if not is_video_file(src):
-        result.error = (
-            f"不是受支持的视频格式，当前支持：{', '.join(config.SUPPORTED_VIDEO_FORMATS)}"
-        )
+        result.error = t("media_svc.video_bad_format",
+                         formats=", ".join(config.SUPPORTED_VIDEO_FORMATS))
         log.error(result.error)
         return result
 
     if not is_video_available():
-        result.error = "当前 OpenCV 缺少视频读写模块，无法处理视频。"
+        result.error = t("media_svc.video_no_codec")
         log.error(result.error)
         return result
 
@@ -495,9 +495,7 @@ def process_video(
     # 步长 > 1 但关掉了复用 —— 中间帧将无掩码可用，等于白白输出带水印的帧。
     # 这里不报错，而是自动把步长拉回 1，并把提醒写进结果，让用户看得见。
     if step > 1 and not reuse:
-        result.warnings.append(
-            f"抽帧步长 {step} 需要配合「复用掩码」才有意义，已自动改为逐帧检测（步长 1）。"
-        )
+        result.warnings.append(t("media_svc.video_step_warn", step=step))
         log.warning(result.warnings[-1])
         step = 1
 
@@ -508,10 +506,10 @@ def process_video(
     writer = None
     try:
         # ---------- 打开源视频 ----------
-        on_progress(0.01, "正在打开视频……")
+        on_progress(0.01, t("media_svc.video_opening"))
         cap = cv2.VideoCapture(src)
         if not cap.isOpened():
-            result.error = "OpenCV 无法打开该视频（编码格式不受支持或文件已损坏）。"
+            result.error = t("media_svc.video_open_failed")
             return result
 
         total = int(cap.get(cv2.CAP_PROP_FRAME_COUNT) or 0)
@@ -521,12 +519,12 @@ def process_video(
 
         # 某些视频读不出帧率（返回 0 或异常大），给一个安全默认值。
         if not (0 < fps <= 240):
-            result.warnings.append(f"源视频帧率异常（读到 {fps}），输出按 25fps 处理。")
+            result.warnings.append(t("media_svc.video_fps_warn", fps=fps))
             log.warning(result.warnings[-1])
             fps = 25.0
 
         if width <= 0 or height <= 0:
-            result.error = f"读不到有效的画面尺寸（{width}×{height}）。"
+            result.error = t("media_svc.video_no_size", w=width, h=height)
             return result
 
         result.total_frames = total
@@ -542,9 +540,7 @@ def process_video(
         backend = _resolve_video_backend(real_backend, real_model_path, real_model_dir, _real_enabled)
         out_w, out_h = (width * _real_scale, height * _real_scale) if backend is not None else (width, height)
         if _real_enabled and backend is None:
-            result.warnings.append(
-                "已开启真实超分，但当前环境缺少 torch/权重，已自动回退轻量超分（同分辨率）。"
-            )
+            result.warnings.append(t("media_svc.video_superres_warn"))
         result.width = out_w
         result.height = out_h
         result.upscaled = backend is not None
@@ -561,10 +557,8 @@ def process_video(
         dst = _default_out_path(src, str(out_path) if out_path else None)
         writer, codec = _open_writer(dst, fps, out_w, out_h)
         if writer is None:
-            result.error = (
-                "所有候选视频编码器都无法使用，无法写出视频。"
-                f"（已尝试：{', '.join(config.VIDEO_CODEC_CANDIDATES)}）"
-            )
+            result.error = t("media_svc.video_no_encoder",
+                             codecs=", ".join(config.VIDEO_CODEC_CANDIDATES))
             return result
         result.codec = codec
 
@@ -592,7 +586,7 @@ def process_video(
             if plan > 0:
                 on_progress(
                     0.02 + 0.95 * min(1.0, idx / plan),
-                    f"处理第 {idx + 1}/{plan} 帧……",
+                    t("media_svc.video_frame_progress", i=idx + 1, plan=plan),
                 )
 
             out_frame = frame_rgb  # 默认原样输出，任何异常都不会导致丢帧（**全程 RGB**，写出前才翻 BGR）
@@ -665,10 +659,9 @@ def process_video(
                                 if drift_iou < config.VIDEO_REUSE_MIN_IOU:
                                     step = 1
                                     result.warnings.append(
-                                        "检测到水印位置漂移（掩码重合度 "
-                                        f"{drift_iou * 100:.0f}% < "
-                                        f"{config.VIDEO_REUSE_MIN_IOU * 100:.0f}%），"
-                                        "已自动改为逐帧检测，避免旧掩码残留水印。"
+                                        t("media_svc.video_drift_warn",
+                                          iou=drift_iou * 100,
+                                          threshold=config.VIDEO_REUSE_MIN_IOU * 100)
                                     )
                                     log.warning(result.warnings[-1])
                             cached_mask = new_mask
@@ -741,7 +734,7 @@ def process_video(
 
         # ---------- 收尾 ----------
         if result.written_frames == 0:
-            result.error = "一帧都没能读出来，视频可能已损坏或编码不受支持。"
+            result.error = t("media_svc.video_no_frames")
             return result
 
         # 必须先释放 writer，文件头才会被正确写入，否则得到的是 0 字节文件。
@@ -749,7 +742,7 @@ def process_video(
         writer = None
 
         if not _os.path.isfile(dst) or _os.path.getsize(dst) == 0:
-            result.error = "视频写出后文件为空，可能是编码器不兼容当前分辨率。"
+            result.error = t("media_svc.video_empty_output")
             return result
 
         # 阶段 339：**「读到坏帧就 break」不等于「读完了」**。
@@ -760,8 +753,8 @@ def process_video(
         if not result.truncated and _total > 0 and result.written_frames < _total:
             result.truncated = True
             result.warnings.append(
-                f"只写出 {result.written_frames}/{_total} 帧：解码在中途停止"
-                "（源视频可能有坏帧，或帧数元数据不准）。未写出的部分不会出现在结果视频里。"
+                t("media_svc.video_trunc_warn",
+                  written=result.written_frames, total=_total)
             )
             log.warning("视频提前结束：%s", result.warnings[-1])
 
@@ -771,8 +764,8 @@ def process_video(
         if result._rec_conf_n > 0:
             result.recommend_conf_avg = result._rec_conf_sum / result._rec_conf_n
         result.seconds = time.time() - started
-        result.warnings.append("输出视频不含音轨（OpenCV 不处理音频），如需原声请用 ffmpeg 合并。")
-        on_progress(1.0, "视频处理完成")
+        result.warnings.append(t("media_svc.video_no_audio"))
+        on_progress(1.0, t("media_svc.video_done"))
         log.info("视频处理完成：%s（%s）", dst, result.summary())
         return result
 

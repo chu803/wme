@@ -51,6 +51,7 @@ from core.device_manager import select_device
 from services.auto_pipeline import process_image
 from utils.path_helper import make_unique_path, ensure_parent_dir
 from utils.logger import get_logger
+from utils.i18n import t
 
 log = get_logger("services.pdf")
 
@@ -417,12 +418,12 @@ def process_pdf(
 
     # ---------- 前置校验 ----------
     if not _os.path.isfile(src):
-        result.error = f"找不到文件：{src}"
+        result.error = t("media_svc.pdf_not_found", src=src)
         log.error(result.error)
         return result
 
     if not is_pdf_file(src):
-        result.error = f"不是 PDF 文件（扩展名不在 {config.SUPPORTED_DOC_FORMATS} 内）：{src}"
+        result.error = t("media_svc.pdf_not_pdf", formats=config.SUPPORTED_DOC_FORMATS, src=src)
         log.error(result.error)
         return result
 
@@ -440,7 +441,7 @@ def process_pdf(
     out_doc = None
     try:
         # ---------- 打开源文档 ----------
-        on_progress(0.02, "正在打开 PDF……")
+        on_progress(0.02, t("media_svc.pdf_opening"))
         try:
             doc = fitz.open(src)
         except Exception as exc:  # noqa: BLE001
@@ -453,13 +454,13 @@ def process_pdf(
         total = doc.page_count
         result.total_pages = total
         if total <= 0:
-            result.error = "这份 PDF 没有任何页面。"
+            result.error = t("media_svc.pdf_no_pages")
             return result
 
         # ---------- 解析要处理的页 ----------
         targets = _parse_pages(pages, total)
         if not targets:
-            result.error = f"页码范围 '{pages}' 在本文档（共 {total} 页）中没有匹配到任何页。"
+            result.error = t("media_svc.pdf_page_no_match", pages=pages, total=total)
             return result
 
         if len(targets) > config.PDF_MAX_PAGES:
@@ -502,7 +503,8 @@ def process_pdf(
                 span = 0.90 / max(1, len(targets))
 
                 def _page_progress(p: float, msg: str, _b=base, _s=span, _n=pr.index) -> None:
-                    on_progress(_b + _s * max(0.0, min(1.0, p)), f"第 {_n} 页：{msg}")
+                    on_progress(_b + _s * max(0.0, min(1.0, p)),
+                               t("media_svc.pdf_page_progress", n=_n, msg=msg))
 
                 core = process_image(
                     rgb,
@@ -560,7 +562,7 @@ def process_pdf(
                     result.success_pages += 1
                 else:
                     # 没检出水印 / 失败：保留原页，画质零损失
-                    pr.error = core.get("error") or "未检测到水印"
+                    pr.error = core.get("error") or t("media_svc.pdf_no_watermark")
                     out_doc.insert_pdf(doc, from_page=page_no, to_page=page_no)
                     if pr.status == "skipped":
                         result.skipped_pages += 1
@@ -591,14 +593,14 @@ def process_pdf(
             log.info("%s，耗时 %.2fs", pr, pr.seconds)
 
         # ---------- 保存输出 ----------
-        on_progress(0.96, "正在保存 PDF……")
+        on_progress(0.96, t("media_svc.pdf_saving"))
         dst = _default_out_path(src, str(out_path) if out_path else None)
         # garbage=4 做最大程度的对象合并去重，deflate 压缩流，减小体积。
         out_doc.save(dst, garbage=4, deflate=True)
         result.out_path = dst
         result.status = "success"
         result.seconds = time.time() - started
-        on_progress(1.0, "PDF 处理完成")
+        on_progress(1.0, t("media_svc.pdf_done"))
         log.info("PDF 处理完成：%s（%s）", dst, result.summary())
         return result
 
