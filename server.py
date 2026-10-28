@@ -187,15 +187,21 @@ def _collect_inpaint_params(body: Dict[str, Any]) -> Dict[str, Any]:
     return params
 
 
-def _detect_one_b64(image_b64: str) -> Dict[str, Any]:
-    """检测单张 base64 图片，返回 REST 响应字典（成功或失败都返回结构化结果）。"""
+def _detect_one_b64(image_b64: str,
+                     preset: Optional[str] = None,
+                     sensitivity: Optional[float] = None) -> Dict[str, Any]:
+    """检测单张 base64 图片，返回 REST 响应字典（成功或失败都返回结构化结果）。
+
+    阶段 354：`preset` / `sensitivity` 此前**收了但不用**（调用点恒传 None），
+    而用法页与调用点注释都写着「可选传递」⇒ 客户端钉了预设却拿到默认检测，**没有任何提示**。
+    """
     try:
         raw = base64.b64decode(image_b64)
     except Exception as exc:  # noqa: BLE001
         return {"status": "failed", "error": f"base64 解码失败：{exc}"}
     try:
         mask_bytes, stats = api.detect_watermark_bytes(
-            raw, preset=None, sensitivity=None)
+            raw, preset=preset, sensitivity=sensitivity)
     except Exception as exc:  # noqa: BLE001 - 单张出错不影响服务可用性。
         return {"status": "failed", "error": str(exc)}
     return {
@@ -500,7 +506,9 @@ class _Handler(BaseHTTPRequestHandler):
                 self._send_json(400, {"error": "缺少 image 字段（base64 字符串）"})
                 return
             # preset/sensitivity 可选传递，缺省交给 api 补 config 默认。
-            self._send_json(200, _detect_one_b64(image))
+            # 阶段 354：此前这里**收了 body 却没往下传** ⇒ 文档承诺的参数被静默忽略。
+            self._send_json(200, _detect_one_b64(
+                image, body.get("preset"), body.get("sensitivity")))
         elif self.path.startswith("/api/inpaint"):
             body = self._read_body()
             if body is None:

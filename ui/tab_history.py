@@ -149,14 +149,19 @@ def load_gallery(compare: bool = False, kind_filter: str = "all",
         records = _CACHE.list_records()
     else:
         records = _CACHE.list_records(kind=kind, query=q if q else None)
-    _HISTORY_ID_MAP = [(r.id, r.thumb_path or r.result_path) for r in records]
     gallery_value = []
+    # 阶段 354：索引表必须与画廊**同一份记录**。原来它按**全部**记录建，
+    # 而画廊会跳过「缩略图与结果都不存在」的记录 ⇒ 格子与索引错位 ⇒
+    # 点第 N 格选中的是**另一条**记录，「删除所选」删的也是那一条。
+    _HISTORY_ID_MAP = []
     for r in records:
         thumb = r.thumb_path or r.result_path
         if not thumb or not _os.path.exists(thumb):
             thumb = r.result_path
         if not thumb or not _os.path.exists(thumb):
             continue
+        # 与画廊同进同出（阶段 354）：只有真正进了画廊的记录才进索引表。
+        _HISTORY_ID_MAP.append((r.id, thumb))
         caption = f"{r.original_name}｜{r.mode}/{r.engine}"
         # 阶段 37 / 40：视频、PDF 记录用醒目徽章，区别于图片记录。
         _kind = getattr(r, "kind", "image")
