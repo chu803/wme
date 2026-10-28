@@ -1063,6 +1063,23 @@ GitHub 的 `${{ toJSON(steps) }}` 在本地是字面量（不是合法 JS）⇒ 
 
 - `357-诊断脚本本身要能跑通.md`
 
+### 358 · CI 连红的第三个原因：我自己那个测试在模块顶层 import 了 PyMuPDF（2026-10-27）
+
+**没有靠截图**：用仓库里**早就存在**的探针 `scripts/ci_env_probe.py`（阶段 184「CI 环境等价性审计」，
+在导入层屏蔽 CI 提供不了的模块）跑了一遍 ⇒ `ERROR tests/test_pdf_page_abort341.py`：
+**阶段 341 我自己写的那个测试在模块顶层 `import fitz`**，而 CI 只装 requirements-min/dev（**不含 PyMuPDF**）
+⇒ **收集期 ImportError** ⇒ pytest 退出码 **2** ⇒ 阶段 330 之后「2 = 收集期报错 = 失败」（不再当"跳过"）
+⇒ 入口判失败 ⇒ **CI 红**；收集即中止 ⇒ **1 分多钟**（与截图里的 1m10s~1m49s 完全对得上）。
+修法：`fitz = pytest.importorskip("fitz")`（CI 上**跳过这条用例**，而不是让整个子集收集失败）。
+新守卫 `tests/test_ci_optional_imports358.py`：AST 扫 `tests/test_*.py` 的**模块顶层** import，
+命中「CI 没有的可选依赖」（fitz/pymupdf/torch/torchvision/easyocr/basicsr/realesrgan）⇒ 红；
+⚠ `cv2`/`gradio` **在** requirements-min 里 ⇒ 不算 offender（第一版误报 14 个文件，已收窄）。
+**三个红因症状完全一样（都是"红得飞快"）**：① 依赖 pin 没有 cp311 轮子（347）② 系统依赖写死镜像代际包名（351）
+③ 顶层 import 可选依赖打断收集（本阶段）⇒ 光看截图分不出来，必须**逐个用探针验证**，不是"改一个看看"。
+**教训**：护栏 `ci_env_probe.py` 早就在仓库里、只是没人跑 ⇒ **「仓库里已有的工具」比「新写一个」更该先被想起**。
+
+- `358-顶层import可选依赖打断CI收集.md`
+
 
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 

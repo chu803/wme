@@ -52,6 +52,15 @@
 
 ## [Unreleased]
 
+### 修复（阶段 358 · 顶层 import 可选依赖打断 CI 收集）
+- 用仓库里**早就存在**的 `scripts/ci_env_probe.py`（CI 环境等价性探针）抓到：
+  `tests/test_pdf_page_abort341.py`（阶段 341 我自己写的）在模块顶层 `import fitz`，
+  而 CI 只装 requirements-min/dev（不含 PyMuPDF）⇒ **收集期 ImportError** ⇒ pytest 退出码 2
+  ⇒ 阶段 330 之后（2 = 收集期报错 = 失败）⇒ 入口判失败 ⇒ **CI 红**，且收集即中止（1 分多钟，与截图时长吻合）。
+- 修法：`fitz = pytest.importorskip("fitz")` ⇒ CI 上跳过这条用例，而不是让整个子集收集失败。
+- 新守卫 `tests/test_ci_optional_imports358.py`：AST 扫 tests/ 的模块顶层 import，
+  命中「CI 没有的可选依赖」⇒ 红（cv2/gradio 在 min 清单里 ⇒ 不算 offender）。
+
 ### 测试（阶段 357 · 诊断脚本本身必须能跑通）
 - 阶段 356 的诊断 JS 从没被执行过 ⇒ 没跑过的诊断 = 没有诊断（它自己抛异常，issue 就不会生成）。
 - 守卫 `tests/test_workflow_diag_script357.py`：把 ci.yml 的脚本原样抽出、用 node 真跑，

@@ -17,8 +17,14 @@ PyMuPDF 的渲染/插入错误同样可能是 `RuntimeError` ⇒ 一页坏就把
 """
 from __future__ import annotations
 
-import fitz
 import pytest
+
+# 阶段 358：⚠ **不许在模块顶层 import 可选依赖**。
+#   CI 只装 requirements-min/dev（**不含 PyMuPDF**）⇒ 顶层 `import fitz` 会让
+#   **整个 CI 子集在收集期 ImportError** ⇒ pytest 退出码 2 ⇒ 阶段 330 之后（2 不再当"跳过"）
+#   入口判失败 ⇒ CI 红，而且红得飞快（收集即中止）。
+#   ⇒ 可选依赖一律用 importorskip：缺了就**跳过这条用例**，而不是让整个子集收集失败。
+fitz = pytest.importorskip("fitz")
 
 import config
 import services.pdf_service as ps
