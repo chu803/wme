@@ -261,6 +261,22 @@ def test_success_still_prints_a_line_of_evidence():
 
 
 
+def test_skip_code_surfaces_the_child_conclusion():
+    """退出码 2（跳过 / 有 WARN）时，那一行必须带出**子进程自己的结论**（阶段 352）。
+
+    背景：门禁家族的 2 表示「跳过」或「有 WARN 但不阻断」；入口行首只印一个 ⏭ ⇒
+    读的人容易理解成「什么都没检查」⇒「有 2 个 WARN 待决策」被吞成绿。
+    本阶段只改显示、不改契约（改契约属对外口径翻转，须先有判决表 —— 阶段 330 开放项 #24）。
+    """
+    def _r(argv, cwd=None, capture_output=True, text=True, **kw):
+        return _Proc(2, "结论：无 ERROR，2 个 WARN（不阻断构建，但需知悉/决策）\n")
+
+    _code, lines, _rep = rac.run_steps(
+        _only("corner_signal_gate"), runner=_r, echo=lambda *a, **k: None)
+    assert any("WARN" in ln for ln in lines), (
+        f"rc=2 的那行没有带出子进程结论 ⇒ 「有 WARN 待决策」会被读成「什么都没检查」：{lines}")
+
+
 def _only(name):
     """只取某一步，便于单点断言退出码语义。"""
     return [st for st in rac.build_steps() if st.name == name]

@@ -312,15 +312,21 @@ def run_steps(steps: list, *, root: str = _ROOT, runner=None, echo=None):
         report.append({"name": st.name, "rc": rc, "verdict": verdict,
                        "seconds": round(dt, 1), "argv": list(st.argv)})
         out = (getattr(proc, "stdout", "") or "").strip()
-        if rc != 0 and out:
-            tail = out.splitlines()[-12:]
+        out_lines = [l for l in out.splitlines() if l.strip()]
+        if rc == 2 and out_lines:
+            # 退出码 2 = 「跳过」或「有 WARN 但不阻断」；行首一个 ⏭ 容易被读成
+            # 「什么都没检查」⇒ 把子进程自己的结论接出来（只改显示，不改退出码契约：
+            # 改契约属对外口径翻转，须先有判决表 —— 阶段 330 开放项 #24）。
+            lines.append(f"   └─ {out_lines[-1].strip()[:160]}")
+        elif rc != 0 and out_lines:
+            tail = out_lines[-12:]
             lines.append("   └─ 末尾输出：")
             lines += [f"      {t}" for t in tail]
-        elif out:
+        elif out_lines:
             # 阶段 331：**通过也要留一行证据**。此前只有失败才附打末尾输出 ⇒
-            # CI 日志里成功的那行是「✅ pytest rc=0」+ 零上下文，没人能看出它究竟跑了多少用例
+            # CI 日志里成功那行是「✅ pytest rc=0」+ 零上下文，没人能看出它究竟跑了多少用例
             # （331 实测：入口全绿的那次，日志里一个计数都找不到）。取最后一条非空行，不改变判定。
-            lines.append(f"   └─ {out.splitlines()[-1].strip()[:160]}")
+            lines.append(f"   └─ {out_lines[-1].strip()[:160]}")
     total = aggregate(verdicts)
     return total, lines, {"steps": report, "exit_code": total}
 
