@@ -986,6 +986,26 @@ zh-CN 仍是中文、中文侧逐字回归、i18n 对称性仍空。
 
 - `352-跳过与WARN要说出结论.md`
 
+### 353 · api 字节入口的通道顺序 + job 的「假成功」（第三轮审计）（2026-10-27）
+
+第三轮审计（core + report/compare/settings）报 7 条；**其中一条我实测推翻了它的方向**：
+审计说「`_encode_bytes` 只对 TIFF/AVIF 红蓝互换，PNG/JPG/WEBP 正常」——它的隔离实验喂的是 **BGR 数组**，
+而管线交出来的是 **RGB** ⇒ 实测（纯红 RGB → 编码 → 解码）：**PNG/JPG 才是互换的那条（还是主路径！）**，
+TIFF/AVIF 走 `save_image` 反而正确。⇒ 照单执行会去「修」本来正确的分支，把真 bug 留在原地。
+修三条：① **编码侧** `cv2.imencode` 前显式 RGB2BGR（它按 BGR 解释数组）；
+② **解码侧** api 三个字节入口解码后补 BGR2RGB（`imdecode` 给 BGR，而核心只认 RGB）
+——**这是阶段 338 修的 PDF/视频那个病在 api 层的同一份**：同一张图，REST 入口与文件/界面路径给的
+**不是同一个结果**（审计实测：纯红像素灰度 76 vs 29）；③ **job 的假成功**：`job_manager` 的 worker 不看
+结果对象的 status，而 PDF/视频服务**失败时不抛异常**（只把 status 设成 failed）⇒ 坏 PDF 作业被标成 success，
+客户端拿到 `{"status":"success"}`，随后取文件却 404 ⇒ 现在先查 status，不是 success 就抛异常走失败分支。
+守卫 `tests/test_api_channel_and_job_status353.py`（4 例）：纯红经 PNG/JPG 编码后解码**仍是红**；
+**`api.detect_watermark_bytes` 与「读文件 → detect_watermark_mask」必须给出同一个掩码**（比结果、不比颜色）；
+坏 PDF 作业最终状态必须是 `failed` 且 `out_path` 为空。反例（修复前 HEAD）：坏 PDF 作业被判 `'success'`（实测）。
+本轮**未修**的 4 条已登记：`/api/detect` 忽略 body 里的 `preset`/`sensitivity`（文档声称可传）、
+对比图导出丢失败项不报告、「保存为默认」写盘失败不可见（仍显示 ✅ 已应用）、历史画廊索引可能指错记录
+（「删除所选」可能删错记录）——后三条是**条件性**，先修「无脑即错」的主路径。
+
+
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 
 `ui/tab_batch._CURRENT_QUEUE` 批跑开始时赋值、**从不置回 None**，而取消处理器（含快捷键 Shift+C）只判

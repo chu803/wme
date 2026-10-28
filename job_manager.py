@@ -253,6 +253,11 @@ class JobManager:
         res = remove_watermark_pdf(src, dst=dst,
                                    on_progress=lambda p, m: cb(p, m),
                                    **clean)
+        # 阶段 353：PDF/视频服务**失败时不抛异常**，只把结果对象的 status 设成 "failed"。
+        # 以前 worker 不看 status ⇒ 照样把作业标成 "success" ⇒ 客户端拿到
+        # {"status":"success"}，随后取文件却 404（审计实测）。
+        if getattr(res, "status", "success") != "success":
+            raise RuntimeError(getattr(res, "error", "") or "处理失败")
         with self._lock:
             job.result = self._result_to_dict(res)
             job.out_path = res.out_path if getattr(res, "out_path", None) else None
@@ -282,6 +287,8 @@ class JobManager:
         res = remove_watermark_video(src, dst=dst,
                                     on_progress=lambda p, m: cb(p, m),
                                     **clean)
+        if getattr(res, "status", "success") != "success":   # 阶段 353：同上
+            raise RuntimeError(getattr(res, "error", "") or "处理失败")
         with self._lock:
             job.result = self._result_to_dict(res)
             job.out_path = res.out_path if getattr(res, "out_path", None) else None

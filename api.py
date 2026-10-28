@@ -242,7 +242,10 @@ def _encode_bytes(rgb: np.ndarray, fmt: Optional[str], quality: Optional[int]) -
             pass
         return data
 
-    ok, buf = cv2.imencode(ext, rgb, params)
+    # 阶段 353：本函数入参是 **RGB**（auto_pipeline 契约 + 本函数 docstring），
+    # 而 `cv2.imencode` 按 **BGR** 解释数组 ⇒ 原样交给它会**红蓝互换**
+    # （实测：纯红 RGB → PNG/JPG 解码出来是蓝；TIFF/AVIF 分支走 save_image 反而正确）。
+    ok, buf = cv2.imencode(ext, cv2.cvtColor(rgb, cv2.COLOR_RGB2BGR), params)
     if not ok:
         raise RuntimeError(f"图片编码失败：{fmt}")
     return buf.tobytes()
@@ -717,6 +720,10 @@ def remove_watermark_bytes(
     arr = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
     if arr is None:
         raise ValueError("无法解码图片字节（不是合法的图片数据）")
+    # 阶段 353：`imdecode` 给的是 **BGR**，而核心管线（`process_image` / `detect_watermark_mask`
+    # / `inpaint`）只认 **RGB**（auto_pipeline 契约）⇒ 这里必须转，否则 REST 入口的检测结果
+    # 与文件/界面路径**不是同一件事**（与阶段 338 修的 PDF/视频同类）。
+    arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)
 
     core = process_image(
         arr,
@@ -786,6 +793,7 @@ def detect_watermark_bytes(
     arr = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
     if arr is None:
         raise ValueError("无法解码图片字节（不是合法的图片数据）")
+    arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)   # 阶段 353：同上，imdecode→BGR，核心要 RGB
 
     det = detect_watermark_mask(
         arr,
@@ -864,6 +872,7 @@ def inpaint_watermark_bytes(
     arr = cv2.imdecode(np.frombuffer(data, np.uint8), cv2.IMREAD_COLOR)
     if arr is None:
         raise ValueError("无法解码原图字节（不是合法的图片数据）")
+    arr = cv2.cvtColor(arr, cv2.COLOR_BGR2RGB)   # 阶段 353：同上
 
     mk = cv2.imdecode(np.frombuffer(mask_data, np.uint8), cv2.IMREAD_UNCHANGED)
     if mk is None:
