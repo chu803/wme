@@ -51,21 +51,25 @@ jobs:
       - name: 系统依赖（OpenCV / Gradio 运行时）
         id: system
         run: |
-          sudo apt-get update
+          set -eo pipefail
+          mkdir -p logs
+          sudo apt-get update 2>&1 | tee logs/system.log
           # ⚠ 阶段 351：Ubuntu 24.04（noble）起 glib 包名带 **t64**（`libglib2.0-0t64`），
           # 过渡包 `libglib2.0-0` 被删 ⇒ 写死旧包名在新镜像上直接 "Unable to locate package"
           # ⇒ 整个 job 一分钟红。按镜像里实际有哪个来挑（launchpad #2063221）。
           GLIB=$(apt-cache show libglib2.0-0t64 >/dev/null 2>&1 && echo libglib2.0-0t64 || echo libglib2.0-0)
           echo "使用系统包：$GLIB"
           sudo apt-get install -y --no-install-recommends \
-            libgl1 libsm6 libxext6 libxrender1 "$GLIB"
+            libgl1 libsm6 libxext6 libxrender1 "$GLIB" 2>&1 | tee logs/system_install.log
 
       - name: 安装依赖（最小集 + 测试依赖）
         id: deps
         run: |
-          python -m pip install --upgrade pip setuptools wheel
-          pip install -r requirements-min.txt
-          pip install -r requirements-dev.txt
+          set -eo pipefail
+          mkdir -p logs
+          python -m pip install --upgrade pip setuptools wheel 2>&1 | tee logs/deps_upgrade.log
+          pip install -r requirements-min.txt 2>&1 | tee logs/deps_min.log
+          pip install -r requirements-dev.txt 2>&1 | tee logs/deps_dev.log
 
       - name: 运行验证入口（与 CI 同一套门禁，不过门禁不发布）
         id: entry
@@ -74,7 +78,8 @@ jobs:
         shell: bash
         run: |
           set -eo pipefail
-          python scripts/run_all_checks.py 2>&1 | tee gate_output.txt
+          mkdir -p logs
+          python scripts/run_all_checks.py 2>&1 | tee gate_output.txt | tee logs/entry.log
 
       - name: 诊断：门禁失败 → FAILED 清单写入 Summary 并建 issue（供自动读取，修完可删）
         id: diagnose
@@ -88,6 +93,19 @@ jobs:
             const lines = out.split('\n');
             const failed = lines.filter(l => l.indexOf('FAILED') !== -1);
             const block = failed.length ? failed.join('\n') : lines.slice(-120).join('\n');
+            // 阶段 356：把**各步骤自己的日志尾巴**也带上（安装类失败的原因只在 runner 日志里，
+            // 以前只能让人截图）。有 logs/<step-id>.log 就取最后 40 行。
+            let stepLogs = '';
+            try {
+              const dir = 'logs';
+              const files = fs.readdirSync(dir).filter(f => f.endsWith('.log'));
+              const parts = [];
+              for (const f of files) {
+                const txt = fs.readFileSync(dir + '/' + f, 'utf8').split('\n');
+                parts.push('### ' + f + '\n' + txt.slice(-40).join('\n'));
+              }
+              stepLogs = parts.join('\n\n');
+            } catch (e) { stepLogs = '(no logs/)'; }
             // 同 ci.yml：第一句必须是「哪一步红了」，否则 pip/apt 失败时这里只会写 (no gate_output.txt)。
             let stepStatus = {};
             try { stepStatus = ${{ toJSON(steps) }} || {}; } catch (e) { stepStatus = {}; }
@@ -97,12 +115,14 @@ jobs:
             const table = rows.length ? rows.join('\n') : '(步骤状态不可用：请确认每个 step 都有 id)';
             await core.summary
               .addHeading('门禁失败 · 哪一步红了', 2).addRaw('```\n' + table + '\n```')
+              .addHeading('门禁失败 · 各步骤日志尾巴', 2).addRaw('```\n' + stepLogs + '\n```')
               .addHeading('门禁失败 · FAILED 清单', 2).addRaw('```\n' + block + '\n```').write();
             try {
               await github.rest.issues.create({
                 owner: context.repo.owner, repo: context.repo.repo,
                 title: '门禁失败诊断 ' + context.sha.slice(0, 7),
                 body: '## 哪一步红了\n\n```\n' + table + '\n```\n\n## FAILED 清单\n\ncommit `'
+                '## 各步骤日志尾巴\n\n```\n' + stepLogs + '\n```\n\n'
                       + context.sha.slice(0, 10) + '`\n\n```\n' + block + '\n```\n\n_publish.yml 自动诊断；修复后请关闭/删除。_',
               });
             } catch (e) { core.warning('issue 创建失败，Summary 仍有清单: ' + e.message); }

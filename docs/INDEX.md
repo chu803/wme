@@ -1037,6 +1037,19 @@ TIFF/AVIF 走 `save_image` 反而正确。⇒ 照单执行会去「修」本来�
 
 - `355-做了一半的事要说出来.md`
 
+### 356 · 让 CI 自诊断：失败步骤的日志尾巴直接进 Summary 与 issue（2026-10-27）
+
+CI 从 10-18 起连续红（#15~#35，每次 1m10s~1m49s ⇒ 失败在 setup 段），但**原因只在 runner 日志里**，
+而会话内读不到 GitHub ⇒ 351 修了「系统依赖写死包名」后 CI **仍红** ⇒ 继续猜的成本已高于让 CI 自己说。
+改法：① 每个 run 步骤的输出 `tee` 到 `logs/<step-id>.log`（**保留 `set -eo pipefail`**，329 的坑不能再踩）；
+② 诊断步骤把各步骤日志**最后 40 行**写进 Summary 与自动建的 issue ⇒ 下一次红，**那张 issue 自己就写着原因**
+（比如 pip 的 `No matching distribution found`）。
+守卫 `tests/test_workflow_selfdiag356.py`（4 例 × 两个 workflow）：带管道必须 tee 到 `logs/`、
+必须有 `pipefail`、诊断必须**同时**进 Summary 与 issue、写 `logs/` 前必须 `mkdir -p logs`。
+**这一步不修任何 bug，只让 bug 现形**；下一个红的原因要等下一次 CI 才拿到。
+
+- `356-CI自诊断.md`
+
 
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 

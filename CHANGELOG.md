@@ -52,6 +52,13 @@
 
 ## [Unreleased]
 
+### 改进（阶段 356 · 让 CI 自诊断）
+- CI 连红的原因只在 runner 日志里，会话内读不到 GitHub ⇒ 351 修完「系统依赖写死包名」仍红
+  ⇒ 继续猜的成本已高于让 CI 自己说。
+- 每个 run 步骤的输出 `tee` 到 `logs/<step-id>.log`（保留 `set -eo pipefail`）；
+  诊断步骤把各步骤日志**最后 40 行**写进 Summary 与自动建的 issue ⇒ 下一次红，那张 issue 自己就写着原因。
+- 守卫 `tests/test_workflow_selfdiag356.py`（4 例 × 2 workflow）。这一步不修 bug，只让 bug 现形。
+
 ### 修复（阶段 355 · 「做了一半」的事必须在界面上说出来）
 - 对比图导出：`except → continue` 只 log、消息只报成功数 ⇒ ZIP 比历史页少几张却没人知道。
   现在统计失败条目，消息用新键 `compare_zip_partial`（成功数 + 失败数 + 前几个失败名）。
