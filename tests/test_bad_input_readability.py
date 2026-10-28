@@ -18,6 +18,11 @@ import sys
 import cv2
 import numpy as np
 import pytest
+import importlib.util
+
+# 阶段 358：CI 只装 requirements-min/dev（**不含 PyMuPDF**）⇒ PDF 相关用例必须**跳过**，
+# 而不是让 `process_pdf` 抛「PDF 依赖缺失」把用例打红（这条正是 358 抓到 CI 连红的第三因）。
+_HAS_FITZ = importlib.util.find_spec("fitz") is not None
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 if _ROOT not in sys.path:
@@ -54,6 +59,7 @@ def test_normal_image_still_loads(tmp_path):
     assert rgb.shape == (64, 64, 3) and alpha is None
 
 
+@pytest.mark.skipif(not _HAS_FITZ, reason="需要 PyMuPDF（CI 最小依赖不含）")
 def test_broken_pdf_reports_readable_error(tmp_path):
     from api import remove_watermark_pdf
 
