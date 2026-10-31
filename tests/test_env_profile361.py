@@ -136,7 +136,7 @@ def test_entry_header_declares_the_environment():
     assert any(tag in out for tag in ("ci_equivalent", "full_dev", "not_ci_env")), "只打印了标题没有判定"
 
 
-def test_env_profile_cli_agrees_with_the_header(capsys):
+def test_env_profile_cli_agrees_with_the_header():
     """脚本单独跑与入口内嵌的判定必须**同源**（同 tag ⇒ 两处不会各说各话）。"""
     rc, out = _run(["scripts/env_profile.py", "--json"])
     prof = json.loads(out.strip().splitlines()[-1])

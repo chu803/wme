@@ -122,7 +122,6 @@ def profile(present: set) -> dict:
         "executable": sys.executable,
         "python": sys.version.split()[0],
         "present_required": [m for m in CI_REQUIRED if m in present],
-        "present_forbidden": p["extra"],
         **p,
         "summary": head,
         "next_step": next_step,
@@ -160,7 +159,7 @@ def main(argv: "list | None" = None) -> int:
         print(f"  CI 必装  : {' '.join(CI_REQUIRED)}")
         print(f"  本机有   : {', '.join(prof['present_required']) or '(无)'}")
         print(f"  CI 不装  : {', '.join(sorted(CI_FORBIDDEN))}")
-        print(f"  本机多装 : {', '.join(prof['present_forbidden']) or '(无)'}")
+        print(f"  本机多装 : {', '.join(prof['extra']) or '(无)'}")
         print(f"  判定     : [{prof['tag']}]")
         print(f"  结论     : {prof['summary']}")
         if prof["next_step"]:
