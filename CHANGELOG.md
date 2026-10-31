@@ -52,6 +52,22 @@
 
 ## [Unreleased]
 
+### 改进（阶段 361 · 入口自报「这次量的是哪个环境」）
+- 门禁步骤全用 `sys.executable` ⇒ 谁启动它就决定量的是哪个环境，**但入口以前不打印这件事**：
+  本地是 3.13 完整环境（torch / PyMuPDF / easyocr 齐），CI 是 3.11 + 只装 min+dev
+  ⇒ 「本地全绿」与「CI 红」同时为真，347 / 351 / 358 / 360 四次都是同一形状。
+- 新增 `scripts/env_profile.py`（环境画像单一真值来源）：`CI_REQUIRED`=`cv2/gradio/numpy/PIL/pytest`
+  （缺 ⇒ 这台机不是 CI 那种环境）；`CI_FORBIDDEN`=`torch/fitz/easyocr`
+  （装了 ⇒ 本地会走 CI 永不走的分支 ⇒ 本地绿**不能外推**成 CI 绿）。
+  退出码沿用家族口径 `0` 等价 / `1` 必装缺 / `2` 本机更强（告知、不判红；改判定属 #24 类口径变更）。
+- `run_all_checks` 开头打印解释器 + 判定 + actionable 下一步（`--list` 也打印，零成本可见）。
+- 探测走 `importlib.metadata.packages_distributions()`，**不用 `find_spec`**——后者正是
+  `ci_env_probe.py` 的注入点，共用一层会让探测器先炸（LESSONS #334）。
+- 守卫 `tests/test_env_profile361.py`（9 例）在**两个环境各跑一遍全绿**（3.11 等价 venv / 3.13 完整 venv），
+  含「`CI_REQUIRED` 必须与两份 requirements 同源」的防漂移断言。
+  ⚠ 过程自打脸两条并当场改掉：文本判据把说明文里"别用 find_spec"判成违规（⇒ 改 AST，同 #316）、
+  以及一条恒真断言。
+
 ### 修复（阶段 360 · 模块自检把「可选依赖没装」判成质量失败；探针的模拟层跨不过进程边界）
 - 建 **真的 CI 等价环境** `D:\qoder\ci311venv`（Python 3.11.4，只装 `requirements-min` + `requirements-dev`），
   跑与 CI **同一条命令** `python scripts/run_all_checks.py` ⇒ `2 failed, 3361 passed, 36 skipped`（7 分 10 秒）。

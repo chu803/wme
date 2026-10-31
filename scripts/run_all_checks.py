@@ -349,6 +349,19 @@ def main(argv: "list | None" = None) -> int:
 
     steps = build_steps(full=args.full, gates=args.gates, root=_ROOT, cov=args.cov)
 
+    # 阶段 361：开口先说「这次量的是哪个环境」。步骤全用 sys.executable ⇒ 解释器决定一切，
+    # 而「本地绿 CI 红」四次（347/351/358/360）的共同根就是没人把这句话打印出来。
+    # ⚠ 它只是**告知**，不参与判定（改判定口径属任务 #24，等用户拍）。
+    from scripts.env_profile import profile as _env_profile, installed_modules as _env_present
+    _prof = _env_profile(_env_present())
+    print("=" * 78)
+    print("验证入口 run_all_checks · 环境画像")
+    print(f"  解释器   : {_prof['executable']}  (Python {_prof['python']})")
+    print(f"  判定     : [{_prof['tag']}] {_prof['summary']}")
+    if _prof["next_step"]:
+        print(f"  下一步   : {_prof['next_step']}")
+    print("=" * 78)
+
     print("=" * 78)
     print("验证入口 run_all_checks · 步骤清单")
     for st in steps:
