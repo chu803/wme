@@ -52,6 +52,39 @@
 
 ## [Unreleased]
 
+### 修复（阶段 360 · 模块自检把「可选依赖没装」判成质量失败；探针的模拟层跨不过进程边界）
+- 建 **真的 CI 等价环境** `D:\qoder\ci311venv`（Python 3.11.4，只装 `requirements-min` + `requirements-dev`），
+  跑与 CI **同一条命令** `python scripts/run_all_checks.py` ⇒ `2 failed, 3361 passed, 36 skipped`（7 分 10 秒）。
+  一条失败是竞态产物（INDEX 在入口跑完后才登记，复跑通过）；另一条是**真缺陷**。
+- 真缺陷：`services/pdf_service.py` 自检在缺 PyMuPDF 时 `raise SystemExit(1)`，而 CI 刻意不装 PyMuPDF
+  ⇒ 守卫 `assert rc == 0` ⇒ **CI 第 4 个红因**。两处口径同时错位：模块侧把**环境事实**申报成质量失败
+  （家族约定里 `2` 才是依赖缺失），守卫侧用 `rc == 0` **禁止了契约里合法的 2**。
+- 修：缺依赖 ⇒ 打印「缺什么 / 怎么装」+ `SystemExit(2)`；守卫接受 `0/2`，**但 2 必须带原因**
+  （否则「跳过」变成真失败的新藏身处）。消费者核查：`README.md`、`scripts/media_gate.py` 只引用路径，无人依赖旧码。
+- 牙齿（反例真跑）：把自检改成「返回 2 却不说原因」⇒ 守卫 `CF_RC=1` 并点名「替真失败打掩护」；复原后绿。
+- **探针盲区（本阶段核心结论）**：`ci_env_probe.py` 用 `sys.meta_path` 屏蔽模块是**进程内**机制，
+  而 `test_module_selfcheck` 用 `subprocess.run([sys.executable, mod])` ⇒ 子进程跑在**本机完整环境**里
+  ⇒ 探针绿、CI 红。判据：**凡是派生子进程的守卫，环境模拟必须沿进程边界传递**；
+  否则只能建真的等价 venv（顺带覆盖解释器/安装版图）⇒ 与 359 的 CI 常驻收集检查互补、不可互替。
+- 顺带证明 **347 的区间修法在 cp311 成立**：两份清单安装均 `rc=0`
+  （numpy 2.4.6 / scipy 1.17.1 / gradio 6.31.0 都取到 cp311 轮子；347 之前钉的版本没有）。
+
+### 改进（阶段 359 · 把 CI 等价探针接进 CI：只做收集检查）
+- 358 修完的尾巴：**能发现问题的探针还是"没人跑的手动脚本"** ⇒ 同类缺陷会再来一次。
+- 先量代价（本机实测）：完整执行 **约 10 分钟**（入口本来就跑一遍 ⇒ 等于跑两遍）vs 只收集 **21 秒**；
+  而 358 那类失败**在收集期就定型** ⇒ CI 常驻 `ci_env_probe.py --collect-only`（步骤 `id: probe_collect`，
+  排在装依赖之后、门禁入口之前：先 21 秒点名文件，而不是先花 8 分钟拿同一条信息），完整执行留在本地。
+- 探针侧：新旗标 `--collect-only`；与 `--extra` 的合成抽成纯函数 `resolve_extra()`（幂等）；
+  **结论行打印它验的是哪一层**（否则读日志的人以为"完整跑过了"）；失败时带上 pytest 原始退出码，
+  并单独解释 **5**（限定单文件时整份被 `importorskip` 跳过 ⇒ 正常；全子集上出现 5 ⇒ 选择器失效要查）。
+- 守卫 `tests/test_ci_probe_in_ci359.py`（5 例 / 1.83 秒）带反例：注入「顶层 `import fitz`」的临时用例
+  （放 `.scratch/`，不进 `tests/`，以免与 358 的 AST 守卫互相看见）⇒ 必须判红**且点名该文件**；
+  同一条命令跑干净文件 ⇒ 必须判绿（否则"判红"不携带信息）。
+- **3.11 等价验证**（补上探针不覆盖的解释器维度）：新建 `D:\qoder\ci311venv`（Python 3.11.4，
+  只装 `requirements-min` + `requirements-dev`，阿里云镜像）⇒ `pip install` **两个清单均 rc=0**
+  （numpy 2.4.6 / scipy 1.17.1 / gradio 6.31.0 都拿到了 cp311 轮子 ⇒ 直接证明 347 的区间修法在 cp311 成立），
+  收集检查在该环境 **20 秒 rc=0**。
+
 ### 修复（阶段 358 · 顶层 import 可选依赖打断 CI 收集）
 - 用仓库里**早就存在**的 `scripts/ci_env_probe.py`（CI 环境等价性探针）抓到：
   `tests/test_pdf_page_abort341.py`（阶段 341 我自己写的）在模块顶层 `import fitz`，
@@ -60,6 +93,11 @@
 - 修法：`fitz = pytest.importorskip("fitz")` ⇒ CI 上跳过这条用例，而不是让整个子集收集失败。
 - 新守卫 `tests/test_ci_optional_imports358.py`：AST 扫 tests/ 的模块顶层 import，
   命中「CI 没有的可选依赖」⇒ 红（cv2/gradio 在 min 清单里 ⇒ 不算 offender）。
+- **续**：收集期修好后，探针又暴露两条**运行时**失败（`test_broken_pdf_reports_readable_error` /
+  `test_process_pdf_reaches_process_image`——它们不 import fitz，但走的 PDF 路径需要它）⇒ 同样按
+  `_HAS_FITZ` 跳过。跳过判据**第一版用 `importlib.util.find_spec("fitz")` ⇒ 被探针自己钩住、收集期即炸**
+  ⇒ 改用 `tests/_optional_deps.py`：函数体内 `__import__` + `except ImportError`（教训 #334：
+  凡是被模拟/注入的那一层，判定必须走另一条路径）。
 
 ### 测试（阶段 357 · 诊断脚本本身必须能跑通）
 - 阶段 356 的诊断 JS 从没被执行过 ⇒ 没跑过的诊断 = 没有诊断（它自己抛异常，issue 就不会生成）。

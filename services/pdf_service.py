@@ -734,8 +734,11 @@ if __name__ == "__main__":
 
     print(f"[1] PyMuPDF 可用性：{is_pdf_available()}")
     if not is_pdf_available():
-        print("    未安装 PyMuPDF，请执行：pip install PyMuPDF")
-        raise SystemExit(1)
+        # 退出码 2 = **依赖缺失 ⇒ 跳过**，不是质量失败（与门禁家族的 0/1/2/3 口径一致）。
+        # 为什么必须区分：CI 只装 requirements-min/dev（**刻意不含 PyMuPDF**）⇒ PDF 是可选增强；
+        # 若这里返回 1，CI 会把「这台机器没有装这个可选库」判成产品坏了（阶段 360 实测：CI 第 4 个红因）。
+        print("    未安装 PyMuPDF，本自检跳过；要启用 PDF 功能请执行：pip install PyMuPDF")
+        raise SystemExit(2)
 
     import tempfile
 

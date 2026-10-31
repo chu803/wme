@@ -49,3 +49,26 @@ E   ModuleNotFoundError: [CI 环境模拟] fitz 在 CI（requirements-min.txt + 
    （第一版把它们也列进去 ⇒ 误报 14 个文件，已收窄）。
 3. **建议（未做）**：把 `ci_env_probe.py` 变成 CI 的**第二个 job**（约 10 分钟），
    让"本地绿、CI 红"在**推之前**就被发现，而不是等 CI 红了再回来查。
+
+## 五、续：修完收集期，还有两条**运行时**失败
+
+收集期修好后重跑探针，子集能跑到用例级了，又露出两条**不是 import 问题**的失败：
+
+- `test_broken_pdf_reports_readable_error`
+- `test_process_pdf_reaches_process_image`
+
+它们**没有**在顶层 import fitz，而是调用「需要 fitz 才有意义」的 PDF 路径 ⇒ 在 CI 上会真的跑、真的失败
+（这就是「修一条不绿」的又一次实例：同一症状下藏着不同层级的成因）。
+⇒ 给这两条加 `skipif(not _HAS_FITZ, reason="需要 PyMuPDF（CI 最小依赖不含）")`，与 341 的口径一致。
+
+### 但「跳过判据」第一版自己又炸了
+
+第一版写的是 `importlib.util.find_spec("fitz")` —— 而 `ci_env_probe.py` **钩住的正是 `find_spec`**
+（它靠这个模拟"CI 上没有此模块"）⇒ 判据表达式在**收集期**抛出 `ModuleNotFoundError` ⇒ 两个文件再次 ERROR。
+**模拟缺失的机制，与最常用的探测方式撞车。**
+
+改法 `tests/_optional_deps.py`：**真的去 `__import__`**，`except ImportError`
+（`ModuleNotFoundError` 是其子类 ⇒ 探针的模拟同样被捕获），且 import 在**函数体内** ⇒ 不违反本阶段的顶层 import 守卫。
+
+**教训（#334）**：凡是被「模拟 / 注入」的那一层，判定代码必须走**另一条路径**。
+否则「探测器」和「被测行为」共用同一个假点，模拟越像真的，探测器越先死。

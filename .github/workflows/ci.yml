@@ -80,6 +80,18 @@ jobs:
           pip install -r requirements-min.txt 2>&1 | tee logs/deps_min.log
           pip install -r requirements-dev.txt 2>&1 | tee logs/deps_dev.log
 
+      - name: 依赖缺失下的收集检查（CI 等价探针，秒级）
+        id: probe_collect
+        # 阶段 358 的复发防线：那次 CI 连红的直接原因是**测试在模块顶层 import 了 CI 没有的可选依赖**
+        # ⇒ 收集期 ImportError ⇒ pytest 退出码 2 ⇒ 入口判失败。这类问题**只看收集期就能发现**，
+        # 所以这里跑 `--collect-only`（实测本机 21 秒），而不是把整个套件再跑一遍（约 10 分钟）。
+        # 本地那条 10 分钟的完整探针仍然保留（推之前手动跑），CI 只常驻最便宜的判据。
+        shell: bash
+        run: |
+          set -eo pipefail
+          mkdir -p logs
+          python scripts/ci_env_probe.py --collect-only 2>&1 | tee logs/probe_collect.log
+
       - name: 运行验证入口（测试 + 静态扫描，与本地同一入口）
         id: entry
         # 阶段 329：必须显式 `shell: bash` + `set -eo pipefail`。

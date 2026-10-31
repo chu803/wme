@@ -3,7 +3,9 @@
 
 把所有分散在各模块的 `python xxx.py` 自检收敛到 pytest 统一管理：
 - 离线、无需 torch：只挑不依赖模型权重下载的模块。
-- 每个模块作为独立子进程运行，断言退出码为 0（与 CI 行为一致）。
+- 每个模块作为独立子进程运行，断言退出码为 0（通过）或 2（**可选依赖缺失 ⇒ 跳过**，
+  且必须说明缺的是什么；阶段 360）。CI 只装 requirements-min/dev，
+  「这台机器没装那个可选库」是环境事实、不是产品缺陷 ⇒ 不能让它把 CI 判红。
 - 标记为 slow 的用例（如 detector）在 CI 中仍会运行（它离线可用），
   但若节奏需要可单独 `-m "not slow"` 跳过。
 
@@ -251,11 +253,19 @@ def test_module_selfcheck(mod, marks, request, tmp_path):
         timeout=300,
         env=env,
     )
-    assert r.returncode == 0, (
+    # 阶段 360：**0 = 通过，2 = 依赖缺失跳过**；其余（尤其 1）一律算失败。
+    # 为什么放开 2：CI 只装 requirements-min/dev，可选库（PyMuPDF 等）在场与否是**环境事实**，
+    # 不是产品质量。但 2 不能变成新的藏身处 ⇒ 下面钉住「返回 2 必须说出缺的是哪个依赖」。
+    assert r.returncode in (0, 2), (
         f"{mod} 自检失败（退出码 {r.returncode}）\n"
         f"--- stdout ---\n{r.stdout}\n"
         f"--- stderr ---\n{r.stderr}"
     )
+    if r.returncode == 2:
+        out = (r.stdout or "") + (r.stderr or "")
+        assert ("未安装" in out) or ("缺失" in out) or ("pip install" in out), (
+            f"{mod} 自检返回 2（跳过）却没说明缺什么 ⇒ 「跳过」正在替真失败打掩护：\n{out}"
+        )
     # 阶段 147：输出非空（防「静默通过」的空自检）。
     assert (r.stdout or "").strip(), (
         f"{mod} 自检退出码为 0 但**没有任何输出** —— "
