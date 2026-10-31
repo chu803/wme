@@ -241,6 +241,29 @@ def test_failure_prints_tail_output():
     assert code == 1
     assert any("末尾输出" in ln for ln in lines)
     assert any("boom" in ln for ln in lines)
+    # 短摘要里没有 FAILED/ERROR 行时，必须**明说**去看末尾输出，而不是留个空头清单。
+    assert any("短摘要里没有" in ln for ln in lines), lines
+
+
+def test_failure_surfaces_the_whole_failed_list():
+    """阶段 362：失败条数**多过末尾 12 行**时，短摘要里的每条失败都要出现在入口输出里。
+
+    现场：CI run #39 有 6 条失败，入口只回显末尾 12 行 ⇒ 自动建的诊断 issue 只列出 3 条，
+    剩下 3 条靠猜。**说不清的失败不是可用的失败**——与「说不清的结果不是通过」（331/352）同族。
+    """
+    steps = [rac.build_steps()[0]]
+    fails = "\n".join(f"FAILED tests/test_x{i}.py::test_case_{i} - AssertionError: 第 {i} 条"
+                      for i in range(20))
+    out = "collected 3366 items\n\n" + fails + "\n20 failed, 3360 passed in 257.58s\n"
+    code, lines, _rep = rac.run_steps(
+        steps, runner=lambda argv, cwd=None, capture_output=True, text=True, **_kw: _Proc(1, out),
+        echo=lambda *a, **k: None)
+    assert code == 1
+    joined = "\n".join(lines)
+    assert "失败清单" in joined, lines
+    for i in range(20):
+        assert f"test_case_{i}" in joined, f"第 {i} 条失败没被接出来 ⇒ 诊断只剩一半信息"
+    assert "20 failed" in joined, "末尾的计数行也要保留（它说明总共几条）"
 
 
 def test_success_still_prints_a_line_of_evidence():

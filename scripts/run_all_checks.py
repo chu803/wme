@@ -319,6 +319,17 @@ def run_steps(steps: list, *, root: str = _ROOT, runner=None, echo=None):
             # 改契约属对外口径翻转，须先有判决表 —— 阶段 330 开放项 #24）。
             lines.append(f"   └─ {out_lines[-1].strip()[:160]}")
         elif rc != 0 and out_lines:
+            # 阶段 362：CI 那次有 **6** 条失败，「末尾 12 行」只容得下 3 条 ⇒ 自动建的诊断
+            # issue 少了一半信息，读的人只能猜。改成：先把子进程短摘要里的**失败行全部**接出来，
+            # 末尾 12 行仍保留当上下文。**只改显示，不改判定**（同 352 的克制）。
+            fails = [l for l in out_lines if l.startswith(("FAILED", "ERROR"))]
+            lines.append("   └─ 失败清单（子进程短摘要）：")
+            if fails:
+                lines += [f"      {f.strip()[:220]}" for f in fails[:80]]
+                if len(fails) > 80:
+                    lines.append(f"      …（还有 {len(fails) - 80} 条，见完整日志）")
+            else:
+                lines.append("      (短摘要里没有 FAILED/ERROR 行 ⇒ 看下面的末尾输出)")
             tail = out_lines[-12:]
             lines.append("   └─ 末尾输出：")
             lines += [f"      {t}" for t in tail]

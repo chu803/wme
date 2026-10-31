@@ -1136,6 +1136,31 @@ vs 只收集 **21 秒**——而 358 那次失败**在收集期就定型**（一
 
 - `361-入口自报环境画像.md`
 
+### 362 · CI 第一次红在「用例级」：Windows 假设 + 诊断看不见剩下的失败（2026-10-31）
+
+推送 `16c0ac7` 后 run #39 **5m36s 才红**（前四次都红在 1~2 分钟的装依赖/收集段），
+自动诊断 issue #30 的状态表写着 `checkout/python/system/deps/probe_collect: success`、`entry: failure`
+⇒ 347/351/358/360 四条**确实修好了**；剩下的是我一直声明"未覆盖"的那一维：**OS**（本机 Windows / runner Ubuntu）。
+三条失败全是平台假设，没有一条是产品逻辑回归：
+- `test_process_file_auto_preset_threading` ⇒ `FileNotFoundError: 'powershell'`：
+  清理临时文件用 `powershell Remove-Item`，**把本机沙箱的 safe-delete 闩锁写进了产品测试的可执行文件依赖**
+  ⇒ 改放 pytest `tmp_path`，用例自己不做删除。
+- `test_display_path_survives_cross_drive` ⇒ POSIX 上 `relpath` **不为"另一个挂载点"抛 ValueError**，
+  而是给出逃逸出 base 的 `../Z:\…` ⇒ 修 `utils/path_helper.py::display_path`：按它**自己 docstring 的契约**
+  （表达不了相对就退回绝对）把"逃逸"也算表达不了 ⇒ 两个 OS 同答案。
+  为什么修产品而不是给测试加 `skipif`：两处真实调用方（quality_gate / real_gate 的 `--update` 确认信息）
+  在 Linux 上印 `../Z:\…` 本就是错的表现，`skipif` 只会把真缺陷永久藏进"CI 不测"的暗处。
+- `test_root_dir_has_no_unexpected_files` ⇒ 根目录散落 `gate_output.txt`：**阶段 356 自己**把入口输出
+  `tee` 到了仓库根 ⇒ 改 tee 到 `logs/entry.log`（目录不算散落文件），诊断脚本与 `publish.yml` 同步改。
+**诊断自己的洞**：issue 写 `6 failed` 却只列 3 条 FAILED——入口对失败步骤只回显子进程**末尾 12 行**。
+⇒ `run_all_checks` 改为先把短摘要里**所有** `FAILED`/`ERROR` 行接出来（上限 80 条，超出报剩余数），
+末尾 12 行保留作上下文；没有失败行时明说"去看末尾输出"。只改显示不改判定（同 352 的克制）。
+新守卫 `tests/test_os_portability362.py`（5 例）：AST 扫「真的会起进程的调用」的 Windows 专属程序；
+反例（注入 powershell 必被抓）**与反-误报**（`re.search('CMD …')` 不许当命令）双测
+——第一版不限定函数名，把 Docker 守卫里的正则**误报**成命令调用，差点去修一个不存在的问题。
+
+- `362-CI红在用例级的Windows假设.md`
+
 
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 

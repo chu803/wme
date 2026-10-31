@@ -45,7 +45,7 @@ def test_diagnostic_script_reports_the_failing_step_log(tmp_path):
     marker = "ERROR: No matching distribution found for numpy==2.5.1"
     (work / "logs" / "deps_min.log").write_text(
         "\n".join([f"line {i}" for i in range(60)] + [marker]), encoding="utf-8")
-    (work / "gate_output.txt").write_text("no failures here\n", encoding="utf-8")
+    (work / "logs" / "entry.log").write_text("no failures here\n", encoding="utf-8")
 
     runner = """
 const core = {

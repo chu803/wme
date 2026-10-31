@@ -206,26 +206,19 @@ def test_process_image_auto_preset_off():
     assert rd["recommendation"] is None
 
 
-def test_process_file_auto_preset_threading():
+def test_process_file_auto_preset_threading(tmp_path):
     """process_file 透传推荐结果（落盘结果按需）。"""
-    import tempfile as _tf
-    fd, path = _tf.mkstemp(suffix=".png")
-    os.close(fd)
+    # 文件放 pytest 的 `tmp_path` 里 ⇒ 用例**自己不做任何删除**：
+    # 前一版为了绕开本机沙箱的 safe-delete 闩锁改用 `powershell Remove-Item`，
+    # 于是这个用例在 Linux runner 上 `FileNotFoundError: 'powershell'`（阶段 362 实测 CI 红）。
+    # 本地开发环境的限制不该写进产品测试的可执行文件依赖（守卫：tests/test_os_portability362.py）。
+    path = str(tmp_path / "plain.png")
     cv2.imwrite(path, _plain())
-    try:
-        rd = auto_pipeline.process_file(
-            path, mode="auto", engine="opencv", auto_preset=True, preset=None,
-        )
-        assert "recommended_preset" in rd
-        assert rd["recommended_preset"] == "general"
-        assert rd["recommendation"] is not None
-        # 纯色图检测不到水印 → skipped，但不影响推荐填充。
-        assert rd["status"] in ("skipped", "success")
-    finally:
-        # 不依赖 os.remove（沙箱 safe-delete 拦截）；用 PowerShell 安全删除项目残留在临时目录的文件。
-        import subprocess
-        subprocess.run(
-            ["powershell", "-NoProfile", "-Command",
-             f"Remove-Item -Force -LiteralPath '{path}'"],
-            check=False,
-        )
+    rd = auto_pipeline.process_file(
+        path, mode="auto", engine="opencv", auto_preset=True, preset=None,
+    )
+    assert "recommended_preset" in rd
+    assert rd["recommended_preset"] == "general"
+    assert rd["recommendation"] is not None
+    # 纯色图检测不到水印 → skipped，但不影响推荐填充。
+    assert rd["status"] in ("skipped", "success")

@@ -617,15 +617,22 @@ def display_path(path: str | Path, base: str | Path | None = None) -> str:
         base : 相对基准目录；默认项目根目录。
 
     返回值：
-        可读路径：同盘符时返回相对路径，跨盘符/异常时原样返回绝对路径。
+        可读路径：能相对 base 表达时返回相对路径，**跨盘符 / 逃逸出 base / 任何异常**时原样返回绝对路径。
     """
     p = Path(path)
     ref = Path(base) if base is not None else Path(_ROOT)
     try:
-        return _os.path.relpath(str(p), str(ref))
+        rel = _os.path.relpath(str(p), str(ref))
     except (ValueError, OSError):
         # 跨盘符（Windows）或任何无法求相对路径的情况 → 退回绝对路径。
         return str(p)
+    # POSIX 上「另一个挂载点/别的盘」不抛 ValueError，而是给出 `../...` 这种**逃逸出 base** 的路径
+    # （阶段 362 实测：CI 的 Ubuntu runner 上 `Z:\somewhere\baseline.json` 被渲染成 `../Z:\...`）。
+    # 按本函数自述的契约——「表达不了相对就退回绝对」——逃逸同样算表达不了，
+    # 退回绝对路径 ⇒ 两个 OS 给同一个答案（展示路径不该长得像 diff 输出）。
+    if rel == ".." or rel.startswith(".." + _os.sep):
+        return str(p)
+    return rel
 
 
 # ==============================================================================

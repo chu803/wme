@@ -52,6 +52,26 @@
 
 ## [Unreleased]
 
+### 修复（阶段 362 · CI 第一次红在用例级：三条 Windows 假设 + 诊断看不见剩下的失败）
+- run #39（`16c0ac7`）**5m36s** 才红，状态表 `checkout/python/system/deps/probe_collect: success`、`entry: failure`
+  ⇒ 347/351/358/360 四条确认真修好；剩下是**OS 维**（本机 Windows / runner Ubuntu）。入口还打印了
+  `[ci_equivalent]`——361 的画像第一次在 runner 上自证"量的就是 CI 环境"。
+- 三条失败都是平台假设，非产品回归：
+  ① 测试用 `powershell Remove-Item` 清理临时文件 ⇒ Linux `FileNotFoundError`；改放 pytest `tmp_path`，
+  **用例自己不做删除**（本机沙箱的 safe-delete 闩锁不该进产品测试）；
+  ② `display_path`：POSIX 上 `relpath` 不为"另一挂载点"抛 `ValueError` 而是给出逃逸出 base 的 `../Z:\…`
+  ⇒ 按函数**自述契约**（表达不了相对就退回绝对）把"逃逸"也算表达不了，两个 OS 同答案
+  （修产品而非 `skipif`：`quality_gate/real_gate` 的 `--update` 确认信息在 Linux 上印 `../…` 本就是错的）；
+  ③ 阶段 356 把入口输出 `tee gate_output.txt` 写到**仓库根** ⇒ 卫生守卫判散落文件；改 tee 到 `logs/entry.log`，
+  诊断脚本与 `publish.yml` 同步。
+- **诊断的洞**：issue 写 `6 failed` 却只列 3 条 ⇒ 入口对失败步骤只回显子进程**末尾 12 行**。
+  改为先把短摘要里**所有** `FAILED`/`ERROR` 行接出来（上限 80，超出报剩余数），末尾 12 行保留作上下文，
+  没有失败行时明说"去看末尾输出"。只改显示不改判定。
+- 守卫：`tests/test_os_portability362.py`（5 例，AST 扫「真的会起进程的调用」里的 Windows 专属程序，
+  含**反例 + 反-误报**双测——第一版不限定函数名，把 Docker 守卫里的正则文本误报成命令调用）；
+  `tests/test_run_all_checks.py` 新增"20 条失败必须逐条出现在入口输出里"。
+- 边界：**仍有 3 条失败未露面**（被截断的那 3 条），下一次 CI 会带完整清单；本地无 Linux，等价验证做不到。
+
 ### 改进（阶段 361 · 入口自报「这次量的是哪个环境」）
 - 门禁步骤全用 `sys.executable` ⇒ 谁启动它就决定量的是哪个环境，**但入口以前不打印这件事**：
   本地是 3.13 完整环境（torch / PyMuPDF / easyocr 齐），CI 是 3.11 + 只装 min+dev
