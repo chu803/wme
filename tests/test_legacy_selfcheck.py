@@ -123,6 +123,10 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     # 阶段 206：默认模式会**跑整个 CI 等价子集**（约 10 分钟），不适合做子进程自检
     # （会拖垮自检套件）。其自身有 `--check` 零副作用自检与 `tests/test_ci_env_probe.py` 守卫。
     "scripts/ci_env_probe.py": "S CI 环境等价性探针（默认模式跑全量，另见 --check）",
+    # 阶段 361：`env_profile.py` 的 `__main__` **返回的是判定**（0 等价 / 1 环境不对 / 2 本机更强），
+    # 不是「自检通过=0」那种模块自检 ⇒ 塞进 MODULES 会把「环境比 CI 强」读成自检失败。
+    # 它的端到端覆盖在 `tests/test_env_profile361.py`（子进程真跑，且 3.11 等价 / 3.13 完整两环境各一遍）。
+    "scripts/env_profile.py": "S 环境画像 CLI（退出码是判定，不是自检结果）",
     "scripts/collect_real_assets.py": "S 资产收集（含网络）",
     # 阶段 349：真实平铺/点阵水印样本的**成对性校验 + 召回测量**。
     # 需要外部样本目录（任务 #22 的采集包），自检时没有 ⇒ 不进子进程守卫清单。

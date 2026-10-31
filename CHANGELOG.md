@@ -67,6 +67,12 @@
   含「`CI_REQUIRED` 必须与两份 requirements 同源」的防漂移断言。
   ⚠ 过程自打脸两条并当场改掉：文本判据把说明文里"别用 find_spec"判成违规（⇒ 改 AST，同 #316）、
   以及一条恒真断言。
+- **台账守卫当场拦下我**：新增带 `__main__` 的 `scripts/env_profile.py` 后，CI 等价入口立刻红在
+  `test_selfcheck_coverage_is_accounted_for`（含 `__main__` 的模块必须登记或显式豁免，阶段 147）。
+  处置＝加进 S 类豁免并写清理由：**它的退出码是「判定」，不是「自检通过」**——塞进 `MODULES`
+  会把「本机环境比 CI 强」读成自检失败（新的假红）。端到端覆盖在 361 的守卫里（子进程真跑）。
+- 最终验证（最终代码状态、CI 等价环境）：入口 **rc=0**，`3371 passed / 37 skipped / 6 deselected`（6 分 47 秒），
+  日志开头就是 `[ci_equivalent]` ——「这次量的是哪个环境」第一次由入口自己说出来。
 
 ### 修复（阶段 360 · 模块自检把「可选依赖没装」判成质量失败；探针的模拟层跨不过进程边界）
 - 建 **真的 CI 等价环境** `D:\qoder\ci311venv`（Python 3.11.4，只装 `requirements-min` + `requirements-dev`），
