@@ -64,12 +64,16 @@ Changelog = "https://github.com/chu803/wme/blob/main/CHANGELOG.md"
 
 # 控制台入口（阶段 296 补齐，服务「发布 v1.0」）。
 # 命名属发布范围决策：wme=UI 主入口 / wme-cli=批量命令行 / wme-api=REST 服务。
-# 三入口函数均无必需参数（start_server 三参全默认、main() 无参、cli.main(argv=None)），
-# 可直接由 pip 安装出的命令无参调用。守卫见 tests/test_packaging_meta.py。
+# 三入口函数均无必需参数，可直接由 pip 安装出的命令无参调用
+# （main() 无参、cli.main(argv=None)、server.cli_main(argv=None)）。
+# ⚠ 阶段 365：`wme-api` **不再直接指向 `start_server`**——那是函数式 API、不读 argv，
+# 于是安装态实测 `wme-api --help` 不打用法而是起服务并阻塞、写错的参数被静默忽略（代价是占用端口）。
+# 规则：**每个 console_scripts 都必须指向"会解析 argv 的薄壳"**，由
+# tests/test_wme_api_cli365.py + tests/test_packaging_meta.py 钉住。
 [project.scripts]
 wme = "main:main"
 wme-cli = "cli:main"
-wme-api = "server:start_server"
+wme-api = "server:cli_main"
 
 [tool.setuptools]
 # 顶层单文件模块（与仓库现状一一对应；`conftest.py` 是测试夹具，不发布）

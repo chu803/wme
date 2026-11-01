@@ -40,7 +40,7 @@ from scripts.verify_dist_artifacts import (  # noqa: E402
 
 _DIST = "wme_watermark_eraser-1.0.3.dist-info"
 _VERSION = "1.0.3"
-_GOOD_SCRIPTS = "[console_scripts]\nwme = main:main\nwme-cli = cli:main\nwme-api = server:start_server\n"
+_GOOD_SCRIPTS = "[console_scripts]\nwme = main:main\nwme-cli = cli:main\nwme-api = server:cli_main\n"
 _GOOD_NAMES = [
     "config.py", "main.py", "cli.py", "server.py", "api.py", "job_manager.py",
     "core/__init__.py", "core/image_utils.py", "services/__init__.py",
@@ -95,7 +95,7 @@ def test_good_wheel_passes_and_each_defect_is_named(tmp_path):
     assert any("job_manager" in x for x in p), f"漏 job_manager 没被抓到（阶段 348 的原事故）：{p}"
 
     dangling = _make_wheel(tmp_path / "d.whl", _GOOD_NAMES,
-                           "[console_scripts]\nwme = nope:main\nwme-cli = cli:main\nwme-api = server:start_server\n")
+                           "[console_scripts]\nwme = nope:main\nwme-cli = cli:main\nwme-api = server:cli_main\n")
     p = check_wheel(dangling)
     assert any("启动即" in x and "nope" in x for x in p), f"入口指向包外模块没被抓到：{p}"
 

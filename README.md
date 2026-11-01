@@ -2207,7 +2207,8 @@ pip install .
 ```bash
 wme        # 网页界面（Gradio，等价于 python main.py）
 wme-cli    # 批量命令行（等价于 python cli.py）
-wme-api    # REST 服务（等价于 python server.py，参数有默认值）
+wme-api    # REST 服务（可加 --host/--port/--max-concurrency；不传即取 config 默认值。
+           #   注意 `python server.py` 是**自检**：随机端口探活后退出，不是起服务）
 ```
 
 开发态或不想安装时，仍可用源码直接启动：

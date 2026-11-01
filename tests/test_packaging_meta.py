@@ -163,7 +163,7 @@ def test_console_scripts_declared_and_resolvable():
     expected = {
         "wme": ("main", "main"),
         "wme-cli": ("cli", "main"),
-        "wme-api": ("server", "start_server"),
+        "wme-api": ("server", "cli_main"),  # 阶段 365：入口必须是读 argv 的薄壳，不是函数式 API
     }
     # 1) 三个命令都声明
     missing = [name for name in expected if name not in scripts]

@@ -74,6 +74,7 @@ import config
 import api
 import job_manager as JM  # 阶段 255：异步作业模型（PDF/视频/模型下载）
 from services import api_security as SEC  # 阶段 299：token 鉴权 + 限流（安全模式）
+from services import quality_service as QS  # 阶段 366：REST 响应的质量报告要用它唯一的渲染函数
 from utils.logger import get_logger
 
 log = get_logger("server")
@@ -122,7 +123,17 @@ def _collect_params(body: Dict[str, Any]) -> Dict[str, Any]:
 
 
 def _quality_to_dict(qr: Optional[Any]) -> Optional[Dict[str, Any]]:
-    """把 QualityReport 转成可 JSON 序列化的字典。"""
+    """把 QualityReport 转成可 JSON 序列化的字典。
+
+    ⚠ 阶段 366（安装态自检实测到的真缺陷）：这里原来写 `qr.detail`，而阶段 337 已经把
+    `QualityReport.detail`（一句硬编码中文）换成 **键 + 数字**（`detail_key` / `detail_base_key` /
+    `review_floor`），句子由 `quality_service.detail_text()` 统一渲染。⇒ 属性早就没了，
+    而这一行在 `return {...}` 里、**在外层 try 之外**，所以 `evaluate=true` 的 `/api/remove`
+    直接把处理线程打挂：客户端拿到的是 `RemoteDisconnected`（连接被掐），而不是错误 JSON——
+    「单张出错不影响服务可用性」这句承诺当时没覆盖到响应组装。
+    为什么长期没人发现：`tests/test_server_endpoints.py` 的 remove 用例**从不传 evaluate** ⇒
+    `qr is None` 直接短路返回（LESSONS 221「从未执行的路径 = 未验证」的又一实例）。
+    """
     if qr is None:
         return None
     return {
@@ -130,7 +141,10 @@ def _quality_to_dict(qr: Optional[Any]) -> Optional[Dict[str, Any]]:
         "level": qr.level,
         "ssim": qr.ssim,
         "changed_ratio": qr.changed_ratio,
-        "detail": qr.detail,
+        # `detail` 保持"一句话"的对外契约（与 337 之前的老客户端一致），但由唯一实现渲染，
+        # 因此跟随当前语言；同时给出机器可读的键，客户端要自己翻译时用这个。
+        "detail": QS.detail_text(qr),
+        "detail_key": qr.detail_key,
     }
 
 
@@ -631,6 +645,36 @@ def start_server(host: Optional[str] = None, port: Optional[int] = None,
         httpd.server_close()
 
 
+def cli_main(argv: "Optional[list]" = None) -> int:
+    """`wme-api` 的命令行入口：**先解析参数**，再启动服务（阶段 365）。
+
+    为什么需要这一层（安装态实测）：`wme-api` 原先直接指向 `start_server`，而那是**函数式 API**、
+    不读 `sys.argv` ⇒ `wme-api --help` 打的不是用法，而是「REST 服务已启动 … 按 Ctrl+C 停止」并**阻塞**；
+    写错的参数（`--prot 7861`）被**静默忽略**，代价是默默占用一个端口。
+    控制台入口必须有一层读 argv 的薄壳——这一条由 `tests/test_wme_api_cli365.py` 与
+    `tests/test_dist_artifacts364.py` 的入口检查共同钉住。
+
+    返回值：`start_server` 正常只在 Ctrl+C 后返回 ⇒ 恒 0；`--help`/参数错由 argparse 直接退出。
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(
+        prog="wme-api",
+        description="AI 智能水印擦除工作台 —— REST 服务（零依赖标准库实现）",
+        epilog="只读参数留空即取 config 的值；两者都可用 WME_ 前缀的环境变量覆盖。",
+    )
+    parser.add_argument("--host", default=None,
+                        help=f"监听地址（缺省取 config.API_HOST，当前 {config.API_HOST}）")
+    parser.add_argument("--port", type=int, default=None,
+                        help=f"监听端口（缺省取 config.API_PORT，当前 {config.API_PORT}）")
+    parser.add_argument("--max-concurrency", type=int, default=None, dest="max_concurrency",
+                        help=f"并发闸门，0=不限（缺省取 config.API_MAX_CONCURRENCY，"
+                             f"当前 {config.API_MAX_CONCURRENCY}）")
+    ns = parser.parse_args(argv)
+    start_server(host=ns.host, port=ns.port, max_concurrency=ns.max_concurrency)
+    return 0
+
+
 # 简单的用法说明页（GET / 返回）。
 _USAGE_HTML = """<!doctype html>
 <html lang="zh-CN"><head><meta charset="utf-8">
@@ -798,6 +842,27 @@ if __name__ == "__main__":
         resp4 = json.loads(r.read())
     assert resp4["status"] == "success" and resp4.get("result"), "按掩码修复失败"
     print(f"用例5通过：/api/inpaint -> 返回结果 {len(resp4['result'])} 字符")
+
+    # 阶段 365：`wme-api` 的薄 CLI 层必须「读得到参数、不该启动时不启动」。
+    # 这里只验两件事，都不真的起服务：--help 走 argparse 退出码 0；未知参数被 argparse 拒（退出码 2）。
+    import contextlib
+    import io as _io
+
+    for argv_case, want_code, want_text in (
+            (["--help"], 0, "usage: wme-api"),
+            (["--prot", "7861"], 2, "unrecognized arguments"),
+    ):
+        buf = _io.StringIO()
+        try:
+            with contextlib.redirect_stdout(buf), contextlib.redirect_stderr(buf):
+                cli_main(argv_case)
+            code = 0
+        except SystemExit as e:
+            code = e.code if isinstance(e.code, int) else (0 if e.code is None else 1)
+        text = buf.getvalue().lower()
+        assert code == want_code, f"cli_main({argv_case}) 退出码 {code}，应为 {want_code}"
+        assert want_text.lower() in text, f"cli_main({argv_case}) 没打印 {want_text!r}：{text[:200]}"
+    print("用例6通过：cli_main（wme-api 入口层）--help 出用法、错参数被拒，且都没有起服务")
 
     srv.shutdown()
     print("server.py 自检通过。")

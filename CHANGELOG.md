@@ -52,6 +52,25 @@
 
 ## [Unreleased]
 
+### 修复（阶段 365 · `wme-api` 的入口指错了函数：`--help` 不打用法而是起服务并阻塞）
+- 安装态冒烟实测：`wme --help` 42 行、`wme-cli --help` 113 行都正常，`wme-api --help` **不打用法**，
+  打的是「REST 服务已启动 … 按 Ctrl+C 停止」然后阻塞（两轮冒烟脚本卡在这里，第一眼像依赖/网络问题）。
+- 根因写在配置里：`wme-api = "server:start_server"`，而 `start_server(host=None, port=None, max_concurrency=None)`
+  是**函数式 API**、不读 `sys.argv`。三层后果一层比一层隐蔽：① `--help` 没人解析；
+  ② **写错的参数被静默忽略**（`--prot 7861` 照跑，用户以为端口换了）；
+  ③ 忽略的代价是**真的占用一个端口**，还会让人误以为 `API_AUTH_ENABLED` 的 fail-closed 配置已经生效。
+- 规则化：**每个 `console_scripts` 都必须指向一层"会解析 argv 的薄壳"** ⇒ 新增 `server.cli_main(argv=None)`
+  （`--host/--port/--max-concurrency`，不传取 config 默认值）；`start_server` 签名与语义一字未改，
+  `main.py --api` / `cli.py --serve` / 测试照旧用它。
+- 同步消费者（漏一处就是"打包与守卫各说各话"）：`test_packaging_meta` 的入口映射、364 的合成夹具文本、
+  README §3.3（原文「等价于 `python server.py`」是错的——那是**自检**：随机端口探活后退出，不是起服务）、
+  docs/297 runbook 第 5 步改成 `wme-api --help` 并写明期望。`server.py` 自检补用例6。
+- 守卫 `tests/test_wme_api_cli365.py`（6 例）：`--help` 出用法且 `start_server` **一次都没被调用**；
+  拼错参数 ⇒ 退出码 2 且不起服务；参数真的透传（防"解析完丢掉"，#333 同族）；不传 ⇒ 全 None；
+  **全表 AST** 要求每个入口函数体里出现 `parse_args`（裸名与属性调用都算）＋反例（拿函数式 API 当入口必须被抓）
+  与反-误报（文档字符串里的 `ns.parse_args(...)` 不许算数——文本判据老坑第四次犯）。
+- 验证：安装态三条命令 `--help` 全部 rc=0 且各打出 `usage:`（42 / 113 / 15 行）；相关 18 例守卫绿。
+
 ### 新增（阶段 364 · 本机真跑 `python -m build` + 把「查产物」钉进发布链）
 - docs/297 挂着两条"没做到"：本机没真跑过 `pip install .` / `python -m build`（当年归因清华镜像取不到
   `build` 与 `setuptools>=77`），以及安装态冒烟只能手工。换镜像后一起做掉：
