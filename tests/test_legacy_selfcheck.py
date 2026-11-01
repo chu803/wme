@@ -63,6 +63,11 @@ MODULES = [
     # rc 符合预期」）。其规则正确性另由 tests/test_docker_consistency250.py 8 例覆盖。
     ("scripts/docker_consistency_check.py", []),
     ("services/pdf_service.py", []),  # Stage 131：补子进程守卫（整份 PDF 流程自检）
+    # 阶段 364：分发产物核对器。**只读**（打开 dist/ 里的 zip 与 tar 查条目，不写不删），
+    # 退出码是判定：0 合格 / 1 有条目不合格 / 2 **缺失**产物（CI 全新 checkout 没有 dist/ ⇒ 跳过）。
+    # 登记成子进程守卫的价值：即使没有产物，也要保证它**能跑完并说清为什么跳过**
+    # （一条会崩的核对器在发布链上等于没有）。
+    ("scripts/verify_dist_artifacts.py", []),
     ("services/cache_service.py", []),  # Stage 132：自检已隔离到临时目录，可安全登记
     ("utils/exceptions.py", []),  # Stage 133：自检已补断言（树完整性 + 路径抽取），可安全登记
     ("services/export_service.py", []),  # Stage 134：自检非破坏性（写 EXPORT_DIR 临时产物后清理），可安全登记

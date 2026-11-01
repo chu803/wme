@@ -188,7 +188,7 @@ def main(argv=None) -> int:
     print(f"  sdist    : {sdist or '(未找到)'}")
     print("=" * 70)
     if not wheel and not sdist:
-        print("结论：目录里没有任何该版本的产物 ⇒ 跳过（退出码 2）。")
+        print(f"结论：目录里**缺失**该版本（{version}）的产物 ⇒ 跳过（退出码 2）。")
         print("      先跑一次 `python -m build`（构建隔离需要能取到 setuptools/wheel）。")
         return 2
 

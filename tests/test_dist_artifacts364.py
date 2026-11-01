@@ -17,6 +17,7 @@
 """
 from __future__ import annotations
 
+import os
 import pathlib
 import subprocess
 import sys
@@ -153,7 +154,8 @@ def test_publish_verifies_artifacts_before_upload():
     assert "logs/verify_dist.log" in body, "缺步骤日志 ⇒ 失败原因只在 runner 里（阶段 356 的坑）"
 
 
-def test_verifier_agrees_with_a_real_build(tmp_path):
+@pytest.mark.timeout(900)
+def test_verifier_agrees_with_a_real_build(tmp_path, monkeypatch):
     """⑥ 端到端：真跑一次 `python -m build`（含构建隔离）+ 核对 ⇒ 必须 0。
 
     用 `--no-isolation`：隔离构建要去 PyPI 取 `setuptools`/`wheel`，
@@ -165,10 +167,16 @@ def test_verifier_agrees_with_a_real_build(tmp_path):
         metadata.version("build")
     except Exception:
         pytest.skip("本机没装 build 前端（`pip install build` 后可跑）")
+    # 真打一次包要 **2–4 分钟**（wheel + sdist 两次构建 + 杀软扫新文件）。
+    # 发布链上这一步本来就会真跑（publish.yml 的 verify_dist 步），所以它**默认跳过**，
+    # 需要时用 `set WME_RUN_REAL_BUILD=1` 显式开启；否则每次本地入口白多 4 分钟（实测就是它把
+    # 整套从 7 分钟推到 11 分钟）。
+    if os.environ.get("WME_RUN_REAL_BUILD") != "1":
+        pytest.skip("真构建耗时 2–4 分钟；发布链已真验，本地按需设 WME_RUN_REAL_BUILD=1")
     # dist 用 tmp_path，避免污染仓库的 dist/
     r = subprocess.run([sys.executable, "-m", "build", "--no-isolation", "--outdir", str(tmp_path)],
                        cwd=str(_ROOT), capture_output=True, text=True,
-                       encoding="utf-8", errors="replace", timeout=1800)
+                       encoding="utf-8", errors="replace", timeout=600)
     assert r.returncode == 0, f"构建失败：\n{r.stdout[-800:]}\n{r.stderr[-800:]}"
     assert verify_main(["--dist", str(tmp_path), "--version", _VERSION]) == 0, \
         "真构建的产物核对不过 ⇒ 分发口径与打包配置已经漂移"
