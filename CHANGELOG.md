@@ -52,6 +52,26 @@
 
 ## [Unreleased]
 
+### 新增（阶段 364 · 本机真跑 `python -m build` + 把「查产物」钉进发布链）
+- docs/297 挂着两条"没做到"：本机没真跑过 `pip install .` / `python -m build`（当年归因清华镜像取不到
+  `build` 与 `setuptools>=77`），以及安装态冒烟只能手工。换镜像后一起做掉：
+  `PIP_INDEX_URL=阿里云 python -m build` ⇒ **rc=0**，wheel + sdist 齐 ⇒ runbook 里"本机无法复现"那句作废。
+- 产物核对抓到缺口：**sdist 里没有 `requirements-*.txt`**。`pyproject` 刻意不声明 `dependencies`
+  （唯一真值来源是 requirements），而 README §3.3 与 runbook 第 5 步都让用户「装完包再照清单装依赖」
+  ⇒ 从 sdist 安装的人拿不到被文档指着的那份文件。修＝`MANIFEST.in` 显式 `include requirements*.txt`
+  （**不是**把清单复制进 pyproject——那正是当初不声明的理由）。
+- wheel 侧核对合格：顶层 6 模块含 `job_manager`（348 原事故）、三个 `console_scripts` 指向包内真实模块、
+  示例图在包内（320c）、不含权重、不含 tests/scripts/docs。
+- **安装态冒烟**（全新 3.11 venv，只装 wheel + min 清单）：三项 rc=0、`wme --help` 42 行、
+  `wme-cli --help` 113 行、安装态 import 无一失败。⚠ 第一次 `DEPS_RC=1`（WinError 32）是我自己
+  并发两个后台任务往同一 venv 装造成的，不是产品问题。
+- 顺带发现并登记：`wme-api --help` 打的不是用法而是服务启动横幅并阻塞（`server.py` 无 argparse、不读 argv）
+  ⇒ 写错的参数被静默忽略、代价是占用端口。记任务 #37；本阶段不动入口语义。
+- 新工具 `scripts/verify_dist_artifacts.py`（0 合格 / 1 有条目不合格 / 2 没有产物）＋
+  `publish.yml` 在 `build` 与 `publish` 之间插入 `id: verify_dist`（`shell: bash` + pipefail + tee logs）
+  ⇒ **产物不合格就进不了 PyPI**。守卫 `tests/test_dist_artifacts364.py`（7 例，含"真构建一次再核对必须为 0"）。
+  ⚠ 工具第一次跑就报出我自己的匹配 bug（wheel 名里版本是点分不是下划线）⇒ 已抽纯函数 `match_artifacts()` 单独钉。
+
 ### 修复（阶段 363 · ICC 档案自带创建时间戳 ⇒ 「写入端与断言端各取一次」是秒位炸弹）
 - 同一条 CI 等价入口，上一轮 `3377 passed` rc=0，这一轮 **`1 failed`**
   ＝ `test_icc_profile.py::test_load_image_full_with_alpha_and_icc`，而**单跑该文件 3/3 全绿**

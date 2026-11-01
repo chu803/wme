@@ -1183,6 +1183,31 @@ LESSONS #337 刚写过"文本判据看不见这行是给人读的还是给机器
 
 - `363-ICC档案自带创建时间戳导致逐字节比较抖动.md`
 
+### 364 · 本机第一次真跑通 `python -m build`（含隔离），并把「查产物」钉进发布链（2026-11-01）
+
+docs/297 的诚实边界里挂着两条没做到的事：没在本机真跑 `pip install .` / `python -m build`
+（当年归因于清华镜像取不到 `build` 与 `setuptools>=77`）、安装态冒烟只能手工。
+换镜像后一起做掉了：`PIP_INDEX_URL=阿里云 python -m build` ⇒ **BUILD_RC=0**，wheel + sdist 都出来
+⇒ runbook 里那句「本机无法复现」**作废**（文档已改）。
+产物核对抓到两个缺口：
+- **sdist 里没有 `requirements-*.txt`**：`pyproject` 刻意不声明 `dependencies`（真值来源是 requirements），
+  于是 README §3.3 与 runbook 第 5 步都让用户「装完包再照清单装依赖」——**从 sdist 安装的人拿不到那份文件**，
+  文档路径对他是空的。⇒ `MANIFEST.in` 补 `include requirements*.txt`（而不是把清单复制进 pyproject）。
+- wheel 侧全部合格：顶层 6 模块含 `job_manager`（348 的原事故）、三个 console_scripts 指向包内真实模块、
+  示例图在包内（320c）、不含权重、不含 tests/scripts/docs。
+安装态冒烟（全新 3.11 venv，只装 wheel + min 清单）：三项 rc=0，`wme --help` 42 行 / `wme-cli --help` 113 行，
+**安装态 import 无一失败**。⚠ 第一次 `DEPS_RC=1`（WinError 32 文件占用）是**我自己**并发两个后台任务往同一 venv 装，
+不是产品问题——重开干净 venv 复测即全绿。
+顺带发现：`wme-api --help` 打的不是用法而是**服务启动横幅并阻塞**（`server.py` 无 argparse、不读 argv）
+⇒ 写错的参数被静默忽略、代价是直接占一个端口。记任务 #37（补薄 CLI），**本阶段不动入口语义**。
+工具与守卫：`scripts/verify_dist_artifacts.py`（0 合格 / 1 不合格 / 2 没产物）、
+`publish.yml` 在 `build` 与 `publish` 之间插入 `id: verify_dist`（`shell: bash` + pipefail + tee logs）；
+守卫 `tests/test_dist_artifacts364.py`（7 例）含"真构建一次再核对必须为 0"。
+⚠ 工具第一次跑就报出**我自己**的 bug：找 wheel 用了 `_1_0_3-`（真实名是点分 `1.0.3`）⇒ 把合格产物报成找不到；
+已抽成纯函数 `match_artifacts()` 单独钉住。
+
+- `364-本机真跑build并核对分发产物.md`
+
 
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 

@@ -135,6 +135,18 @@ jobs:
         id: build
         run: python -m build
 
+      - name: 核对分发产物（上传前查「真产物」的条目，不看声明）
+        id: verify_dist
+        # 阶段 348 的教训固化：`py-modules` 漏了 `job_manager` 时，**源码目录里一切正常**
+        # （`sys.path` 含仓库根），只有装出来的包启动即崩 ⇒ 声明对了不等于进包对了。
+        # 查的条目：顶层模块齐全 / 三个 console_scripts 都指向包内真实模块 / 示例图在包内 /
+        # 不含模型权重 / 不含 tests·scripts·docs / sdist 带 requirements 清单（阶段 364 补）。
+        shell: bash
+        run: |
+          set -eo pipefail
+          mkdir -p logs
+          python scripts/verify_dist_artifacts.py 2>&1 | tee logs/verify_dist.log
+
       - name: 上传构建产物（安全网：未配 PYPI_API_TOKEN 也能在 Actions 下载 wheel+sdist 本地试装）
         id: artifact
         uses: actions/upload-artifact@v4

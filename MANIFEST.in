@@ -21,3 +21,17 @@ global-exclude *.pyc
 global-exclude __pycache__
 global-exclude .pytest_cache
 global-exclude *.egg-info
+
+# 阶段 364：**把依赖清单装进 sdist**。
+#   `pyproject.toml` 刻意**不声明** `dependencies`（真值来源是 `requirements*.txt`，避免两处漂移），
+#   于是安装态用户必须照清单自己装依赖——README §3.3 与 docs/297 runbook 第 5 步都是这么写的。
+#   但首版 sdist 里**没有** `requirements-*.txt`（实测：`pip install <包> --no-binary :all:`
+#   或从 sdist 构建的人，拿不到那份被文档指着的清单）。
+#   修法不是把清单复制进 pyproject（那正是当初不声明的理由），而是**把同一份文件打进产物**。
+#   wheel 侧不额外塞：wheel 用户的清单入口是 PyPI 项目页 / 仓库 README（这一步由
+#   scripts/verify_dist_artifacts.py 在发布前把关）。
+include requirements.txt
+include requirements-min.txt
+include requirements-dev.txt
+include requirements-gpu.txt
+include requirements-verified.txt
