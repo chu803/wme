@@ -75,6 +75,46 @@ def test_remove(srv):
     assert resp["result"]
 
 
+def test_remove_with_evaluate_returns_quality_payload(srv):
+    """阶段 366 的**缺失覆盖**：`evaluate=true` 时 REST 必须返回结构化质量报告，而不是掐断连接。
+
+    为什么单列一条：既有 remove 用例从不传 `evaluate` ⇒ `qr is None`，
+    `_quality_to_dict` 那行组装**从未被执行**；而它里面写着 `qr.detail`（阶段 337 已删掉的属性）
+    ⇒ 真实客户端一开评估就拿到 `RemoteDisconnected`（处理线程在 try 之外抛 AttributeError）。
+    本用例把这条路径钉成常驻守卫（CI 也跑）。
+    """
+    base, b64, _ = srv
+    resp = _post(base, "/api/remove",
+                 {"image": b64, "engine": "opencv", "allow_auto_erase": True, "evaluate": True})
+    assert resp["status"] == "success", f"带评估的移除失败：{resp.get('error')}"
+    q = resp.get("quality")
+    assert isinstance(q, dict), f"quality 不是字典（响应被截断/线程崩了？）：{type(q)}"
+    assert isinstance(q["score"], int) and 0 <= q["score"] <= 100
+    assert q["level"] in ("good", "warn", "review")
+    assert isinstance(q["detail"], str) and q["detail"].strip(), "detail 必须是渲染好的一句话"
+    assert isinstance(q["detail_key"], str) and q["detail_key"].startswith("quality."), \
+        f"detail_key 应是 i18n 键，供客户端自己翻译：{q.get('detail_key')!r}"
+
+
+def test_quality_to_dict_never_touches_removed_attributes():
+    """单元级：`_quality_to_dict` 的字段映射与 `QualityReport` 的**真实字段**同源。
+
+    结构守卫的用意：337 那次改了 dataclass 字段（`detail` → `detail_key` + `detail_text()`），
+    却漏了 REST 序列化这一处 ⇒ 「改了数据结构要 grep 全部消费者」的判据在这里的落地形式，
+    就是**用真对象过一遍序列化**，而不是只看有没有异常。
+    """
+    from services.quality_service import QualityReport, detail_text
+
+    qr = QualityReport(ssim=0.87, changed_ratio=0.03, score=82, level="good",
+                       detail_key="quality.detail.good")
+    d = server._quality_to_dict(qr)
+    assert d == {
+        "score": 82, "level": "good", "ssim": 0.87, "changed_ratio": 0.03,
+        "detail": detail_text(qr), "detail_key": "quality.detail.good",
+    }, d
+    assert server._quality_to_dict(None) is None, "没评估时应返回 None（老客户端依赖这个形状）"
+
+
 def test_detect(srv):
     base, b64, _ = srv
     resp = _post(base, "/api/detect", {"image": b64})

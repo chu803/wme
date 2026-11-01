@@ -1231,6 +1231,26 @@ docs/297 的诚实边界里挂着两条没做到的事：没在本机真跑 `pip
 
 - `365-wme-api入口指向函数式API导致help失效.md`
 
+### 366 · `evaluate=true` 的 `/api/remove` 从阶段 337 起就是坏的——而唯一会跑它的那条自检被豁免了（2026-11-01）
+
+阶段 365 给 `server.py` 自检加用例6，于是**四个多月来第一次**完整跑完它，用例2 直接崩：
+`AttributeError: 'QualityReport' object has no attribute 'detail'`（`server.py` 的 `_quality_to_dict`
+仍在读 337 已删掉的属性），客户端侧的表现是 **`RemoteDisconnected`——连接被掐，不是错误 JSON**。
+外层那句 `except Exception: return {"status":"failed"}`（注释"单张出错不影响服务可用性"）
+**没覆盖到 `return` 里的响应组装** ⇒ 承诺的边界恰好漏了出错那一行。
+为什么能潜伏：① REST 测试的 remove 用例**从不传 `evaluate`** ⇒ `qr is None` 直接短路，组装那行从未执行；
+② **唯一会传 `evaluate=True` 的是 `python server.py` 自检，而 `server.py` 在自检台账里被豁免**
+（理由"B 启动服务"站不住：它用随机端口、跑完自己 shutdown）；③ 337 的守卫只钉了 UI/CLI 两处消费者。
+⇒ 豁免从来不是免费的：**每豁免一个模块，就要问它的这条路径还有谁在跑**（LESSONS 221 的结构性版本）。
+三层一起做：修（`QS.detail_text(qr)` + 追加机器可读的 `detail_key`，对外"一句话"语义不变）；
+补常驻覆盖（真 HTTP + 生产服务器类跑 `evaluate=true`；再用真 `QualityReport` 直接过一遍序列化）；
+**取消豁免**，把 `server.py` 登记进台账（实测 CI 等价环境 rc=0、约 20 秒、不需要网络与权重）。
+反例：把那一行改回 `qr.detail` ⇒ 两条新用例同时红；复原后 9 例绿、两个环境各一遍。
+⚠ 自伤两处并已修：自检用例先写成"用例5"与既有 5 重号（挪到末尾又漏改，跑起来看到两行"用例5通过"才发现）；
+`--force-reinstall` 之外还一度用 Windows 自带 `timeout` 判退出码得到假 rc=1（365 同坑）。
+
+- `366-REST质量报告序列化引用已删属性且唯一覆盖被豁免.md`
+
 
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 

@@ -68,6 +68,11 @@ MODULES = [
     # 登记成子进程守卫的价值：即使没有产物，也要保证它**能跑完并说清为什么跳过**
     # （一条会崩的核对器在发布链上等于没有）。
     ("scripts/verify_dist_artifacts.py", []),
+    # 阶段 366：原豁免理由「B 启动服务」站不住——它用**随机端口**、跑完自己 shutdown、不需要网络与权重
+    # （EasyOCR/torch 缺失只走降级分支），实测 CI 等价环境 rc=0 约 20 秒。
+    # 而它是**唯一**会带 `evaluate=true` 打 `/api/remove` 的检查 ⇒ 豁免它等于关掉最后一道闸
+    # （阶段 337 的 `QualityReport.detail` 改动因此躲了四个多月，见 docs/366）。
+    ("server.py", []),
     ("services/cache_service.py", []),  # Stage 132：自检已隔离到临时目录，可安全登记
     ("utils/exceptions.py", []),  # Stage 133：自检已补断言（树完整性 + 路径抽取），可安全登记
     ("services/export_service.py", []),  # Stage 134：自检非破坏性（写 EXPORT_DIR 临时产物后清理），可安全登记
@@ -108,7 +113,6 @@ MODULES = [
 NOT_REGISTERED_BY_DESIGN: dict = {
     # --- B：依赖重 / 有外部副作用（离线守卫跑不了）---
     "main.py": "B Gradio 入口，import torch + gradio + 网络",
-    "server.py": "B 启动服务，含网络与模型下载路径",
     "cli.py": "B CLI 入口，`__main__` 仅转发，含模型下载目录创建",
     "download_model.py": "B 专职下载模型，含网络",
     "core/device_manager.py": "B import torch，含网络与模型下载",

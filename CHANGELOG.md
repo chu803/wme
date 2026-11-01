@@ -52,6 +52,22 @@
 
 ## [Unreleased]
 
+### 修复（阶段 366 · `evaluate=true` 的 `/api/remove` 从 337 起就是坏的；唯一覆盖它的自检被豁免）
+- 阶段 365 给 `server.py` 自检加用例6 之后，**四个多月来第一次**跑完它，用例2 崩：
+  `AttributeError: 'QualityReport' object has no attribute 'detail'` ⇒ REST 客户端只要开
+  `evaluate=true`，拿到的是 **`RemoteDisconnected`（连接被掐）而不是错误 JSON**；
+  外层"单张出错不影响服务可用性"的 `except` **没覆盖 `return` 里的响应组装**。
+- 三条防线各自失守：① `test_server_endpoints` 的 remove 用例从不传 `evaluate` ⇒ 组装那行从未执行；
+  ② 唯一会传的是 `python server.py` 自检，而 `server.py` 在自检台账里**被豁免**（理由"B 启动服务"站不住：
+  随机端口、跑完自己 shutdown）；③ 337 的守卫只钉了 UI/CLI 两处消费者。
+  ⇒ **豁免不免费：每豁免一个模块，就要问它的这条路径还有谁在跑。**
+- 三层一起修：① `QS.detail_text(qr)` + 追加机器可读 `detail_key`（对外"一句话"语义不变）；
+  ② 两条常驻覆盖（真 HTTP 跑 `evaluate=true` 断言 quality 字典；用真 `QualityReport` 直接过一遍序列化）；
+  ③ **取消豁免**，`server.py` 登记进台账（CI 等价环境实测 rc=0、约 20 秒、不需网络与权重）。
+- 反例：把那一行改回 `qr.detail` ⇒ 两条新用例同时红；复原后 9 例绿，3.11 等价与 canonical 3.13 各一遍。
+- 全仓 `\.detail` 复扫：其余命中是 i18n 键名、`WMEError.detail`（另一套结构）与注释 ⇒ 无第二处同类。
+  未做：把响应组装也纳入兜底（属接口容错策略变更，另案）。
+
 ### 修复（阶段 365 · `wme-api` 的入口指错了函数：`--help` 不打用法而是起服务并阻塞）
 - 安装态冒烟实测：`wme --help` 42 行、`wme-cli --help` 113 行都正常，`wme-api --help` **不打用法**，
   打的是「REST 服务已启动 … 按 Ctrl+C 停止」然后阻塞（两轮冒烟脚本卡在这里，第一眼像依赖/网络问题）。
