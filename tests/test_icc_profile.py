@@ -8,7 +8,9 @@ Pillow 写回（PNG/JPEG/WEBP/TIFF 实测均支持 icc_profile）。
 本文件锁定：ICC 随导出写回、未提供时不写、alpha + ICC 共存、load_image_full 语义、
 save_result 透传。ICC 字节本身用 Pillow ImageCms 生成的 sRGB profile。
 """
+import ast
 import os
+import pathlib
 import sys
 
 import numpy as np
@@ -22,8 +24,46 @@ from core import image_utils as iu  # noqa: E402
 from services import file_service  # noqa: E402
 
 
+#: ⚠ **必须是会话内常量**，不能每次调用重新生成：ICC 档案头第 24–35 字节是**创建时间**
+#: （秒位在 34–35），LittleCMS 生成 sRGB 档案时写入"当下" ⇒ 两次生成的字节**并不相同**。
+#: 实测（阶段 363）：空档 1.2 秒后逐字节比对，差异恰好落在偏移 **35**（34 → 35 秒翻篇），
+#: 而全量运行里「写入时」与「断言时」之间跨过一秒是常事 ⇒ `test_load_image_full_*` 随机红。
+#: 单跑本文件永远绿（毫秒级间隔），所以这个坑只在整套跑时现形——正是 CI 最怕的那类抖动。
+_ICC_SRGB: bytes = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+
+
 def _icc_srgb() -> bytes:
-    return ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    """返回会话内取好的那一份（写入端与断言端**必须同源**，否则比的是时间戳）。"""
+    return _ICC_SRGB
+
+
+def test_no_other_call_site_regenerates_the_profile():
+    """本文件里**真正调用** `createProfile(...)` 的点只允许有两处：常量取值 + 上面那条成因测试。
+
+    第三处就意味着某个写入端或断言端在重新生成档案 ⇒ 比的是时间戳，不是内容（抖动之源）。
+    ⚠ 判据走 AST 而不是数文本：说明文里也写着 `createProfile(`，文本计数会得到 6 并误报
+    （本条第一版就是这么红的——LESSONS #316 / #337 的同类）。
+    需要新用法时：复用 `_icc_srgb()` / `_ICC_SRGB`。
+    """
+    tree = ast.parse(pathlib.Path(__file__).read_text(encoding="utf-8"))
+    sites = [n.lineno for n in ast.walk(tree)
+             if isinstance(n, ast.Call)
+             and isinstance(n.func, ast.Attribute) and n.func.attr == "createProfile"]
+    assert len(sites) == 2, (
+        f"真正调用 createProfile() 的行有 {sites}（应为 2：模块常量 + 成因测试）"
+        "⇒ 有调用点在重新生成 ICC 档案，请改用 _icc_srgb()"
+    )
+
+
+def test_freshly_generated_profile_differs_only_in_the_header_date():
+    """钉住抖动的**成因**：重新生成只允许在 ICC 头的日期字段上与常量不同。
+
+    若哪天差异跑到 24–35 之外，说明 ICC 的生成路径本身变了 ⇒ 本文件所有「逐字节比较」的假设都要重审。
+    """
+    fresh = ImageCms.ImageCmsProfile(ImageCms.createProfile("sRGB")).tobytes()
+    assert len(fresh) == len(_ICC_SRGB), "sRGB 档案长度变了"
+    diff = [i for i in range(len(fresh)) if fresh[i] != _ICC_SRGB[i]]
+    assert all(24 <= i < 36 for i in diff), f"差异跑出日期字段之外：{diff}"
 
 
 def _rgb() -> np.ndarray:
