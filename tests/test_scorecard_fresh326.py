@@ -23,6 +23,7 @@ from __future__ import annotations
 import json
 import os
 import re
+import subprocess
 import sys
 
 _ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -63,7 +64,7 @@ def test_the_two_copies_of_the_same_numbers_agree():
     """
     score = _scorecard()
     scale, m = score.get("scale") or {}, _metrics(score)
-    for key in ("test_cases", "test_files", "docs"):
+    for key in ("test_cases", "test_files", "docs", "audited_modules"):
         assert key in scale and key in m, f"{key} 在两处之一缺失"
         assert scale[key] == m[key], f"{key} 两份副本不一致：scale={scale[key]} vs engineering={m[key]}"
 
@@ -134,3 +135,38 @@ def test_changelog_doc_count_is_not_stale():
     assert abs(actual - declared) <= max(2, round(actual * STALE_TOLERANCE)), (
         f"CHANGELOG 说 docs 共 {declared} 份，实测 {actual} 份"
         "（复测：ls docs/*.md | wc -l）")
+
+
+def test_audited_modules_equals_the_tool_registry():
+    """`audited_modules` 现在**有唯一真值来源**：`audit_selector.AUDITED_SINCE`（阶段 368）。
+
+    背景：docs/326 §四承认这个字段"无可机械复测的定义"，只能沿用 45 ——
+    一个没有复现命令的数字，写进对外记分卡就等于写了一句"信我"。
+    本断言把口径钉死：记分卡里两份副本都必须等于登记条数
+    （复现命令：`python scripts/audit_selector.py --audited-count`）。
+    """
+    sys.path.insert(0, _ROOT)
+    from scripts.audit_selector import AUDITED_SINCE  # noqa: WPS433
+
+    score = _scorecard()
+    want = len(AUDITED_SINCE)
+    got_scale = (score.get("scale") or {}).get("audited_modules")
+    got_eng = _metrics(score).get("audited_modules")
+    assert got_scale == want, f"scale.audited_modules={got_scale}，但工具登记是 {want}"
+    assert got_eng == want, f"engineering.audited_modules={got_eng}，但工具登记是 {want}"
+
+
+def test_audited_count_cli_reports_the_registry():
+    """`--audited-count` 这条命令本身必须报同一个数（否则"可复现"只是句漂亮话）。"""
+    env = dict(os.environ, PYTHONIOENCODING="utf-8")
+    r = subprocess.run([sys.executable, "scripts/audit_selector.py", "--audited-count"],
+                       cwd=_ROOT, capture_output=True, text=True,
+                       encoding="utf-8", errors="replace", env=env, timeout=300)
+    assert r.returncode == 0, (
+        f"--audited-count 退出码 {r.returncode}："
+        f"{r.stdout[-400:]}{r.stderr[-400:]}"
+    )
+    printed = int(r.stdout.strip().splitlines()[-1])
+    assert printed == _scorecard()["scale"]["audited_modules"], (
+        f"命令报 {printed}，记分卡写 {_scorecard()['scale']['audited_modules']}"
+    )

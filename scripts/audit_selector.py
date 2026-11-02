@@ -48,6 +48,7 @@
    python scripts/audit_selector.py                       # 荒漠度排序（前 25）
    python scripts/audit_selector.py --top 40
    python scripts/audit_selector.py --unaudited            # **决策用**：只列未审模块
+   python scripts/audit_selector.py --audited-count         # 已审模块数（记分卡 audited_modules 的真值来源）
    python scripts/audit_selector.py --module ui/tab_models # 看该模块命中的测试文件 + 已审状态
    python scripts/audit_selector.py --md                  # 输出可粘贴的 Markdown 表
    python scripts/audit_selector.py --json out.json        # 落盘机读结果
@@ -457,7 +458,16 @@ def main(argv=None) -> int:
     ap.add_argument("--check", action="store_true", help="只跑口径自检")
     ap.add_argument("--unaudited", action="store_true",
                     help="只列**未审计**模块的荒漠度（决策用；剔除 AUDITED_SINCE）")
+    ap.add_argument("--audited-count", action="store_true", dest="audited_count",
+                    help="只打印**已审模块数**（= len(AUDITED_SINCE)，记分卡 audited_modules 的唯一真值来源）")
     args = ap.parse_args(argv)
+
+    if getattr(args, "audited_count", False):
+        # 阶段 368：记分卡里的 `audited_modules` 一直**没有可复现命令**（docs/326 §四自己承认）。
+        # 但真值来源一直存在——`AUDITED_SINCE` 这本登记。把它接成一条命令：
+        # 数字不再靠人抄，守卫也能直接对着它断言（见 tests/test_scorecard_fresh326.py）。
+        print(len(AUDITED_SINCE))
+        return 0
 
     targets = collect(args.root)
     problems = self_check(targets)
