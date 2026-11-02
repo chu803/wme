@@ -157,11 +157,15 @@ def test_audited_modules_equals_the_tool_registry():
 
 
 def test_audited_count_cli_reports_the_registry():
-    """`--audited-count` 这条命令本身必须报同一个数（否则"可复现"只是句漂亮话）。"""
+    """`--audited-count` 这条命令本身必须报同一个数（否则"可复现"只是句漂亮话）。
+
+    ⚠ 子进程 `timeout` 取 120 而不是 300：超时契约规定"内层 ≥300 必须有更宽的外层标记"，
+    第一版写 300 就被 `test_no_test_has_outer_timeout_smaller_than_inner` 判红（全量套件实测）。
+    """
     env = dict(os.environ, PYTHONIOENCODING="utf-8")
     r = subprocess.run([sys.executable, "scripts/audit_selector.py", "--audited-count"],
                        cwd=_ROOT, capture_output=True, text=True,
-                       encoding="utf-8", errors="replace", env=env, timeout=300)
+                       encoding="utf-8", errors="replace", env=env, timeout=120)
     assert r.returncode == 0, (
         f"--audited-count 退出码 {r.returncode}："
         f"{r.stdout[-400:]}{r.stderr[-400:]}"
