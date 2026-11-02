@@ -59,23 +59,23 @@ from utils.exceptions import EmptyMaskError  # noqa: E402
 
 OUT_DIR = os.path.join(_ROOT, "docs", "assets")
 
-# Windows 常见字体；找不到时回退到 PIL 内置位图字体。
-_FONT_CANDIDATES = (
-    r"C:\Windows\Fonts\arialbd.ttf",
-    r"C:\Windows\Fonts\arial.ttf",
-    "/usr/share/fonts/truetype/dejavu/DejaVuSans-Bold.ttf",
-)
+#: 基准的**度量标准**之一。字体决定像素，像素决定覆盖率 / 召回 / ΔPSNR。
+#: 旧写法按「本机装了哪个字体」挑，于是同一 seed 在两台机器上量的不是同一个水印：
+#: 阶段 369 实测，256px 角标用例的默认路径掩码从 0 px 变成 2813 px（换到 Linux 系统字体后），
+#: edge_text 的 ΔPSNR 从 12.43 变成 17.12。改为**随源码分发的一份未修改字体** ⇒ 跨 OS 同字节。
+#: 许可原文见同目录 LICENSE-DejaVu.txt；指纹由 tests/test_font_standard369.py 钉住。
+BUNDLED_FONT = os.path.join(_ROOT, "scripts", "assets", "DejaVuSans-Bold.ttf")
 
 
-def _font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
-    """按优先级挑一个可用字体；全部缺失时回退内置字体。"""
-    for p in _FONT_CANDIDATES:
-        if os.path.exists(p):
-            try:
-                return ImageFont.truetype(p, size)
-            except OSError:
-                continue
-    return ImageFont.load_default()
+def _font(size: int) -> ImageFont.FreeTypeFont:
+    """只用仓库内那份字体。缺失就**明确报错**，绝不回退本机字体——回退等于换了量具还自称同一把尺。"""
+    if not os.path.isfile(BUNDLED_FONT):
+        raise FileNotFoundError(
+            "合成基准的字体缺失：" + BUNDLED_FONT + "\n"
+            "成因：基准数字标定在这份随 **git 仓库**分发的字体上；MANIFEST.in 把 scripts/ "
+            "prune 掉了，所以从 sdist/wheel 装出来的人拿不到它（本工具也不在交付路径里）。\n"
+            "下一步：用 git 检出的工作树运行本脚本；需要复现基准数字不要走 sdist。")
+    return ImageFont.truetype(BUNDLED_FONT, size)
 
 
 # ---------------------------------------------------------------------------
