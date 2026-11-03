@@ -75,11 +75,12 @@ jobs:
         id: entry
         # 阶段 329：同 ci.yml——不显式给 `shell: bash` + `pipefail` 时，
         # `... | tee` 会把门禁退出码吞成 0，这条「不发布」的门禁**从未真正生效**。
+        # 阶段 371：`--strict-env` 同 ci.yml——发布必须由「确认量的是 runner 环境」的入口放行。
         shell: bash
         run: |
           set -eo pipefail
           mkdir -p logs
-          python scripts/run_all_checks.py 2>&1 | tee logs/entry.log
+          python scripts/run_all_checks.py --strict-env 2>&1 | tee logs/entry.log
 
       - name: 诊断：门禁失败 → FAILED 清单写入 Summary 并建 issue（供自动读取，修完可删）
         id: diagnose

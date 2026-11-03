@@ -215,3 +215,48 @@ def test_manifest_prunes_non_package_dirs_from_sdist():
     missing = sorted(must_prune - prune_dirs)
     assert not missing, f"MANIFEST.in 未 prune 这些目录（会漏进 sdist）：{missing}"
 
+
+
+# ---------------------------------------------------------------------------
+# 阶段 371（任务 #38 判决）：运行时依赖由 requirements-min.txt 动态提供
+# ---------------------------------------------------------------------------
+
+def test_dependencies_are_declared_dynamically_from_requirements_min():
+    """`pip install wme` 必须一步装齐最小可运行集；真值来源仍是清单文件。
+
+    阶段 297/348 的取舍是「刻意不声明 dependencies，避免两处清单漂移」——
+    代价是装完包 import 就崩（缺 gradio/opencv），README 只能教用户手动补装。
+    阶段 371 用 setuptools 的 `dynamic = {file = [...]}` 读清单：既保留单一真值来源，
+    又让 pip 一步装齐。这里同时钉住「不许回退成手抄一份 dependencies」。
+    """
+    meta = _pyproject()
+    proj = meta["project"]
+    assert "dependencies" not in proj, (
+        "不允许在 [project] 手抄 dependencies（会与 requirements*.txt 两处漂移）")
+    assert "dependencies" in proj.get("dynamic", []), (
+        "[project] 的 dynamic 里必须声明 dependencies，否则 wheel 不带任何 Requires-Dist")
+    dd = meta["tool"]["setuptools"]["dynamic"]["dependencies"]
+    assert dd == {"file": ["requirements-min.txt"]}, (
+        "dependencies 必须从 requirements-min.txt 读取（不是 requirements.txt——后者含 torch，"
+        "cu128 轮子不在 PyPI 默认索引上，写进 Requires-Dist 会让普通安装解析失败）：%r" % (dd,))
+
+
+def test_requirements_min_is_pep508_parseable():
+    """清单文件要能被 setuptools 的 file 读取器解析：不能有 -r / --index-url 这类选项行。"""
+    from packaging.requirements import Requirement
+
+    lines = []
+    for raw in (_ROOT / "requirements-min.txt").read_text(encoding="utf-8").splitlines():
+        s = raw.strip()
+        if not s or s.startswith("#"):
+            continue
+        assert not s.startswith("-"), (
+            "requirements-min.txt 里有选项行 %r：setuptools 的 dynamic file 只接受 PEP 508 "
+            "需求行，选项行会让构建失败" % s)
+        lines.append(s)
+    assert lines, "requirements-min.txt 是空的"
+    for s in lines:
+        Requirement(s)
+    names = {Requirement(s).name.lower() for s in lines}
+    assert "torch" not in names and "easyocr" not in names, (
+        "requirements-min 的语义是「最小可运行集」：torch / easyocr 属可选增强，不得混入")

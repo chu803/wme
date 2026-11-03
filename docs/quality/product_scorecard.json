@@ -30,15 +30,15 @@
   },
   "scale": {
     "src_loc": 38422,
-    "test_loc_approx": 52233,
-    "test_cases": 3439,
+    "test_loc_approx": 52344,
+    "test_cases": 3446,
     "test_files": 271,
-    "docs": 327,
+    "docs": 328,
     "scripts": 52,
     "audited_modules": 45,
     "runtime": "torch 2.9.1+cu128 (RTX 5060 Laptop 8151MiB)；另备 Python 安装 CPU 版；requirements 已统一 2.9.1+cu128（116 时为 stale 2.3.1）",
-    "scale_note": "阶段 369（2026-11-02）复测刷新（367 的续），复现命令：docs=`ls docs/*.md | wc -l`；test_files=`ls tests/test_*.py | wc -l`；scripts=`ls scripts/*.py | wc -l`；test_cases=`pytest --collect-only -q -v -m 'not torch_required and not network'` **直接取 pytest 自报行** = 3439/3445（6 deselected；含参数化）——⚠ 367 记的 3515 用同一命令今天复现不出来（详见下方说明），已作废；同日入口实跑 3409 passed + 37 skipped（=30 条用例级 + **7 条模块级** import 跳过，torch/fitz 缺席）⇒ 3409+30=3439 与收集数一致；src_loc=core+services+ui+utils 全部 .py **加顶层 7 个模块** （cli/api/config/main/server/job_manager/download_model，不含 scripts/ 与 tests/）——⚠ 旧版这句写成「加 cli/api/config/main.py」，但记录值 38300 只有按 7 个模块才复现得出来⇒ 口径描述本身不准，本次一并订正（口径不可复现 = 数字不可信）；test_loc_approx=tests/test_*.py。audited_modules=`python scripts/audit_selector.py --audited-count`（= len(AUDITED_SINCE)，阶段 368 接成命令；此前 docs/326 §四承认它无可复现定义）。 ⚠ 阶段 369 复算时发现 test_cases 的旧值 3515 **不可复现**：同一命令当天自报 3439/3445，而 367 那条记录内部也自相矛盾（3515 vs 同日实跑 3397+37+6=3440）⇒ 口径改为「直接取 pytest 自报行」，不再靠人工按文件求和（人工求和会漏掉 7 个模块级 skip 的模块）。",
-    "counts_measured_at": "2026-11-03（阶段 370 复测）"
+    "scale_note": "阶段 369（2026-11-02）复测刷新（367 的续），复现命令：docs=`ls docs/*.md | wc -l`；test_files=`ls tests/test_*.py | wc -l`；scripts=`ls scripts/*.py | wc -l`；test_cases=`pytest --collect-only -q -v -m 'not torch_required and not network'` **直接取 pytest 自报行** = 3446/3452（6 deselected；含参数化）——⚠ 367 记的 3515 用同一命令今天复现不出来（详见下方说明），已作废；同日入口实跑 3414 passed + 38 skipped（含 **7 条模块级** import 跳过：torch/fitz 缺席）；口径取 pytest 自报行，人工按文件求和会漏掉模块级 skip 的模块，不再强行配平；src_loc=core+services+ui+utils 全部 .py **加顶层 7 个模块** （cli/api/config/main/server/job_manager/download_model，不含 scripts/ 与 tests/）——⚠ 旧版这句写成「加 cli/api/config/main.py」，但记录值 38300 只有按 7 个模块才复现得出来⇒ 口径描述本身不准，本次一并订正（口径不可复现 = 数字不可信）；test_loc_approx=tests/test_*.py。audited_modules=`python scripts/audit_selector.py --audited-count`（= len(AUDITED_SINCE)，阶段 368 接成命令；此前 docs/326 §四承认它无可复现定义）。 ⚠ 阶段 369 复算时发现 test_cases 的旧值 3515 **不可复现**：同一命令当天自报 3439/3445，而 367 那条记录内部也自相矛盾（3515 vs 同日实跑 3397+37+6=3440）⇒ 口径改为「直接取 pytest 自报行」，不再靠人工按文件求和（人工求和会漏掉 7 个模块级 skip 的模块）。",
+    "counts_measured_at": "2026-11-03（阶段 371 复测）"
   },
   "dimensions": [
     {
@@ -123,9 +123,9 @@
       "name": "工程与质量体系",
       "grade": "A",
       "metrics": {
-        "test_cases": 3439,
+        "test_cases": 3446,
         "test_files": 271,
-        "docs": 327,
+        "docs": 328,
         "audited_modules": 45,
         "gates": [
           "scripts/quality_gate.py",
@@ -145,7 +145,7 @@
         "packaging": "pyproject.toml + build.spec(PyInstaller) + Dockerfile/Dockerfile.gpu + docker-compose.yml 齐备",
         "injection_counterexamples": true,
         "margin_monitor": "259 check_redline_margin_health advisory（14 守卫）",
-        "counts_measured_at": "2026-11-03（阶段 370 复测）"
+        "counts_measured_at": "2026-11-03（阶段 371 复测）"
       },
       "note": "注入式反例 + 门禁家族 + AUDITED_SINCE 审计体系 + 5j 深度续审链（276-290 收官，45 模块全审）+ 跨进程 i18n 污染 conftest 治本。工程标准远超同类开源（IOPaint 已归档停更）。"
     },

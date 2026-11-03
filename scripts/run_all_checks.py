@@ -210,37 +210,57 @@ STEP_MARKS = {0: "✅", 1: "❌", 2: "⏭", 3: "🚧"}
 VERDICTS = {
     0: "✅ 全部通过",
     1: "❌ 有步骤未通过",
-    2: "⏭ 全部跳过",
-    3: "🚧 环境错误（缺依赖/资产），未做判定 —— **不是通过**",
+    2: "⏭ 无事可跑（--list 或步骤清单为空）",
+    3: "🚧 入口环境错误，未做判定 —— **不是通过**",
 }
 
 
 def aggregate(rcs: list) -> int:
     """把各步骤的**判定码**（已由 `normalize_rc` 按各自约定归一）聚合成总退出码。
 
-    语义：**失败优先**，且**默认拒绝未知码**。四档含义（与门禁家族契约一致）：
+    契约（阶段 371 按任务 #24 的判决改定，**这是对外口径翻转**）：
 
-      * ``1`` 有步骤判「质量不合格」（最高优先级）
-      * ``3`` 有步骤报「环境错误」（如 `real_gate` 缺关键依赖）——**绝不能当通过**
-      * ``2`` 全部步骤都「跳过」（依赖/资产缺失，无事可守）
-      * ``0`` 至少一步真通过且无上述情形
+      * ``1`` 有步骤判「质量不合格」——包括约定外的码（127/崩溃/被信号杀掉）：
+        **说不清的结果不是通过**。
+      * ``2`` 无事可跑（空清单）。
+      * ``0`` 没有质量失败。步骤的「跳过(2) / 环境错误(3)」**不再阻断** CI，
+        但必须由 `uncovered()` 逐条列出来——否则就是静默放行（见 `verdict_line`）。
+      * ``3`` 保留给**入口自身**的环境问题（`--strict-env` 不满足）。
 
-    阶段 328 修的正是这里：旧实现只把 ``rc == 1`` 当失败 ⇒ ``real_gate`` 用退出码 3
-    表达「环境错误」时会被聚合成 **0**，同一份输出里那行是 ❌、总结句却是「✅ 全部通过」，
-    而发布链跑的就是这条命令（`publish.yml`）。凡不在约定集合 {0,1,2,3} 内的码
-    （127 找不到解释器、崩溃、被信号杀掉）一律按失败处理：**说不清的结果不是通过**。
+    为什么改（任务 #24 背景）：旧契约里 2/3 都会让入口退出非零，于是 CI 上「缺数据集」
+    与「质量不合格」长得一模一样；而本地文案又把 2 印成「全部跳过」。两种语义共用两个码，
+    读日志的人分不清「没测」和「测坏了」。拆开后的判据是：
+    **质量 WARN 必须用 1 表达；2/3 只允许表达「没做判定」。**
     """
     if not rcs:
         return 2
+    if any(rc not in (0, 1, 2, 3) for rc in rcs):
+        return 1
     if any(rc == 1 for rc in rcs):
         return 1
-    if any(rc == 3 for rc in rcs):
-        return 3
-    if any(rc not in (0, 2) for rc in rcs):
-        return 1
-    if all(rc == 2 for rc in rcs):
-        return 2
     return 0
+
+
+def uncovered(report: list) -> list:
+    """从报告里挑出「未覆盖」的步骤（判定码 2/3）——它们不算失败，但必须被说出来。"""
+    return [r for r in report if r.get("verdict") in (2, 3)]
+
+
+def verdict_line(total: int, uncovered_count: int = 0) -> str:
+    """总结句：**「未覆盖」存在时不许印「全部通过」**（否则同一份输出自相矛盾）。"""
+    if total == 0 and uncovered_count:
+        return f"✅ 无质量失败（但 {uncovered_count} 项未覆盖，见上）——未覆盖项未经判定"
+    return VERDICTS.get(total, "❌ 有步骤返回了约定外的退出码")
+
+
+def env_gate(tag: str, strict: bool) -> "int | None":
+    """`--strict-env`：画像不是 `[ci_equivalent]` 时拒绝裁决（返回 3），否则放行（None）。
+
+    纯函数便于测试；判定逻辑只有一处。
+    """
+    if not strict:
+        return None
+    return None if tag == "ci_equivalent" else 3
 
 
 def marker_expr_in(argv: list) -> "str | None":
@@ -313,10 +333,14 @@ def run_steps(steps: list, *, root: str = _ROOT, runner=None, echo=None):
                        "seconds": round(dt, 1), "argv": list(st.argv)})
         out = (getattr(proc, "stdout", "") or "").strip()
         out_lines = [l for l in out.splitlines() if l.strip()]
+        if verdict in (2, 3) and out_lines:
+            # 判定码 2/3 = 「没做判定」；子进程自己的结论要留档（下面的未覆盖清单会用到）。
+            report[-1]["conclusion"] = out_lines[-1].strip()[:160]
         if rc == 2 and out_lines:
             # 退出码 2 = 「跳过」或「有 WARN 但不阻断」；行首一个 ⏭ 容易被读成
-            # 「什么都没检查」⇒ 把子进程自己的结论接出来（只改显示，不改退出码契约：
-            # 改契约属对外口径翻转，须先有判决表 —— 阶段 330 开放项 #24）。
+            # 「什么都没检查」⇒ 把子进程自己的结论接出来。
+            # ⚠ 阶段 371（任务 #24 判决）：2/3 已**不再阻断**聚合码，但必须出现在
+            # 「未覆盖项」清单里；质量类 WARN 只能用退出码 1 表达。
             lines.append(f"   └─ {out_lines[-1].strip()[:160]}")
         elif rc != 0 and out_lines:
             # 阶段 362：CI 那次有 **6** 条失败，「末尾 12 行」只容得下 3 条 ⇒ 自动建的诊断
@@ -339,7 +363,15 @@ def run_steps(steps: list, *, root: str = _ROOT, runner=None, echo=None):
             # （331 实测：入口全绿的那次，日志里一个计数都找不到）。取最后一条非空行，不改变判定。
             lines.append(f"   └─ {out_lines[-1].strip()[:160]}")
     total = aggregate(verdicts)
-    return total, lines, {"steps": report, "exit_code": total}
+    unc = uncovered(report)
+    if unc:
+        lines.append("")
+        lines.append(f"⚠ 未覆盖项（不算失败，但不是通过）：{len(unc)} 项")
+        for r in unc:
+            lines.append(f"   {STEP_MARKS.get(r['verdict'], '?')} {r['name']:20s} "
+                         f"rc={r['rc']}  {r.get('conclusion', '（子进程未给结论）')}")
+    return total, lines, {"steps": report, "exit_code": total,
+                          "uncovered": len(unc)}
 
 
 def main(argv: "list | None" = None) -> int:
@@ -356,13 +388,17 @@ def main(argv: "list | None" = None) -> int:
                     help=f"pytest 追加覆盖率统计与地板判定（地板 {COVERAGE_FLOOR}%%，口径见 .coveragerc）")
     ap.add_argument("--list", action="store_true",
                     help="只列出将要执行的步骤，不执行（退出码 2）")
+    ap.add_argument("--strict-env", action="store_true",
+                    help="环境画像必须是 [ci_equivalent]，否则拒绝裁决（返回 3）。CI 用它钉住"
+                         "「量的就是 runner 环境」；本机开发环境默认不加（full_dev 属预期）。")
     args = ap.parse_args(sys.argv[1:] if argv is None else argv)
 
     steps = build_steps(full=args.full, gates=args.gates, root=_ROOT, cov=args.cov)
 
     # 阶段 361：开口先说「这次量的是哪个环境」。步骤全用 sys.executable ⇒ 解释器决定一切，
     # 而「本地绿 CI 红」四次（347/351/358/360）的共同根就是没人把这句话打印出来。
-    # ⚠ 它只是**告知**，不参与判定（改判定口径属任务 #24，等用户拍）。
+    # 阶段 371（任务 #35 判决）：默认仍只**告知**；加 `--strict-env` 后由 `env_gate` 参与判定
+    # （CI 已带上它）。本地开发机是 [full_dev]，无条件强制会让本地入口常红。
     from scripts.env_profile import profile as _env_profile, installed_modules as _env_present
     _prof = _env_profile(_env_present())
     print("=" * 78)
@@ -383,13 +419,23 @@ def main(argv: "list | None" = None) -> int:
         print("（--list：仅列步骤，不执行）")
         return 2
 
+    # 阶段 371（任务 #35 判决）：`--strict-env` 把画像从「告知」升级为「门禁」。
+    # 只在显式要求时生效——本地开发机是 [full_dev]，无条件强制会让本地入口常红。
+    gate = env_gate(_prof["tag"], args.strict_env)
+    if gate is not None:
+        print()
+        print(f"🚧 --strict-env：当前画像 [{_prof['tag']}] 不是 [ci_equivalent] ⇒ 拒绝在这上面裁决")
+        if _prof["next_step"]:
+            print(f"   下一步：{_prof['next_step']}")
+        print("   （本地调试请去掉 --strict-env；CI 必须带上它，否则「CI 绿」不代表 runner 上绿）")
+        return gate
+
     total, lines, rep = run_steps(steps, root=_ROOT)
     print()
     for ln in lines:
         print(ln)
     print()
-    verdict = VERDICTS.get(total, "❌ 有步骤返回了约定外的退出码")
-    print(f"{verdict}（退出码 {total}）")
+    print(verdict_line(total, rep.get("uncovered", 0)) + f"（退出码 {total}）")
     return total
 
 

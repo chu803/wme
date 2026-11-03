@@ -1,6 +1,6 @@
 # 更新日志 / CHANGELOG
 
-> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 327 份（2026-11-03 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
+> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 328 份（2026-11-03 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
 > 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.3`。
 
 ## [1.0.2] - 2026-10-18
@@ -51,6 +51,30 @@
 - 新增 `docs/302-资产重建清单.md`：`models/big-lama.pt` 不入库（阶段 205 瘦身），固化下载源/大小校验/断点续传/备份建议。
 
 ## [Unreleased]
+
+### 变更（阶段 371 · 三个口径判决落地：入口契约拆码 + 环境画像门禁 + 依赖声明）
+- 🎯 里程碑：推送 `eea049e`（370）后 **CI run `41633113636` 全绿**（诊断步 skipped），
+  6 条红 → 2 条 → 0 的 CI 弧线走完。
+- **#24 入口契约翻转**：旧的「跳过(2)/环境错误(3)」各自聚合成 2/3 ⇒ CI 上「缺数据集」与
+  「质量不合格」长得一样；本地文案又印「全部跳过」。新契约：`0` 没有质量失败（可含未覆盖项）/
+  `1` 质量不通过（含约定外码 127/4）/ `2` 无事可跑 / `3` 入口自身环境问题。
+  新增 `uncovered()` 把 2/3 步骤逐条列进输出并带**子进程自己的结论**；`verdict_line()`
+  在有未覆盖项时**禁用「全部通过」**。纪律：质量 WARN 只能用 1 表达，2/3 只允许表达「没做判定」。
+- **#35 环境画像门禁**：新增 `--strict-env`——画像不是 `[ci_equivalent]` 就**拒绝裁决**（退出 3，
+  并打印下一步）。本地默认不传（开发机是 `[full_dev]`）；`ci.yml` 与 `publish.yml` 的入口步都带上。
+  判定抽成纯函数 `env_gate(tag, strict)`。
+- **#38 依赖声明**：`pyproject.toml` 改为 `dynamic = ["dependencies"]` +
+  `[tool.setuptools.dynamic] dependencies = { file = ["requirements-min.txt"] }`——
+  单一真值来源不变，但 `pip install wme-watermark-eraser` 从此一步装齐**最小可运行集**。
+  选 min 而非全量：`requirements.txt` 含 torch（`+cu128` 轮子不在 PyPI 默认索引上，写进
+  `Requires-Dist` 会让普通 `pip install` 直接解析失败）。README §3.3 同步改写。
+- 实测：`python -m build --wheel` 成功，wheel METADATA 出现 **15 条 `Requires-Dist`**，逐条与清单一致。
+- 守卫：aggregate 新契约（2/3 ⇒ 0，127/4 ⇒ 1 不变）/ 未覆盖清单必带结论 / 总结句禁「全部通过」/
+  `env_gate` 纯函数 4 例 / 两个工作流入口步必须带 `--strict-env`（参数化）/
+  `requirements-min.txt` 必须 PEP 508 可解析、无选项行、不含 torch/easyocr。
+- ⚠ 这是**对外契约翻转**：历史文档 184/192 记录的是旧契约，不回改；「未覆盖=不阻断」是本次判决
+  明确接受的代价——没有任何机器会把它们变红，只有清单与措辞上的显式暴露。
+- 验证：CI 等价入口 `rc=0`（3414 passed / 38 skipped / 6 deselected，442.20s）。
 
 ### 修复（阶段 370 · CI 剩下的两条红：把「轮子编译特性」当成环境事实）
 - 推送 `0f48ccc` 后 run `41460803064` 失败，自动诊断 issue #31 的 FAILED 清单**只剩 2 条**

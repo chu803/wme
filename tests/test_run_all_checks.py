@@ -5,7 +5,8 @@
      `pytest.ini` 的约定一致（torch_required / network）；
   ② 环境层：pytest 的 `--basetemp` **必须落在项目内**，不得落在系统 %TEMP%
      （阶段 183：%TEMP% 清理会触发沙箱批量删除护栏 ⇒ 一整族「删除类」用例假失败）；
-  ③ 聚合层：退出码语义 = 失败优先，只有「全部跳过」才返回 2；
+  ③ 聚合层：退出码语义 = 失败优先；**跳过/环境缺失只算「未覆盖」不阻断**，
+     但必须逐条列出来（阶段 371 按任务 #24 改定，旧契约是 2/3 分别返回 2/3）；
   ④ 同源层：CI 工作流**必须调用同一入口**，且不得再自己复制一份 marker 选择逻辑
      （防「CI 与本地各写一遍、慢慢漂移」）。
 """
@@ -168,41 +169,67 @@ def test_pytest_basetemp_is_project_local_not_system_temp(monkeypatch):
 # ---------------------------------------------------------------------------
 
 @pytest.mark.parametrize("rcs,expected", [
-    ([], 2),                    # 没有步骤 ⇒ 跳过
+    ([], 2),                    # 没有步骤 ⇒ 无事可跑
     ([0, 0], 0),                # 全通过
     ([0, 2], 0),                # 有通过 + 有跳过 ⇒ 通过（跳过不算失败）
-    ([2, 2], 2),                # 全跳过 ⇒ 跳过
+    ([2, 2], 0),                # 阶段 371（任务 #24）：全跳过不再阻断 ⇒ 0 + 未覆盖清单
     ([0, 1], 1),                # 任一失败 ⇒ 失败
     ([1, 0], 1),
     ([2, 1], 1),                # 失败优先于跳过
-    # ---- 阶段 328：环境错误（3）与「非约定退出码」不得被聚合成 0 ----
-    ([0, 3], 3),                # real_gate 缺依赖 ⇒ 环境错误，绝不能算「全部通过」
-    ([3, 0], 3),
-    ([1, 3], 1),                # 质量失败优先于环境错误
-    ([2, 3], 3),                # 环境错误优先于跳过
-    ([0, 127], 1),              # 崩溃 / 解释器缺失 ⇒ 失败（默认拒绝未知码）
-    ([0, 4], 1),                # 其它非约定码同样算失败
+    # ---- 阶段 371（任务 #24 判决）：环境错误(3)与跳过(2)一样，只算「未覆盖」不阻断 ----
+    # 旧契约（328）把它们聚合成 3/2 ⇒ CI 上「缺数据集」与「质量不合格」长得一模一样。
+    ([0, 3], 0),
+    ([3, 0], 0),
+    ([1, 3], 1),                # 质量失败仍然优先
+    ([2, 3], 0),
+    # ---- 约定外的码永远算失败（说不清的结果不是通过）----
+    ([0, 127], 1),              # 崩溃 / 解释器缺失
+    ([0, 4], 1),                # 其它非约定码
 ])
 def test_aggregate_semantics(rcs, expected):
     assert rac.aggregate(rcs) == expected
 
 
-def test_environment_error_is_never_reported_as_pass():
-    """阶段 328 的真 bug：`real_gate` 用退出码 3 表达「缺依赖」，旧聚合层把它算成 0。
+def test_uncovered_steps_are_reported_not_silently_passed():
+    """阶段 371（任务 #24）的核心：2/3 不阻断，但**必须被说出来**。
 
-    后果不是「红一次」，而是**同一份输出自相矛盾**——那一步印 ❌/🚧，总结句却印
-    「✅ 全部通过（退出码 0）」，而 `publish.yml` 跑的就是这条命令 ⇒ 环境坏了也能发版。
-    这里同时钉三件事：总码不是 0、总结措辞不含「全部通过」、未知码默认失败。
+    旧实现（328）把它们聚合成 3/2 ⇒ 与「质量不合格」共用同一种红，读日志的人分不清
+    「没测」和「测坏了」；而本地文案又把 2 印成「全部跳过」。现在：
+    · 总码可以是 0（不阻断）；
+    · 但输出里必须有「未覆盖项」清单，且总结句**不许印「全部通过」**。
     """
-    code, lines, _rep = rac.run_steps(
+    code, lines, rep = rac.run_steps(
         rac.build_steps(gates=True),
         runner=_runner({"real_gate": 3}), echo=lambda *a, **k: None)
-    assert code == 3, f"环境错误必须聚合成 3，实得 {code}"
-    assert not any("全部通过" in ln for ln in lines), lines
+    assert code == 0, f"环境错误不再阻断，实得 {code}"
+    assert rep["uncovered"] == 1, rep
+    joined = "\n".join(lines)
+    assert "未覆盖项" in joined and "real_gate" in joined, lines
+    assert "全部通过" not in rac.verdict_line(code, rep["uncovered"]), (
+        "有未覆盖项时总结句不许印「全部通过」")
 
+    # 约定外的码（127）依旧按失败处理 —— 这是 328 的底线，不能被 371 放宽。
     code2, _, _ = rac.run_steps(
         rac.build_steps(), runner=_runner({"undef_scan": 127}), echo=lambda *a, **k: None)
     assert code2 == 1, f"约定外的码（127）默认按失败处理，实得 {code2}"
+
+
+def test_skip_and_env_codes_are_listed_in_the_uncovered_block():
+    """2 与 3 都要进清单，并且带上子进程自己的结论（否则等于静默放行）。"""
+    def _r(argv, cwd=None, capture_output=True, text=True, **kw):
+        name = " ".join(str(a) for a in argv)
+        if "corner_signal_gate" in name:
+            return _Proc(2, "结论：缺数据集，跳过\n")
+        if "docker_consistency_check" in name:
+            return _Proc(3, "结论：缺关键依赖，未做判定\n")
+        return _Proc(0)
+
+    code, lines, rep = rac.run_steps(
+        rac.build_steps(), runner=_r, echo=lambda *a, **k: None)
+    assert code == 0
+    assert rep["uncovered"] == 2, rep
+    joined = "\n".join(lines)
+    assert "缺数据集" in joined and "缺关键依赖" in joined, lines
 
 
 def test_verdict_and_mark_tables_cover_all_documented_codes():
@@ -222,15 +249,47 @@ def test_run_steps_aggregates_and_reports():
     assert {"name", "rc", "seconds", "argv"} <= set(rep["steps"][0])
 
 
-def test_run_steps_all_skipped_returns_two():
+def test_run_steps_all_skipped_is_green_but_lists_uncovered():
+    """全跳过 ⇒ 总码 0（不阻断）+ 每条都进「未覆盖项」清单（阶段 371 契约）。"""
     steps = [st for st in rac.build_steps() if st.name != "pytest"]
     # 用「一律返回 2」的 runner：对默认步骤集合的未来增减免疫（不再逐个点名步骤）。
-    # ⚠ pytest 必须排除在外（阶段 330）：它的 2 是「中断」不是「跳过」，
-    #   留在这里就会把这条用例本该证明的事（全跳过 ⇒ 2）改成失败 ⇒ 那是**正确的**失败，
-    #   但测不到想测的东西。pytest 自己的码由 test_pytest_nonzero_codes_... 单独钉。
-    code, _lines, _rep = rac.run_steps(
+    # ⚠ pytest 必须排除在外（阶段 330）：它的 2 是「中断」不是「跳过」。
+    code, lines, rep = rac.run_steps(
         steps, runner=lambda *a, **k: _Proc(2), echo=lambda *a, **k: None)
-    assert code == 2
+    assert code == 0
+    assert rep["uncovered"] == len(steps), rep
+    joined = "\n".join(lines)
+    for st in steps:
+        assert st.name in joined
+
+
+def test_strict_env_gate_is_a_pure_function():
+    """#35 判决：`--strict-env` 只在画像不是 ci_equivalent 时拒绝裁决（返回 3）。"""
+    assert rac.env_gate("ci_equivalent", strict=True) is None
+    assert rac.env_gate("full_dev", strict=True) == 3
+    assert rac.env_gate("not_ci_env", strict=True) == 3
+    # 不加开关时永远不拦（本地开发机本来就是 full_dev）
+    assert rac.env_gate("full_dev", strict=False) is None
+    assert rac.env_gate("not_ci_env", strict=False) is None
+
+
+def test_strict_env_flag_is_accepted_and_list_wins():
+    """`--strict-env` 必须是合法参数；与 --list 同用时以 --list 为准（不执行步骤）。"""
+    assert rac.main(["--list", "--strict-env"]) == 2
+
+
+@pytest.mark.parametrize("rel", [".github/workflows/ci.yml", ".github/workflows/publish.yml"])
+def test_entry_steps_force_strict_env(rel):
+    """调用入口的工作流步必须带 --strict-env：否则「绿」不保证量的是 runner 环境。
+
+    覆盖 ci.yml 与 publish.yml：后者是发布闸门，同样不能在没有画像约束的环境上放行。
+    """
+    text = (_ROOT / rel).read_text(encoding="utf-8")
+    steps = _workflow_steps(text)
+    entry = [s for s in steps if any("run_all_checks.py" in ln for ln in s)]
+    assert len(entry) == 1, entry
+    assert any("--strict-env" in ln for ln in entry[0]), (
+        f"{rel} 的入口步没带 --strict-env ⇒ 环境画像漂移不会被发现")
 
 
 def test_failure_prints_tail_output():
@@ -324,16 +383,23 @@ def test_pytest_nonzero_codes_are_failures_not_skips():
 def test_gate_step_skip_and_env_codes_are_preserved():
     """反向：门禁脚本的 2/3 仍按「跳过 / 环境错误」解释，不得被拖成质量失败。
 
-    缺数据集或 OpenCV 的机器应当看得见「⏭ 没跑成」，而不是被误判为产品退化。
+    阶段 371：它们不再阻断聚合码（⇒ 0），但**判定码必须原样保留**在报告里，
+    并且进入「未覆盖项」清单——否则「缺数据集」会被读成「通过」。
     """
-    code2, _, _ = rac.run_steps(_only("corner_signal_gate"),
-                                runner=_runner({"corner_signal_gate.py": 2}),
-                                echo=lambda *a, **k: None)
-    assert code2 == 2, code2
-    code3, _, _ = rac.run_steps(_only("corner_signal_gate"),
-                                runner=_runner({"corner_signal_gate.py": 3}),
-                                echo=lambda *a, **k: None)
-    assert code3 == 3, code3
+    got2, lines2, rep2 = rac.run_steps(_only("corner_signal_gate"),
+                                       runner=_runner({"corner_signal_gate.py": 2}),
+                                       echo=lambda *a, **k: None)
+    assert got2 == 0, got2
+    assert rep2["steps"][0]["verdict"] == 2, rep2["steps"][0]
+    assert rep2["uncovered"] == 1
+    assert "未覆盖项" in "\n".join(lines2), lines2
+
+    got3, _lines3, rep3 = rac.run_steps(_only("corner_signal_gate"),
+                                        runner=_runner({"corner_signal_gate.py": 3}),
+                                        echo=lambda *a, **k: None)
+    assert got3 == 0, got3
+    assert rep3["steps"][0]["verdict"] == 3, rep3["steps"][0]
+    assert rep3["uncovered"] == 1
 
 
 def test_run_steps_pins_the_cross_process_encoding():

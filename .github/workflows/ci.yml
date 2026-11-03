@@ -99,11 +99,13 @@ jobs:
         # 退出码取 `tee` 的 0 ⇒ 门禁判失败也照样绿，「不过门禁不发布」形同装饰
         # （本机复现：`sh -e -c 'false | tee /dev/null'` 退出码 0；`bash -eo pipefail` 为 1）。
         # 守卫：tests/test_run_all_checks.py::test_piped_gate_step_cannot_swallow_the_exit_code
+        # 阶段 371（任务 #35）：`--strict-env` 让「量的就是 runner 环境」成为硬约束——
+        # 画像一旦漂成 [full_dev]/[not_ci_env]，入口直接拒绝裁决（退出码 3）而不是默默量错东西。
         shell: bash
         run: |
           set -eo pipefail
           mkdir -p logs
-          python scripts/run_all_checks.py 2>&1 | tee logs/entry.log
+          python scripts/run_all_checks.py --strict-env 2>&1 | tee logs/entry.log
 
       - name: 诊断：门禁失败 → FAILED 清单写入 Summary 并建 issue（供自动读取，修完可删）
         id: diagnose

@@ -5,8 +5,12 @@
 #  --------------------------------
 #  · 本文件提供**项目元数据**（名称 / 版本 / 描述 / 许可 / 所需 Python），
 #    使工具链（打包、依赖扫描、编辑器、GitHub 等）能读到统一的项目身份。
-#  · **依赖清单的真值来源仍是 `requirements*.txt`**（安装方式与清华镜像说明都在那里），
-#    此处**刻意不复制**一份 `dependencies`，避免两处清单慢慢漂移（LESSONS 187/195）。
+#  · **依赖清单的真值来源仍是 `requirements*.txt`**（安装方式与镜像说明都在那里）。
+#    阶段 371（任务 #38 判决）：`dependencies` 改为从 `requirements-min.txt` **动态读取**
+#    （见下方 `[tool.setuptools.dynamic]`）——单一真值来源不变，但 `pip install wme`
+#    从此一步装齐**最小可运行集**（不含 torch；LaMa 等可选增强仍按文档另装）。
+#    之前"刻意不声明"的理由是怕两处清单漂移；用 file 形式读取清单后，这个理由不再成立。
+#    守卫：`tests/test_packaging_meta.py` 断言声明存在且来源是 requirements-min.txt。
 #  · 版本号唯一真值来源是 `config.APP_VERSION`；此处写同一数值并由
 #    `tests/test_packaging_meta.py` 断言两者一致（不采用 setuptools 的
 #    `dynamic = {attr = ...}`，因为那会在**构建时导入 config.py**，而 config.py
@@ -32,6 +36,9 @@ version = "1.0.3"
 description = "AI 智能水印擦除工作台：本地离线、免手涂的 AI 图片/PDF/视频可见水印检测与修复工具"
 readme = "README.md"
 requires-python = ">=3.11"
+# 阶段 371：运行时依赖不在本文件里手抄，而是从 requirements-min.txt 动态读取
+# （该文件是安装清单的真值来源；torch / easyocr / pymupdf 等可选增强不在其中）。
+dynamic = ["dependencies"]
 # 许可文件（阶段 293 迁移）：旧的 license table 形式（license = { file = "LICENSE" }）
 #   自 setuptools 77 起弃用，2027-02-18 后构建不再被支持。本作为专有许可（无 SPDX
 #   标识），故按 PEP 639 用 license-files 随包附带 LICENSE 文本，不写 SPDX 表达式；
@@ -74,6 +81,12 @@ Changelog = "https://github.com/chu803/wme/blob/main/CHANGELOG.md"
 wme = "main:main"
 wme-cli = "cli:main"
 wme-api = "server:cli_main"
+
+[tool.setuptools.dynamic]
+# 阶段 371（任务 #38）：dependencies 从清单文件读取——**单一真值来源仍是 requirements-min.txt**。
+# 选 requirements-min 而不是 requirements.txt：后者含 torch（cu128 轮子不在 PyPI 默认索引上，
+# 写进 wheel 的 Requires-Dist 会让普通 `pip install` 直接解析失败）。
+dependencies = { file = ["requirements-min.txt"] }
 
 [tool.setuptools]
 # 顶层单文件模块（与仓库现状一一对应；`conftest.py` 是测试夹具，不发布）
