@@ -180,18 +180,30 @@ def test_avif_with_alpha_never_exposes_hidden_rgb(tmp_path):
 
 
 def test_avif_fallback_png_flattens(tmp_path, monkeypatch):
-    """强制 Pillow 路径失败 → 降级 PNG 时必须按背景色合成（不得暴露隐藏 RGB）。"""
+    """两个 AVIF 编码器都不可用 → 降级 PNG 时必须按背景色合成（不得暴露隐藏 RGB）。
+
+    阶段 370 修：原版只屏蔽 Pillow 路径，并**假设**「cv2 的 AVIF 编码器在本环境同样不可用」。
+    这条假设在 Linux CI 上不成立——manylinux 的 opencv wheel 带 libavif、能真的写出 AVIF，
+    于是 `assert saved.endswith(".png")` 在 runner 上翻红（run 41460803064 实测，
+    本机 Windows 的 opencv wheel 没有该编码器，所以本地一直是绿的）。
+    ⇒ 现在把 cv2 的 `.avif` 编码**显式**模拟为不可用（只拦 .avif，PNG 编码保持真实），
+    与「依赖构建里带不带某个编码器」解耦，两个 OS 跑同一条分支。
+    """
     from unittest.mock import patch
 
     rgb, alpha = _hidden_alpha_image()
     p = str(tmp_path / "out.avif")
     monkeypatch.setattr(config, "PNG_KEEP_ALPHA", True)
-    with patch.object(iu, "_save_avif_via_pillow", return_value=False):
-        # cv2 的 AVIF 编码器在本环境同样不可用 → 走第 ③ 级 PNG 降级。
-        try:
-            saved = iu.save_image(p, rgb, fmt="AVIF", alpha=alpha, quality=95)
-        except cv2.error:
-            pytest.skip("当前 OpenCV 的 AVIF 编码器行为异常，跳过该回退分支")
+    real_imencode = cv2.imencode
+
+    def fake_imencode(ext, img, params=None):
+        if str(ext).lower() == ".avif":
+            raise cv2.error("AVIF encoder not available (simulated for fallback test)")
+        return real_imencode(ext, img, params) if params is not None else real_imencode(ext, img)
+
+    with patch.object(iu, "_save_avif_via_pillow", return_value=False), \
+            patch.object(cv2, "imencode", side_effect=fake_imencode):
+        saved = iu.save_image(p, rgb, fmt="AVIF", alpha=alpha, quality=95)
     assert saved.endswith(".png"), "降级后应为 PNG"
     back = np.array(Image.open(saved).convert("RGB"))
     assert np.max(np.abs(back[20, 20].astype(int) - np.array(_BG))) <= 2

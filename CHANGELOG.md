@@ -1,6 +1,6 @@
 # 更新日志 / CHANGELOG
 
-> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 326 份（2026-11-02 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
+> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 327 份（2026-11-03 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
 > 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.3`。
 
 ## [1.0.2] - 2026-10-18
@@ -51,6 +51,21 @@
 - 新增 `docs/302-资产重建清单.md`：`models/big-lama.pt` 不入库（阶段 205 瘦身），固化下载源/大小校验/断点续传/备份建议。
 
 ## [Unreleased]
+
+### 修复（阶段 370 · CI 剩下的两条红：把「轮子编译特性」当成环境事实）
+- 推送 `0f48ccc` 后 run `41460803064` 失败，自动诊断 issue #31 的 FAILED 清单**只剩 2 条**
+  （362 的全量回显第一次真正发挥作用；对比 `16c0ac7` 的 6 条，362/369 的修复在 runner 上确认）：
+  - `test_path_helper_audit144::test_L0_legacy_unique_name_posix_does_not_strip_backslash`：
+    测试本意是证明旧实现的 F5 缺陷「依赖平台」，**自己却先断言了 Windows 语义**（"本机应是被支持的
+    Windows 语义"）⇒ Linux 必红。改为两个平台各说各的结论（POSIX 分支恰是缺陷证据），不加 skipif。
+  - `test_output_fidelity::test_avif_fallback_png_flattens`：注释假设"cv2 的 AVIF 编码器在本环境
+    同样不可用"——对 Windows wheel 成立，但 **manylinux 的 opencv 5.0.0.93 wheel 带 libavif**，
+    runner 上真写出了 `.avif` ⇒ `assert endswith(".png")` 翻红。改为显式模拟 `.avif` 编码失败
+    （PNG 编码保持真实），删掉原来 `try/except → pytest.skip` 的挡箭牌。
+- 归类：**第五类环境假设——同一版本号的 wheel，在不同 OS 上带的编码器/后端可以不同**
+  （不是版本漂移 / 路径语义 / 时区 / 字体）。通用判据：凡"本环境没有 X"的注释，先问"哪个 OS/哪个轮子没有"。
+- 本阶段**未改产品代码**。验证：CI 等价入口 `rc=0`（3409 passed / 37 skipped / 6 deselected）。
+- ⚠ 边界：其余"本环境"注释（WebP/TIFF/AVIF 家族）未逐条审计，只修了唯一翻红的那条。
 
 ### 修复（阶段 369 · 合成基准的字体是量具：从「本机装了什么」改成「仓库里那一份」）
 - `scripts/make_demo_assets.py::_font()` 原先按本机字体库存挑（Windows→arialbd、Linux→系统 DejaVu、

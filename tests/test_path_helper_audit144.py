@@ -97,14 +97,22 @@ def test_L0_legacy_fallback_passes_illegal_chars_through():
 
 
 def test_L0_legacy_unique_name_posix_does_not_strip_backslash():
-    """`PurePosixPath("a\\b.txt").name` 不剥离反斜杠 ⇒ 证明 F5 的平台相关是真缺陷。"""
-    assert Path("a\\b.txt").name == "b.txt", "本机应是被支持的 Windows 语义"
-    assert PurePosixPath("a\\b.txt").name == "a\\b.txt", (
-        "POSIX 语义下反斜杠不是分隔符 —— 旧实现无法剥离"
-    )
-    # 新旧对比
-    assert _legacy_unique_name("a\\b.txt") == "b.txt"          # Windows 侥幸正确
-    assert PurePosixPath("a\\b.txt").name != "b.txt"            # POSIX 失效
+    """旧实现用 `Path(...).name` 剥目录 ⇒ 结论随平台变，这正是 F5 真缺陷的证据。
+
+    阶段 370 修：原版第一句写死 Windows 语义（`Path("a\\b.txt").name == "b.txt"`，
+    失败信息「本机应是被支持的 Windows 语义」）⇒ Linux runner 上必红
+    （run 41460803064 实测）。现在**两个平台都断言、各说各的结论**：
+    Windows 上旧实现侥幸正确，POSIX 上它剥不掉反斜杠——后者正是本阶段要暴露的缺陷。
+    """
+    if os.name == "nt":
+        assert Path("a\\b.txt").name == "b.txt", "Windows 上反斜杠是分隔符（旧实现侥幸正确）"
+        assert _legacy_unique_name("a\\b.txt") == "b.txt"
+    else:
+        assert Path("a\\b.txt").name == "a\\b.txt", "POSIX 上反斜杠不是分隔符（旧实现失效）"
+        assert _legacy_unique_name("a\\b.txt") == "a\\b.txt"
+    # 跨平台恒真：POSIX 语义永远不剥离反斜杠 ⇒ 依赖它的实现无法跨平台。
+    assert PurePosixPath("a\\b.txt").name == "a\\b.txt"
+    # 新实现（L5）两个 OS 都必须剥离反斜杠——那组用例不按平台分支。
 
 
 def test_L0_legacy_output_dir_escapes(tmp_path):

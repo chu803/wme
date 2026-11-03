@@ -1314,6 +1314,25 @@ AST 全仓（含 tests/）不引用 OS 字体目录、反例双向。两处踩�
 - `369-合成基准的字体是量具不是环境细节.md`
 
 
+### 370 · CI 剩下的两条红：都是「依赖轮子的编译特性」假设（2026-11-03）
+
+推送 `0f48ccc` 后 run `41460803064` 失败，自动诊断 issue **#31** 的 FAILED 清单只剩 2 条
+（362 的全量回显第一次真正发挥作用）：`test_L0_legacy_unique_name_posix_does_not_strip_backslash`
+（"本机应是被支持的 Windows 语义"）与 `test_avif_fallback_png_flattens`（"降级后应为 PNG"）。
+对比 `16c0ac7` 的 6 条 ⇒ 362/369 的修复在 runner 上确认。
+第一条：测试本意是证明旧实现的 F5 缺陷「依赖平台」，却先断言了 Windows 语义 ⇒ 改成
+**两个平台各说各的结论**（POSIX 分支恰是缺陷证据；不加 skipif，否则证据被永久藏起来）。
+第二条：注释写"cv2 的 AVIF 编码器在本环境同样不可用"——对 Windows 成立，但 manylinux 的
+opencv 5.0.0.93 wheel **带 libavif**，runner 上真写出了 `.avif` ⇒ 断言翻红。
+这是第五类环境假设：**同版本 wheel 在不同 OS 上带的编码器/后端可以不同**（不是版本漂移、
+不是路径语义、不是时区、不是字体）。修法：显式模拟 `.avif` 编码失败（PNG 编码保持真实），
+与构建特性解耦，并删掉原来那个 `try/except → pytest.skip` 挡箭牌。
+本阶段**未改产品代码**；本地 CI 等价入口 `rc=0`（3409 passed / 37 skipped / 6 deselected）。
+⚠ 边界：其余"本环境"注释（WebP/TIFF/AVIF 家族）未逐条审计，只修了唯一翻红的那条。
+
+- `370-CI剩下两条红都是依赖构建特性假设.md`
+
+
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 
 `ui/tab_batch._CURRENT_QUEUE` 批跑开始时赋值、**从不置回 None**，而取消处理器（含快捷键 Shift+C）只判
