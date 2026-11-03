@@ -52,6 +52,13 @@
 
 ## [Unreleased]
 
+> **发布记录（2026-11-03）**：`1.0.3` 已上架 PyPI（`wme-watermark-eraser==1.0.3`，
+> 上传时间 2026-11-03T12:55Z）。发布链：tag `v1.0.3` 重指到 `c75ed69` → Publish 工作流
+> （入口带 `--strict-env` → build → `verify_dist_artifacts` → PyPI 上传）全绿。
+> **PyPI 侧的 `requires_dist` 实测 15 条**（与 `requirements-min.txt` 逐条一致）⇒
+> `pip install wme-watermark-eraser` 一步装齐最小可运行集（阶段 371 的 #38 在已发布产物上验证）。
+> 1.0.3 的内容 = 下文 [Unreleased] 各阶段 + 既有 `## [1.0.3]` 段。
+
 ### 变更（阶段 371 · 三个口径判决落地：入口契约拆码 + 环境画像门禁 + 依赖声明）
 - 🎯 里程碑：推送 `eea049e`（370）后 **CI run `41633113636` 全绿**（诊断步 skipped），
   6 条红 → 2 条 → 0 的 CI 弧线走完。
