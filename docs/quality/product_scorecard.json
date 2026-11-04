@@ -33,7 +33,7 @@
     "test_loc_approx": 52376,
     "test_cases": 3447,
     "test_files": 271,
-    "docs": 329,
+    "docs": 330,
     "scripts": 52,
     "audited_modules": 45,
     "runtime": "torch 2.9.1+cu128 (RTX 5060 Laptop 8151MiB)；另备 Python 安装 CPU 版；requirements 已统一 2.9.1+cu128（116 时为 stale 2.3.1）",
@@ -125,7 +125,7 @@
       "metrics": {
         "test_cases": 3447,
         "test_files": 271,
-        "docs": 329,
+        "docs": 330,
         "audited_modules": 45,
         "gates": [
           "scripts/quality_gate.py",
