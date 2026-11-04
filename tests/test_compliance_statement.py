@@ -89,3 +89,21 @@ def test_no_legacy_compliance_phrase_in_source():
             missing.append(rel)
     assert not legacy, f"以下文件仍含旧措辞：{legacy}"
     assert not missing, f"以下文件缺少新措辞：{missing}"
+
+
+def test_ui_brief_states_local_processing_and_no_upload():
+    """阶段 375：首屏必须写明「本地处理、图片不上传」。
+
+    为什么：这是产品最核心的信任点（离线 / 本地），但此前 UI 文案里一处都没有
+    （实测 grep「不上传 / 本地处理」= 0 命中）。判据同时要求中英双语，且**点名"不上传"**，
+    防止有人把它改成一句含糊的"隐私友好"而丢掉承诺本身。
+    """
+    i18n.set_language("zh-CN")
+    zh = i18n.t("app.compliance")
+    assert "不上传" in zh, "中文首屏没有「图片不上传」的明确承诺"
+    assert "本地" in zh, "中文首屏没有点明「本地处理」"
+
+    i18n.set_language("en-US")
+    en = i18n.t("app.compliance")
+    assert "never uploaded" in en, "英文首屏没有「never uploaded」的明确承诺"
+    assert "locally" in en.lower(), "英文首屏没有点明「runs locally」"

@@ -37,7 +37,9 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        python-version: ["3.11"]
+        # 阶段 375：pyproject 的 classifiers 声称支持 3.11/3.12/3.13，而 CI 此前只跑 3.11
+        # ⇒ 声明没有证据。补齐矩阵：三个版本并行（墙钟不变），任一版本红就说明声明要收窄。
+        python-version: ["3.11", "3.12", "3.13"]
 
     steps:
       # ⚠ 每个 step 都必须有 `id`（守卫：tests/test_run_all_checks.py::test_every_workflow_step_has_an_id）。

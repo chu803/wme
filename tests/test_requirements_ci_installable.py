@@ -7,7 +7,8 @@ Pillow 12.3.0 / scikit-image 0.26.0 / scipy 1.18.1 / pydantic 2.13.4）。
 
 代价（CI 上整整 8 天全红）：这些版本**在 PyPI 上是有的**，但其中 `numpy 2.5.1` 与 `scipy 1.18.1`
 **没有 cp311 轮子**（实测索引页：numpy 2.5.1 只有 cp312/313/314；scipy 1.18.1 只有 cp312~315），
-而 CI 的矩阵是 **Python 3.11** ⇒ runner 上 `pip install` 必然失败
+而 CI 的矩阵从 **Python 3.11** 起（阶段 375 起扩到 3.11/3.12/3.13）
+⇒ 只要最低版本 3.11 装不上，runner 上 `pip install` 必然失败
 ⇒ 每次都红在 26~92 秒（跑不完入口步）。而 `requirements-min.txt` 同时是 **README 让用户照着装的清单**
 ⇒ 照着装、且用 Python 3.11 的用户同样装不上。
 （opencv 5.0.0.93 是 cp37-abi3 轮子 ⇒ 向前兼容，3.11/3.13 都能装；Pillow / scikit-image 有 cp311 ⇒ 无碍。）

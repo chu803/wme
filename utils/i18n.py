@@ -93,6 +93,8 @@ TRANSLATIONS: dict = {
                 "> ⚠️ **合规提醒**：本工具专用于去除**您本人生成的 AI 图片**上的可见水印 / 署名标识"
                 "（如您自行添加的水印）。请勿用于清除他人作品或 AI 平台第三方署名水印"
                 "（通常违反其服务条款）。\n"
+                "> 🔒 **本地处理、图片不上传**：检测与修复都在本机完成，图片不会发送到任何服务器"
+                "（唯一联网是首次使用时的模型权重大小约 205 MB 的下载）。\n"
                 "> 详见控制台启动时的《合规使用声明》。"
             ),
             "tab": {
@@ -953,6 +955,9 @@ TRANSLATIONS: dict = {
                 "attribution marks from **AI images you generated yourself** (e.g. your own watermarks). "
                 "Do not use it to remove others' works or third-party AI platform signatures "
                 "(usually against their Terms of Service).\n"
+                "> 🔒 **Runs locally — your images are never uploaded**: detection and inpainting "
+                "happen on this machine; no image is sent to any server (the only network use is the "
+                "one-time ~205 MB model download).\n"
                 "> See the Compliance Statement printed in the console at startup."
             ),
             "tab": {
