@@ -172,8 +172,9 @@ def ensure_model_ready() -> bool:
         log.error("模型下载失败：%s", exc)
         print(
             f"\n>>> 模型下载失败：{exc}\n"
-            ">>> 程序仍可使用 OpenCV 方案处理细小水印；"
-            "如需 LaMa 效果，请手动下载模型后重试。"
+            ">>> 程序仍可使用 OpenCV 方案处理细小水印；如需 LaMa 效果，请手动下载后重试。\n"
+            f">>> 手动方式：把权重放到 {config.MODEL_PATH}"
+            "（或启动时加 --no-download，明确只用 OpenCV）。"
         )
         return False
 

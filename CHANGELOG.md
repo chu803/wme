@@ -1,6 +1,6 @@
 # 更新日志 / CHANGELOG
 
-> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 332 份（2026-11-04 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
+> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 333 份（2026-11-04 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
 > 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.3`。
 
 ## [1.0.2] - 2026-10-18
@@ -58,6 +58,14 @@
 > **PyPI 侧的 `requires_dist` 实测 15 条**（与 `requirements-min.txt` 逐条一致）⇒
 > `pip install wme-watermark-eraser` 一步装齐最小可运行集（阶段 371 的 #38 在已发布产物上验证）。
 > 1.0.3 的内容 = 下文 [Unreleased] 各阶段 + 既有 `## [1.0.3]` 段。
+
+### 修复（阶段 376 · README 展示图是破链；README 还是 PyPI 正文）
+- §2.2 的四张「四联对比图」指向 `docs/assets/demo_*_opencv.png` —— 文件**从未入库**（GitHub 破图）；
+  且 README 是 **PyPI 项目页正文**，相对路径在 PyPI 上解析不到仓库（就算文件在也加载不出来）。
+- 改指已入库的 `bench_*_seed1.png`，并全部改为**绝对 raw URL**（两端都能渲染）。
+- 模型下载失败提示补全：手动放到 `config.MODEL_PATH`，或 `--no-download` 只用 OpenCV。
+- 守卫 `tests/test_readme_assets.py`：引用必须存在 + 必须绝对 URL（含反例）。
+- 验证：入口 `rc=0`（3424 passed / 38 skipped / 6 deselected，432.99s）。
 
 ### 改进（阶段 375 · 首屏信任文案 + 版本口径 + 全页签走查）
 - 首屏新增中英双语「🔒 本地处理、图片不上传」（改前 grep 0 命中）；守卫要求中英都点名

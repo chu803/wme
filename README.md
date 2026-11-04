@@ -201,11 +201,11 @@ python scripts/detector_diag.py --json docs/assets/detector_diag_after.json
 
 | 角落 LOGO（成功） | 底部边缘小字（成功） |
 |---|---|
-| ![角落LOGO](docs/assets/demo_corner_logo_opencv.png) | ![底部小字](docs/assets/demo_edge_text_opencv.png) |
+| ![角落LOGO](https://raw.githubusercontent.com/chu803/wme/main/docs/assets/bench_corner_logo_seed1.png) | ![底部小字](https://raw.githubusercontent.com/chu803/wme/main/docs/assets/bench_edge_text_seed1.png) |
 
 | 极淡平铺文字（失败） | 网格点阵（失败） |
 |---|---|
-| ![平铺文字](docs/assets/demo_faint_tiled_opencv.png) | ![网格点阵](docs/assets/demo_grid_opencv.png) |
+| ![平铺文字](https://raw.githubusercontent.com/chu803/wme/main/docs/assets/bench_faint_tiled_seed1.png) | ![网格点阵](https://raw.githubusercontent.com/chu803/wme/main/docs/assets/bench_grid_seed1.png) |
 
 ### 2.3 网格水印在纹理底图上的精确率收敛（阶段 53）
 
