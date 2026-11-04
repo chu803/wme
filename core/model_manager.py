@@ -113,6 +113,16 @@ _INITED: bool = False
 # 模型缓存：路径 -> torch 模型对象（与 model_loader 的单例语义一致，但按路径区分）。
 _CACHE: dict[str, object] = {}
 
+#: 阶段 374：**下载进行中**（进程内）。启动期改为「界面先起、权重后台下」后，
+#: 不能让推理线程把**正在写**的权重当成可用：`is_model_available()` 在此标记为真时
+#: 一律返回 False（回退 OpenCV），下载结束（成功/失败/回滚完）再放开。
+_DOWNLOAD_IN_PROGRESS: bool = False
+
+
+def is_downloading() -> bool:
+    """当前进程是否有模型下载正在进行（供 is_model_available 与 UI 提示使用）。"""
+    return _DOWNLOAD_IN_PROGRESS
+
 #: **已知 fp16（半精度）不安全的模型** → 加载时强制保持 float32。
 #:
 #: 实测依据（阶段 207 · RTX 5060 + torch 2.9.1+cu128）：
@@ -398,6 +408,9 @@ def is_model_available(name: Optional[str] = None) -> bool:
     """
     slot = get_model_slot(name)
     if slot is None or slot.path is None:
+        return False
+    if _DOWNLOAD_IN_PROGRESS:
+        # 阶段 374：权重正在写盘 ⇒ 一律视为不可用（否则半写文件会被 torch.jit.load 命中）。
         return False
     p = str(slot.path)
     if not _os.path.exists(p):
@@ -785,6 +798,10 @@ def download_model(
         except Exception as exc:  # noqa: BLE001
             log.warning("备份现有权重失败（继续下载）：%s", exc)
 
+    # 阶段 374：进入「下载中」状态（is_model_available 会据此返回 False），
+    # 直到成功 / 失败 / 回滚全部结束才放开——否则界面先起后，推理线程可能命中半写文件。
+    global _DOWNLOAD_IN_PROGRESS
+    _DOWNLOAD_IN_PROGRESS = True
     try:
         path = download_to(
             dest=dest,
@@ -821,6 +838,9 @@ def download_model(
         else:
             log.warning("无可用备份，权重可能处于不完整状态，请重新下载。")
         raise
+    finally:
+        # 阶段 374：成功/失败/回滚都已结束，放开「下载中」标记。
+        _DOWNLOAD_IN_PROGRESS = False
 
 
 # ==============================================================================

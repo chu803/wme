@@ -32,6 +32,7 @@ force_utf8_stdio()
 import argparse  # noqa: E402
 import os
 import sys
+import threading
 import time
 
 import config
@@ -181,6 +182,39 @@ def ensure_model_ready() -> bool:
 # 第 3.5 节：启动期性能报告与降级提示
 # ==============================================================================
 
+def model_startup_action(available: bool) -> str:
+    """阶段 374：启动期模型策略（纯函数，便于守卫）。
+
+    · `"sync"`       —— 权重已就位：同步预热，首屏即可用 LaMa；
+    · `"background"` —— 缺失：**界面先起**（OpenCV 可用），下载+预热丢后台。
+    """
+    return "sync" if available else "background"
+
+
+def _background_model_setup() -> None:
+    """阶段 374：在后台线程里完成「下载 + 预热」，不阻塞界面启动。
+
+    为什么（真机实测）：模型 205 MB、默认从 GitHub 拉；网络不通时 ghproxy 回退只有 ~50 KB/s，
+    而旧流程是**先等下载完再起界面** ⇒ 新用户可能盯着空终端几十分钟，还以为程序没启动。
+    现在界面先起（先用 OpenCV 引擎），下载在后台；完成后下一次请求自动用上 LaMa
+    （`core/inpainter` 每次按 `is_model_available()` 现查，不缓存引擎选择）。
+
+    下载期间 `model_manager.is_model_available()` 恒为 False（阶段 374 的「下载中」标记），
+    所以不会有人把半写文件加载进来。
+    """
+    try:
+        ensure_model_ready()
+        warm_up_model()
+    except Exception as exc:  # noqa: BLE001 - 后台准备失败绝不影响界面可用性
+        log.warning("后台模型准备失败（界面仍可用 OpenCV 引擎）：%s", exc)
+
+
+def _start_background_model_setup() -> None:
+    """起后台守护线程跑「下载 + 预热」（抽成函数便于测试替换）。"""
+    threading.Thread(target=_background_model_setup, name="model-setup",
+                     daemon=True).start()
+
+
 def print_performance_report() -> None:
     """
     打印性能相关配置摘要（线程 / 分块 / 并发 / 半精度），便于排查性能问题。
@@ -240,16 +274,14 @@ def report_device_and_gpu_hint() -> None:
         )
 
 
-def warm_up_model() -> None:
-    """
-    启动期预热模型：若模型已就位则加载一次 LaMa，给出明确的引擎就绪状态；
-    若不可用则明确告知已回退 OpenCV。让用户在打开浏览器前就清楚本次用哪套引擎。
+def _warm_up_ocr() -> None:
+    """启动期预热 EasyOCR（后台守护线程，不阻塞界面启动）。
+
+    阶段 374：从 `warm_up_model` 抽出来——权重缺失时界面先起，但 OCR 预热与权重无关，
+    仍要在启动期触发（否则首个检测请求会冷启动卡顿）。
     """
     if not config.STARTUP_WARMUP_MODEL:
         return
-
-    # 阶段 238：启动期预热 EasyOCR（后台守护线程，不阻塞界面启动）。
-    #   与 LaMa 模型预热解耦：即便模型缺失也照常预热 OCR，首个检测请求不再冷启动卡顿。
     try:
         from core.detector import warm_up_ocr
 
@@ -260,6 +292,17 @@ def warm_up_model() -> None:
             print("  [OCR]  ℹ️  DETECT_USE_OCR 关闭，跳过 OCR 预热。")
     except Exception as exc:  # noqa: BLE001 - 预热失败绝不影响启动
         log.debug("OCR 预热触发异常（不影响启动）：%s", exc)
+
+
+def warm_up_model() -> None:
+    """
+    启动期预热模型：若模型已就位则加载一次 LaMa，给出明确的引擎就绪状态；
+    若不可用则明确告知已回退 OpenCV。让用户在打开浏览器前就清楚本次用哪套引擎。
+    """
+    if not config.STARTUP_WARMUP_MODEL:
+        return
+
+    _warm_up_ocr()
 
     from core.model_loader import is_model_available, load_lama_model
     from utils.exceptions import (
@@ -454,11 +497,20 @@ def main() -> int:
     print_performance_report()
     report_device_and_gpu_hint()
 
-    # 4) 模型就绪（缺失且开启自动下载时触发下载 / 否则提示）。
-    ensure_model_ready()
+    # 4) 模型就绪（阶段 374：**不阻塞界面**）。
+    #    已就位 ⇒ 同步预热（快，且让首屏就能用 LaMa）；
+    #    缺失   ⇒ 界面先起（OpenCV 引擎可用），下载+预热丢到后台守护线程。
+    from core.model_loader import is_model_available as _model_ready
 
-    # 5) 预热模型：加载 LaMa 或明确回退 OpenCV，给出引擎就绪状态。
-    warm_up_model()
+    if model_startup_action(_model_ready()) == "sync":
+        warm_up_model()
+    else:
+        print(
+            "\n>>> 未检测到 LaMa 权重：**界面现在启动**，先使用 OpenCV 引擎；\n"
+            "    权重将在后台下载（可在「模型管理」页查看进度），完成后自动可用。"
+        )
+        _warm_up_ocr()          # OCR 预热与权重无关，仍在启动期触发
+        _start_background_model_setup()
 
     # 6) 启动分发：--api 走零依赖 REST 服务（server.py），否则启动 Gradio 界面。
     if args.api:

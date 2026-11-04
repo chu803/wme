@@ -77,7 +77,7 @@ def _fake_ui_app(build_ok=True, launch_rc=0):
     return mod
 
 
-def _patch_pipeline(monkeypatch, calls, *, env_ok=True):
+def _patch_pipeline(monkeypatch, calls, *, env_ok=True, model_ready=True):
     """把 main 的编排依赖替换为记录调用的间谍。"""
     monkeypatch.setattr(m, "print_startup_banner", lambda: calls.append("banner"))
     monkeypatch.setattr(m, "run_environment_check",
@@ -86,6 +86,11 @@ def _patch_pipeline(monkeypatch, calls, *, env_ok=True):
     monkeypatch.setattr(m, "report_device_and_gpu_hint", lambda: calls.append("device"))
     monkeypatch.setattr(m, "ensure_model_ready", lambda: calls.append("model"))
     monkeypatch.setattr(m, "warm_up_model", lambda: calls.append("warmup"))
+    # 阶段 374：模型是否就位由 model_loader 现查；后台线程用替身记录，不真起线程。
+    import core.model_loader as _ml
+    monkeypatch.setattr(_ml, "is_model_available", lambda name=None: model_ready)
+    monkeypatch.setattr(m, "_start_background_model_setup",
+                        lambda: calls.append("background"))
     monkeypatch.setattr(m, "launch_ui", lambda: (calls.append("launch"), 0)[1])
 
 
@@ -133,7 +138,8 @@ def test_selftest_returns_before_model_steps(monkeypatch):
 
     assert m.main() == 7
     assert "selftest" in calls
-    assert "model" not in calls, "selftest 路径触发了模型就绪检查（会引发网络下载）"
+    assert "model" not in calls and "background" not in calls, (
+        "selftest 路径触发了模型就绪/后台下载（会引发网络下载）")
     assert "warmup" not in calls
     assert "launch" not in calls
 
@@ -144,7 +150,18 @@ def test_normal_path_orchestration_order(monkeypatch):
     monkeypatch.setattr(m, "parse_args", lambda: _Args())
 
     assert m.main() == 0
-    assert calls == ["banner", "env", "perf", "device", "model", "warmup", "launch"], calls
+    assert calls == ["banner", "env", "perf", "device", "warmup", "launch"], calls
+
+
+def test_missing_model_starts_ui_without_waiting(monkeypatch):
+    """阶段 374：权重缺失时**界面先起**（后台下载），不得同步等下载。"""
+    calls = []
+    _patch_pipeline(monkeypatch, calls, model_ready=False)
+    monkeypatch.setattr(m, "parse_args", lambda: _Args())
+
+    assert m.main() == 0
+    assert calls == ["banner", "env", "perf", "device", "background", "launch"], calls
+    assert "warmup" not in calls, "缺失权重时不应同步预热（会先等下载）"
 
 
 def test_fatal_env_check_aborts_before_launch(monkeypatch):
@@ -153,7 +170,7 @@ def test_fatal_env_check_aborts_before_launch(monkeypatch):
     monkeypatch.setattr(m, "parse_args", lambda: _Args())
 
     assert m.main() == 1
-    assert "launch" not in calls and "model" not in calls
+    assert "launch" not in calls and "model" not in calls and "background" not in calls
 
 
 def test_selftest_ignores_failed_env_check(monkeypatch):

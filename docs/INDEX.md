@@ -1390,6 +1390,25 @@ opencv 5.0.0.93 wheel **带 libavif**，runner 上真写出了 `.avif` ⇒ 断�
 
 - `373-网格平铺检测可行性spike-负结果.md`
 
+### 374 · 首屏不再等 205 MB 模型下载（2026-11-04）
+
+旧流程 `ensure_model_ready()` 同步下载 205 MB，下完才起界面；本机实测 GitHub 不可达时回退
+ghproxy 只有 ~50 KB/s ⇒ 新用户可能盯着空终端几十分钟，而程序**本可以用 OpenCV 先跑起来**。
+改法：① `main.model_startup_action` 分两条路——已就位同步预热 / 缺失则**界面先起 + 后台线程**
+下载与预热；② OCR 预热抽成 `_warm_up_ocr()`，两条路都在启动期触发；
+③ `model_manager` 新增进程内 `_DOWNLOAD_IN_PROGRESS` + `is_downloading()`，
+下载中 `is_model_available()` **恒 False**（防半写文件被 `torch.jit.load`），
+`download_model` 用 `try/finally` 保证成功/失败/回滚三种结局后都清标记；
+引擎选择本来就是每次请求现查 ⇒ 下载完成后下一次处理自动用 LaMa，**无需重启**。
+守卫：`tests/test_model_bg_start374.py`（4 例：策略分支、下载中不可用、失败后清标记、后台吞异常）
+\+ `test_main_entry.py` 编排顺序改两条路（缺模型路径**不同步预热**）。
+实测：空模型目录启动 → **UI 5 秒就绪（http 200）**，后台同时开始下载；入口 `rc=0`
+（3421 passed / 38 skipped / 6 deselected）。
+⚠ 顺带修一个守卫假红：编码守卫把 gitignored 的 `.scratch/` 探针当"入口"（CI 上看不到、本地会红）。
+边界：未新增下载镜像；未在安装态（wheel）重复实验（源码树 + 空模型目录模拟首次运行）。
+
+- `374-首屏不再等模型下载.md`
+
 ### 372 之后：真实样本到位与召回基线（同日）
 
 用户按清单放入了 **10 对**真实成对样本（2730×1536，`D:\wme-1.0.3\samples_grid\pairs`）。

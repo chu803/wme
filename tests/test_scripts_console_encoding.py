@@ -123,7 +123,11 @@ def _docstring_nodes(tree) -> set:
 #: `tests/` 不在本判据射程内：测试由 pytest 的捕获层负责，且**没有任何地方把测试文件当脚本 spawn**
 #: （实测 `grep` 全仓无引用）。把测试也算进来只会逼人往测试文件里塞无用的加固调用。
 _ENCODING_SCAN_SKIP_DIRS = {"htmlcov", "temp", "build", "dist", ".git", "__pycache__",
-                            "scratch", ".pytest_cache", ".workbuddy", "tests"}
+                            "scratch", ".pytest_cache", ".workbuddy", "tests",
+                            # 阶段 374：`.scratch/` 是 gitignored 的开发探针目录（本仓约定），
+                            # 不是入口。不跳过 ⇒ 本地随手写个带 ⇒/✓ 的探针就能让门禁变红，
+                            # 而 CI 上没有这个目录、永远看不到这个假红。
+                            ".scratch"}
 
 
 def _iter_py(skip_dirs: set):
