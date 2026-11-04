@@ -559,7 +559,11 @@ def _clear_editor(upload):
     return {"background": bg, "layers": [], "composite": None}
 
 
-#: 阶段 320：随包发布的示例图（640² 真照片 + 右下角「StudioAI」角标）。
+#: 阶段 372：随包发布的示例图（768² 真照片 + 右下角「StudioAI」角标）。
+#: ⚠ 角标**按真实比例**画（占宽 ~10.7%、白底圆角板）——阶段 320 那张是 640²/占宽 36% 的深色板，
+#: 实测角标通路在 corner_ratio 0.20~0.55 下全部 0 px、一键修复后深色底板残留 ⇒ 首屏演示恰好
+#: 落在「承诺能力」的边界外。守卫 `tests/test_sample_image320.py::test_sample_is_detectable_by_the_promised_path`
+#: 把「示例必须被角标通路检出」钉成契约。
 #: ⚠ 必须放在 `ui/assets/`（pyproject 的 `[tool.setuptools.package-data]` 声明了它）——
 #:   放 docs/assets 时 wheel 里没有该文件，安装态用户点按钮只会看到降级提示。
 SAMPLE_IMAGE_PATH = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)),
@@ -611,7 +615,7 @@ def build_auto_tab():
             reg_label(upload, "auto.upload_label")
             # 阶段 320：首次体验——没有素材的人也能一键看到完整效果。
             #   动机：首屏只有「上传」，新用户没有现成的带水印图就直接卡住；
-            #   示例图随包发布（docs/assets/sample_watermarked.png，640² 真照片 + 右下角标）。
+            #   示例图随包发布（ui/assets/sample_watermarked.png，768² 真照片 + 右下角标）。
             with gr.Row():
                 sample_btn = gr.Button(
                     t("auto.sample_btn"), size="sm", variant="secondary",
