@@ -12,7 +12,7 @@ from __future__ import annotations
 
 import os
 
-import gradio
+import gradio as gr
 import pytest
 
 import config
@@ -47,7 +47,7 @@ def launch_env(monkeypatch):
 def test_analytics_is_off_by_default():
     assert config.SERVER_ANALYTICS is False, "默认必须关闭 Gradio 匿名统计"
     assert os.environ.get("GRADIO_ANALYTICS_ENABLED") == "False"
-    assert gradio.analytics.analytics_enabled() is False
+    assert gr.analytics.analytics_enabled() is False
 
 
 def test_env_can_opt_in(monkeypatch):
@@ -58,15 +58,23 @@ def test_env_can_opt_in(monkeypatch):
 
 
 def test_launch_passes_the_flag(launch_env, monkeypatch):
-    monkeypatch.setattr(config, "SERVER_ANALYTICS", False)
-    fake = _FakeApp()
-    assert app_mod.launch_app(fake) == 0
-    assert fake.kwargs["analytics_enabled"] is False
+    """开关要传给 **Blocks 构造器**（Gradio 的 launch() 不接受该参数）。
+
+    1.0.8 就是把 `analytics_enabled` 传给了 launch() ⇒ 发布物启动即抛 TypeError。
+    """
+    import inspect
+
+    assert "analytics_enabled" in inspect.signature(gr.Blocks.__init__).parameters
+    assert "analytics_enabled" not in inspect.signature(gr.Blocks.launch).parameters, (
+        "Gradio 的 launch() 不接受 analytics_enabled；1.0.8 因此起不来"
+    )
+
+    demo = app_mod.build_app()
+    assert demo.analytics_enabled is False
 
     monkeypatch.setattr(config, "SERVER_ANALYTICS", True)
-    fake = _FakeApp()
-    assert app_mod.launch_app(fake) == 0
-    assert fake.kwargs["analytics_enabled"] is True
+    demo = app_mod.build_app()
+    assert demo.analytics_enabled is True
 
 
 def test_compliance_copy_states_statistics_are_off():
