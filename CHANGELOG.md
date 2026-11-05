@@ -1,7 +1,7 @@
 # 更新日志 / CHANGELOG
 
 > 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 335 份（2026-11-05 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
-> 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.3`。
+> 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.4`。
 
 ## [1.0.2] - 2026-10-18
 
@@ -52,17 +52,18 @@
 
 ## [Unreleased]
 
-> **发布记录（2026-11-03）**：`1.0.3` 已上架 PyPI（`wme-watermark-eraser==1.0.3`，
-> 上传时间 2026-11-03T12:55Z）。发布链：tag `v1.0.3` 重指到 `c75ed69` → Publish 工作流
-> （入口带 `--strict-env` → build → `verify_dist_artifacts` → PyPI 上传）全绿。
-> **PyPI 侧的 `requires_dist` 实测 15 条**（与 `requirements-min.txt` 逐条一致）⇒
-> `pip install wme-watermark-eraser` 一步装齐最小可运行集（阶段 371 的 #38 在已发布产物上验证）。
-> 1.0.3 的内容 = 下文 [Unreleased] 各阶段 + 既有 `## [1.0.3]` 段。
+（下一版本待记）
+
+## [1.0.4] - 2026-11-05
+
+> 本版汇总阶段 369–378：把「合成基准的字体」钉成量具、发布后 CI 收口到全绿、
+> 入口契约拆码 + `--strict-env`、首屏体验（不等模型下载、示例可演示、本地不上传）
+> 与可访问性（对比度 1.1:1 → 7.5:1）。全部经 CI（3.11/3.12/3.13）与 CI 等价入口验证。
 
 ### 修复（阶段 378 · 对比度全量审计：画布占位文字 3.03:1）
 - 真浏览器逐文本节点做 WCAG 判据（正文 ≥4.5:1）：单图/自动页各 2 处不达标 —— Gradio 画布空态
   `Upload an image…` 为 rgb(107,114,128) 落在 rgb(30,41,59) 上 = **3.03:1**；历史页 0。
-- 修法：`.image-container .empty.wrap` 提到 `#9ca3af` ⇒ 实测 **5.6:1**，整页复扫 0 违规。
+- 修法：`.image-container .empty.wrap` 的颜色改走 `var(--body-text-color-subdued)`（主题按明暗给值），实测 **5.6 / 4.8:1**，整页复扫 0 违规。
 - 守卫 `test_image_editor_placeholder_is_lightened`。
 - ⚠ 只测深色品牌主题 + 三个页签；忽略半透明叠加背景；不覆盖非文本对比度。
 
@@ -524,6 +525,13 @@
   ⇒ **PyPI 上没有 1.0.3**（发布链自守生效，但「推了 tag ≠ 发版成功」）⇒ 需把 tag 重指到修复后的提交再推。
 
 ## [1.0.3] - 2026-10-26
+
+> **发布记录（2026-11-03）**：`1.0.3` 已上架 PyPI（`wme-watermark-eraser==1.0.3`，
+> 上传时间 2026-11-03T12:55Z）。发布链：tag `v1.0.3` 重指到 `c75ed69` → Publish 工作流
+> （入口带 `--strict-env` → build → `verify_dist_artifacts` → PyPI 上传）全绿。
+> **PyPI 侧的 `requires_dist` 实测 15 条**（与 `requirements-min.txt` 逐条一致）⇒
+> `pip install wme-watermark-eraser` 一步装齐最小可运行集（阶段 371 的 #38 在已发布产物上验证）。
+> 1.0.3 的内容 = 下文 [Unreleased] 各阶段 + 既有 `## [1.0.3]` 段。
 
 > 这一版的主题是「**把假绿和假成功都拆掉**」：门禁/退出码层的 6 处「说绿其实没跑」，
 > 产品层的 6 处「说成功其实没做成」，以及 1 处「跨入口喂错颜色导致检测结果不对」。
