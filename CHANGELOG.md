@@ -56,7 +56,13 @@
 
 ## [1.0.9] - 2026-11-05
 
-> **发布记录**：待发布后回填（tag `v1.0.9`）。
+> **发布记录（2026-11-05）**：已上架 PyPI（`wme-watermark-eraser==1.0.9`，
+> 上传时间 2026-11-05T13:49:01Z）。发布链：tag `v1.0.9` → `ce9d3f5` → Publish 13 步 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel + sdist 均在；**发布物**跑新增的「安装态启动冒烟」
+> ⇒ rc=0（能装、布局对、**能启动**并响应 HTTP 200）；在**全新 venv（只装声明的最小依赖）**
+> + 默认数据目录下真机跑通「示例 → 检测 → 一键修复」，状态栏如实显示
+> 「✅ 处理完成（引擎：OPENCV）」并说明 LaMa 权重尚未就绪。
 
 ### 修复（阶段 384 · 1.0.8 起不来：发布闸门补强）
 
