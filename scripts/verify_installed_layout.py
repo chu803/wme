@@ -91,6 +91,83 @@ def _run(cmd: list[str], **kwargs) -> subprocess.CompletedProcess:
     return subprocess.run(cmd, **kwargs)
 
 
+def _smoke_launch(interp: Path, script: Path, extra_path: Path, tmp: Path,
+                  data_root: Path, timeout: float = 150.0) -> tuple[bool, str]:
+    """在**装了依赖的解释器**里真正启动一次 wheel 里的程序，确认能起来并响应 HTTP。
+
+    为什么必须有这一步：1.0.8 的发布物"装得上、导得进"，但启动即抛
+    `TypeError: Blocks.launch() got an unexpected keyword argument 'analytics_enabled'`
+    —— 只做 import/布局检查是发现不了的。
+
+    为什么用宿主解释器 + PYTHONPATH：新 venv 里没有依赖（OpenCV/Gradio），启动自检会
+    直接因"缺依赖"退出，测不到"界面能不能起来"。于是用**宿主解释器**（CI 与本地都已有
+    最小依赖），把 PYTHONPATH 指向 venv 的 site-packages ⇒ 跑的是 **wheel 里的代码**，
+    依赖来自宿主，贴近真实用户环境。
+    """
+    import socket
+    import time
+    import urllib.error
+    import urllib.request
+
+    with socket.socket() as probe:
+        probe.bind(("127.0.0.1", 0))
+        port = probe.getsockname()[1]
+
+    env = dict(os.environ)
+    env.pop("PYTHONPATH", None)
+    env["PYTHONPATH"] = str(extra_path)
+    env.update({
+        "WME_DATA_DIR": str(data_root),
+        "WME_SERVER_PORT": str(port),
+        "WME_SERVER_OPEN_BROWSER": "0",
+        "PYTHONUTF8": "1",
+        "PYTHONIOENCODING": "utf-8",
+    })
+
+    log_path = tmp / "smoke_launch.log"
+    ok = False
+    reason = ""
+    with open(log_path, "wb") as log_file:
+        proc = subprocess.Popen(
+            [str(interp), str(script), "--no-download"], cwd=str(tmp), env=env,
+            stdout=log_file, stderr=subprocess.STDOUT,
+        )
+        try:
+            deadline = time.time() + timeout
+            while time.time() < deadline:
+                if proc.poll() is not None:
+                    reason = f"进程已退出（返回码 {proc.returncode}）"
+                    break
+                try:
+                    with urllib.request.urlopen(f"http://127.0.0.1:{port}/", timeout=3) as resp:
+                        if resp.status == 200:
+                            ok = True
+                            reason = f"界面已启动并响应 HTTP 200（端口 {port}）"
+                            break
+                except urllib.error.HTTPError as exc:
+                    ok = True
+                    reason = f"界面已启动（端口 {port}，根路径返回 HTTP {exc.code}）"
+                    break
+                except Exception:
+                    time.sleep(1.0)
+            else:
+                reason = f"{timeout:.0f}s 内界面没有响应"
+        finally:
+            proc.terminate()
+            try:
+                proc.wait(timeout=15)
+            except subprocess.TimeoutExpired:
+                proc.kill()
+
+    if ok:
+        return True, reason
+    try:
+        tail = log_path.read_text(encoding="utf-8", errors="replace")[-1200:]
+    except OSError:
+        tail = "(读不到启动日志)"
+    return False, f"{reason}\n--- 启动日志尾部 ---\n{tail}"
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="校验 wheel 安装态的运行时目录布局")
     parser.add_argument("--wheel", required=True, help="dist/*.whl 或具体 wheel 文件")
@@ -106,7 +183,10 @@ def main(argv: list[str] | None = None) -> int:
         cwd = tmp / "cwd"
         cwd.mkdir()
 
-        venv.EnvBuilder(with_pip=True, clear=True).create(venv_dir)
+        # system_site_packages=True：让这个 venv 看到**当前环境已装好的最小依赖**
+        # （CI / 发布流水线本来就装了 requirements-min）。否则启动自检会因
+        # "未安装 OpenCV" 直接退出——那就测不到"界面能不能起来"这件事了。
+        venv.EnvBuilder(with_pip=True, clear=True, system_site_packages=True).create(venv_dir)
         py = venv_dir / ("Scripts/python.exe" if os.name == "nt" else "bin/python")
 
         installed = _run([str(py), "-m", "pip", "install", "--no-deps", "--quiet", str(wheel)])
@@ -145,6 +225,22 @@ def main(argv: list[str] | None = None) -> int:
                 problems.append(f"安装目录被写入运行时目录：{package_root / name}")
             if not (data_root / name).is_dir():
                 problems.append(f"数据目录缺少运行时目录：{data_root / name}")
+
+        # 阶段 384：布局合格还不够——**真的启动一次**才算数。
+        # 1.0.8 的发布物能装、能导，但启动即 TypeError（参数传错了地方）⇒ 必须起一次。
+        purelib = _run([str(py), "-c", "import sysconfig;print(sysconfig.get_paths()['purelib'])"])
+        venv_site = Path(purelib.stdout.strip())
+        entry = venv_site / "main.py"
+        if not entry.exists():
+            problems.append(f"wheel 里找不到 main.py（入口模块缺失）：{entry}")
+        else:
+            launched, detail = _smoke_launch(
+                Path(sys.executable), entry, venv_site, tmp, data_root
+            )
+            if launched:
+                print(f"[OK] 启动冒烟通过：{detail}")
+            else:
+                problems.append(f"安装后界面起不来：{detail}")
 
     if problems:
         print("[FAIL] 安装态布局不合格：")

@@ -88,3 +88,13 @@ def test_publish_workflow_runs_installed_layout_guard():
         "发布链没有跑安装态布局自检，1.0.4 的缺陷可以再次上线"
     )
     assert "id: installed_layout" in text, "该步骤需要 id，失败诊断才读得到"
+
+
+def test_verifier_also_smoke_launches_the_installed_app():
+    """阶段 384：布局合格还不够，必须**真的启动一次**。
+
+    1.0.8 能装、能导，但启动即 TypeError ⇒ 只查布局的闸门放行了坏包。
+    """
+    src = (ROOT / "scripts" / "verify_installed_layout.py").read_text(encoding="utf-8")
+    assert "_smoke_launch(" in src, "安装态自检缺少启动冒烟"
+    assert "安装后界面起不来" in src, "启动失败必须报出可读原因"

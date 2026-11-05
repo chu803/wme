@@ -399,6 +399,9 @@ def build_app() -> gr.Blocks:
     # 因此这里只传 title，主题在 launch_app() 中传入。
     with gr.Blocks(
         title=f"{config.APP_NAME} v{config.APP_VERSION}",
+        # 阶段 383：匿名统计开关在 **Blocks 构造时** 决定（Gradio 的 launch() 不接受该参数，
+        # 传给它会在启动时抛 TypeError —— 1.0.8 的发布物就是这样起不来的）。
+        analytics_enabled=config.SERVER_ANALYTICS,
     ) as demo:
         gr.Markdown(f"# {config.APP_NAME}  ·  v{config.APP_VERSION}")
         compliance_md = gr.Markdown(_compliance_brief())
@@ -526,8 +529,6 @@ def launch_app(app: gr.Blocks) -> int:
             js=_build_custom_js(),
             footer_links=footer_links,
             allowed_paths=_gradio_allowed_paths(),
-            # 阶段 383：默认关闭 Gradio 匿名统计（否则首屏「唯一联网是模型下载」的承诺不成立）。
-            analytics_enabled=config.SERVER_ANALYTICS,
         )
         return 0
     except KeyboardInterrupt:
