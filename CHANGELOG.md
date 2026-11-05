@@ -1,6 +1,6 @@
 # 更新日志 / CHANGELOG
 
-> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 334 份（2026-11-04 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
+> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 335 份（2026-11-05 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
 > 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.3`。
 
 ## [1.0.2] - 2026-10-18
@@ -58,6 +58,13 @@
 > **PyPI 侧的 `requires_dist` 实测 15 条**（与 `requirements-min.txt` 逐条一致）⇒
 > `pip install wme-watermark-eraser` 一步装齐最小可运行集（阶段 371 的 #38 在已发布产物上验证）。
 > 1.0.3 的内容 = 下文 [Unreleased] 各阶段 + 既有 `## [1.0.3]` 段。
+
+### 修复（阶段 378 · 对比度全量审计：画布占位文字 3.03:1）
+- 真浏览器逐文本节点做 WCAG 判据（正文 ≥4.5:1）：单图/自动页各 2 处不达标 —— Gradio 画布空态
+  `Upload an image…` 为 rgb(107,114,128) 落在 rgb(30,41,59) 上 = **3.03:1**；历史页 0。
+- 修法：`.image-container .empty.wrap` 提到 `#9ca3af` ⇒ 实测 **5.6:1**，整页复扫 0 违规。
+- 守卫 `test_image_editor_placeholder_is_lightened`。
+- ⚠ 只测深色品牌主题 + 三个页签；忽略半透明叠加背景；不覆盖非文本对比度。
 
 ### 修复（阶段 377 · 首屏《合规提醒》对比度约 1.1:1，几乎读不清）
 - 真机 computed style：`blockquote` 背景浅黄（#fffbeb），内部 `p/strong` 文字近白（rgb(243,244,246)）

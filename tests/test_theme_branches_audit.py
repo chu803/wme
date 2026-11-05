@@ -138,3 +138,15 @@ def test_compliance_blockquote_keeps_readable_contrast():
     seg = css[css.index("blockquote p"):]
     seg = seg[:seg.index("}")] if "}" in seg else seg
     assert "!important" in seg, "子元素规则没有 !important ⇒ 压不过主题规则"
+
+
+def test_image_editor_placeholder_is_lightened():
+    """阶段 378：Gradio 画布空态提示在深色主题下只有 3.03:1，主题必须提亮它。
+
+    实测（真浏览器 WCAG 判据）：`Upload an image / select the draw tool...` 为
+    rgb(107,114,128) 落在 rgb(30,41,59) 上 = 3.03:1（正文要 ≥4.5）。
+    修法：`.image-container .empty.wrap` 提到 #9ca3af（约 5.6:1）。
+    """
+    css = theme_mod.build_app_css()
+    assert ".image-container .empty.wrap" in css, "画布占位文字的提亮规则不见了"
+    assert "#9ca3af" in css, "占位文字的颜色不是提亮后的 #9ca3af"

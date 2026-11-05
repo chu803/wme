@@ -182,6 +182,14 @@ body .gradio-container .prose blockquote span,
 body .gradio-container .prose blockquote li {
     color: #475569 !important;
 }
+
+/* 图片编辑器空状态提示（Gradio 自带 "Upload an image / select the draw tool..."）：
+   深色主题下是中性灰落在页面深色底上，实测对比度 3.03:1（正文要 ≥4.5）。
+   提到 #9ca3af 后约 5.6:1。 */
+.gradio-container .image-container .empty.wrap,
+.gradio-container .image-container .empty.wrap * {
+    color: #9ca3af !important;
+}
 """
 
 
