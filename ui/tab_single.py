@@ -37,6 +37,7 @@ from ui.i18n_rt import reg_label, reg_label_info, reg_value, reg_textbox
 from core.inpainter import inpaint
 from core.mask_generator import build_mask_from_editor, count_mask_pixels
 from ui.components import get_engine_choices, register_superres_widget, repair_params_text, format_elapsed
+from ui.engine_display import engine_display
 from services.file_service import save_result
 from services import compare_service as _cs
 from services import export_service as _es
@@ -111,13 +112,16 @@ def _compose_status(engine: str, out_path: str, elapsed: float,
         ③ `upscaled_note`      —— 真实超分放大提示（阶段 32，可为空串）
 
     参数说明：
-        engine        : 实际使用的引擎名（本函数负责转大写展示）。
+        engine        : **用户选择**的引擎名；展示时按阶段 382 换成**实际引擎**
+                       （auto 默认落到 OpenCV ⇒ 显示 OPENCV，不再显示 AUTO）。
         out_path      : 结果保存路径。
         elapsed       : 秒数（浮点）；文案里用 `{seconds:.2f}` 格式化到两位。
         upscaled_note : 超分提示；无放大时传空串。
     """
+    label, engine_note = engine_display(engine)
     return (
-        t("single.msg.done", engine=engine.upper(), path=out_path)
+        t("single.msg.done", engine=label, path=out_path)
+        + engine_note
         + format_elapsed(elapsed)
         + upscaled_note
     )

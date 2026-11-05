@@ -54,6 +54,33 @@
 
 （下一版本待记）
 
+## [1.0.8] - 2026-11-05
+
+> **发布记录**：待发布后回填（tag `v1.0.8`）。
+
+### 修复（阶段 383 · 隐私承诺要字面成立：默认关掉 Gradio 匿名统计）
+
+- 首屏写「唯一联网是首次使用时的模型权重下载」，但 Gradio 6.x 的匿名统计**默认开启**
+  （`gradio/analytics.py:46` 缺省 True），启动时会向 `api.gradio.app` 发一次
+  "用了哪些组件类型"的统计（不含图片内容）⇒ 那句承诺在默认配置下并不成立。
+- 修法：新增 `config.SERVER_ANALYTICS`（默认 False，`WME_SERVER_ANALYTICS=1` 可开），
+  `launch_app` 透传 `analytics_enabled`，模块加载时同步 `GRADIO_ANALYTICS_ENABLED`，
+  首屏中英文案补「匿名使用统计默认关闭」⇒ 除模型下载外默认不再出网。
+- 验证：4 条新守卫（含 `gradio.analytics.analytics_enabled()` 实测为 False）。
+  ⚠ 公网分享与模型下载属用户主动出网；打开统计开关时启动日志未额外提示。
+
+### 修复（阶段 382 · 界面说「auto=有模型用 LaMa」，实际永远走 OpenCV）
+
+- 界面两处与代码不一致：完成状态只显示用户选的「引擎：AUTO」；引擎说明写
+  「auto=有模型用 LaMa」。而 `INPAINT_AUTO_PREFER` 默认 **opencv**（阶段 55 的实测定论），
+  ⇒ auto 实际永远走 OpenCV，用户看不出、README 也早写明，只有界面文案没跟上。
+- 修法（不改行为）：新增 `resolve_effective_engine()`（与 `inpaint()` 同源）与
+  `ui/engine_display.py`，状态栏显示**实际引擎**并在落到 OpenCV 时说明原因；
+  中英文案订正，并给出 `WME_INPAINT_AUTO_PREFER=lama` 的切换路径。
+- 验证：6 条新守卫 + 真机「示例 → 检测 → 修复」显示「✅ 处理完成（引擎：OPENCV）」+ 原因说明。
+
+（下一版本待记）
+
 ## [1.0.7] - 2026-11-05
 
 > **发布记录（2026-11-05）**：已上架 PyPI（`wme-watermark-eraser==1.0.7`，

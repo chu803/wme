@@ -59,6 +59,14 @@ from ui.i18n_rt import (
 
 log = get_logger("ui.app")
 
+# 阶段 383：Gradio 的匿名统计**默认开启**（启动时向 api.gradio.app 发一次"用了哪些组件类型"
+# 的统计，不含图片内容）。本工具首屏承诺「唯一联网是模型权重下载」⇒ 默认关闭；
+# 用户显式设了 GRADIO_ANALYTICS_ENABLED 时以用户为准。
+_os.environ.setdefault(
+    "GRADIO_ANALYTICS_ENABLED",
+    "True" if config.SERVER_ANALYTICS else "False",
+)
+
 # 主页签 elem_id —— 必须与 build_app() 中各 TabItem 的 elem_id 一一对应，
 # 否则注入的 JS 找不到按钮、切换语言时标签标题不刷新（tests 有对账断言）。
 _MAIN_TAB_IDS = ("single", "auto", "batch", "media", "history", "settings", "models")
@@ -518,6 +526,8 @@ def launch_app(app: gr.Blocks) -> int:
             js=_build_custom_js(),
             footer_links=footer_links,
             allowed_paths=_gradio_allowed_paths(),
+            # 阶段 383：默认关闭 Gradio 匿名统计（否则首屏「唯一联网是模型下载」的承诺不成立）。
+            analytics_enabled=config.SERVER_ANALYTICS,
         )
         return 0
     except KeyboardInterrupt:

@@ -398,6 +398,23 @@ def _resolve_auto_engine(preferred: str, model_available: bool) -> str:
     return "opencv"
 
 
+def resolve_effective_engine(requested: str) -> str:
+    """解析「实际会用哪个引擎」，供界面如实展示（阶段 382）。
+
+    与 `inpaint()` 的选择逻辑**同源**：auto 时按 `config.INPAINT_AUTO_PREFER` 解析
+    （默认 `opencv` ⇒ 即便模型就绪，auto 仍走 OpenCV，这是阶段 55 依实测定下的取舍：
+    更快、更保守、不"脑补"内容）；显式指定时原样返回（模型缺失时由引擎 setup 显式报错，
+    不会静默换引擎）。
+
+    以前界面只显示用户选的标签（如 "AUTO"），于是「实际用 OpenCV」这件事对用户不可见
+    ——这正是阶段 382 修掉的「承诺与实际不一致」。
+    """
+    name = (requested or "auto").lower()
+    if name == "auto":
+        return _resolve_auto_engine(config.INPAINT_AUTO_PREFER, is_model_available())
+    return name
+
+
 def pick_better_result(
     res_a: np.ndarray,
     res_b: np.ndarray,
@@ -614,7 +631,7 @@ def inpaint(
 
     # ---- 选择引擎 ----
     if engine == "auto":
-        engine = _resolve_auto_engine(config.INPAINT_AUTO_PREFER, is_model_available())
+        engine = resolve_effective_engine("auto")
         if engine == "opencv" and not is_model_available():
             log.warning("模型不可用，自动降级为 OpenCV 算法（仅适合细小水印）。")
 

@@ -46,6 +46,7 @@ from utils.recommend_view import markdown as _build_recommend_markdown
 from core.inpainter import inpaint
 from core.mask_generator import build_mask_from_editor, count_mask_pixels
 from core.mask_editor import merge_masks, MASK_MODE_MERGE, MASK_MODE_MANUAL
+from ui.engine_display import engine_display
 from services.file_service import save_result
 from services import compare_service as _cs
 from services import export_service as _es
@@ -453,7 +454,15 @@ def process_auto_repair(
             fmt=config.DEFAULT_OUTPUT_FORMAT,
             quality=config.DEFAULT_OUTPUT_QUALITY,
         )
-        status = t("single.msg.done", engine=engine.upper(), path=out_path) + eval_text + refine_tip + upscaled_note
+        # 阶段 382：展示**实际引擎**（auto 默认落到 OpenCV），不再只显示用户选的 "AUTO"。
+        engine_label, engine_note = engine_display(engine)
+        status = (
+            t("single.msg.done", engine=engine_label, path=out_path)
+            + engine_note
+            + eval_text
+            + refine_tip
+            + upscaled_note
+        )
     except Exception as exc:
         log.exception("结果保存失败")
         return (
