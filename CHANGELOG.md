@@ -56,7 +56,11 @@
 
 ## [1.0.6] - 2026-11-05
 
-> **发布记录**：待发布后回填（tag `v1.0.6`）。
+> **发布记录（2026-11-05）**：已上架 PyPI（`wme-watermark-eraser==1.0.6`，
+> 上传时间 2026-11-05T10:30:17Z）。发布链：tag `v1.0.6` → `51ffc3d` → Publish 全 12 步 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel + sdist 均在；发布物安装态自检 rc=0，
+> 从仓库外启动真机「示例 → 检测 → 一键修复」首次点击即成功。
 
 ### 修复（阶段 380 · Gradio 画布上传竞态导致修复按钮在预处理阶段失败）
 
@@ -71,7 +75,12 @@
 
 ## [1.0.5] - 2026-11-05
 
-> **发布记录**：待发布后回填（tag `v1.0.5`）。
+> **发布记录（2026-11-05）**：已上架 PyPI（`wme-watermark-eraser==1.0.5`，
+> 上传时间 2026-11-05T09:51:19Z）。发布链：tag `v1.0.5` → `4c5df3e` → Publish 全 12 步 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel + sdist 均在。
+> ⚠ 发布后真机复验发现画布上传竞态会让「一键修复」在预处理阶段失败（阶段 380），
+> 已由 1.0.6 修复并取代。
 
 ### 修复（阶段 379 · pip 安装后把 site-packages 当数据目录，Gradio 无法回传结果）
 
