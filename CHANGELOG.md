@@ -52,7 +52,16 @@
 
 ## [Unreleased]
 
-（下一版本待记）
+### 修复（阶段 380 · Gradio 画布上传竞态导致修复按钮在预处理阶段失败）
+
+- 1.0.5 发布后真机复验：试示例 → 检测 → 修复，事件在进入业务 handler 前抛
+  `ComponentProcessingError`，底层 `UnidentifiedImageError` 打不开画布临时文件；
+  同一文件毫秒后可读，确认是 Gradio 前端重传与后端 preprocess 的读竞态。
+- `format="png"` 实验证明换成真 PNG 仍失败，已撤回；新增 `ui/gradio_compat.py`
+  对 `ImageEditor.preprocess` 做 6×0.15s 有界重试，耗尽后原样抛出；`build_app()` 幂等装载。
+- 验证：4 条单测 + 源码态真机复验 0 次该错误、结果正常保存；
+  全量入口 `rc=0`（3448 passed / 37 skipped / 6 deselected，781.50s）。
+- ⚠ 上游竞态的兼容层，Gradio 修复后应复评；不吞真正坏图错误。
 
 ## [1.0.5] - 2026-11-05
 

@@ -1498,6 +1498,20 @@ rgb(107,114,128) 落在 rgb(30,41,59) 上 = **3.03:1**；历史页 0；377 修�
 
 - `379-pip安装的数据根与Gradio回传.md`
 
+### 380 · Gradio 画布上传竞态：修复按钮在 preprocess 阶段失败（2026-11-05）
+
+1.0.5 发布后真机复验发现：试示例 → 检测 → 一键修复，事件在进入业务 handler 前就报
+`ComponentProcessingError`，底层是 `UnidentifiedImageError` 打不开 `background.png` / `layer_0.png`；
+同一文件毫秒级后可读，确认不是坏图。`format="png"` 实验证明文件确实变 PNG 仍失败，
+排除格式假设（已撤回）。根因是 Gradio 6.31 前端点击时重传画布、后端 preprocess
+在文件写完前 `PIL.Image.open` 的竞态。修法：`ui/gradio_compat.py` 对
+`ImageEditor.preprocess` 做 6×0.15s 有界重试，耗尽后原样抛出；`build_app()` 幂等装载。
+验证：4 条单测 + 源码态真机复验 0 次该错误、修复结果正常落盘；
+全量入口 `rc=0`（3448 passed / 37 skipped / 6 deselected，781.50s）。
+⚠ 属上游竞态的兼容层，Gradio 修复后应复评；不吞真正坏图错误。
+
+- `380-Gradio画布上传竞态与修复按钮失败.md`
+
 
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 

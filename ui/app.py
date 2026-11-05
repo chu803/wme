@@ -32,6 +32,7 @@ import gradio as gr
 import config
 from services.file_service import ensure_dirs
 from ui.components import render_scope_note, clear_superres_widgets
+from ui.gradio_compat import install_image_editor_retry
 from ui.tab_single import build_single_tab
 from ui.tab_auto import build_auto_tab
 from ui.tab_batch import build_batch_tab
@@ -371,6 +372,9 @@ def build_app() -> gr.Blocks:
     # （实测 288 → 576），使新事件的 outputs 里混入上一次构建、已废弃
     # Blocks 的组件。clear_registry() 的 docstring 早已声明此用途，
     # 但此前 build_app() 从未调用它（阶段 91 真值审计）。
+    # 阶段 380：Gradio 画布上传/预处理存在竞态，装载一次重试包装（幂等）。
+    install_image_editor_retry()
+
     clear_registry()
     # 阶段 96：同上理，`_SUPERRES_WIDGETS` 也是构建期全局注册表
     # （设置页「应用真实超分」遍历它刷新所有功能页控件）。不清空则
