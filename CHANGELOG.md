@@ -1,7 +1,7 @@
 # 更新日志 / CHANGELOG
 
 > 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 335 份（2026-11-05 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
-> 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.6`。
+> 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.7`。
 
 ## [1.0.2] - 2026-10-18
 
@@ -54,10 +54,23 @@
 
 （下一版本待记）
 
+## [1.0.7] - 2026-11-05
+
+> **发布记录**：待发布后回填（tag `v1.0.7`）。
+
+### 修复（阶段 381 · 安装指引会让人装到带缺陷的旧版）
+
+- 实测：清华 / 阿里镜像只到 **1.0.3**（不含阶段 379/380 修复），而 README 原文建议「整包换镜像」；
+  官方源直连实测约 36 kB/s（numpy 12.6 MB 用了 6 分 23 秒）。
+- 改法：README 改为两步装（本体 `--no-deps` 走官方源、依赖走镜像），已在第二个全新 venv 复现，
+  第二条命令只补依赖、不降级；并写明 PDF 需另装 PyMuPDF。
+- 另：新增首次安装全链路验收（干净 venv + 默认数据目录）——黄金路径首次点击即成功；
+  已安装 1.0.6 的 UI / REST / 作业 / 文件服务巡检未发现新缺陷。
+
 ## [1.0.6] - 2026-11-05
 
 > **发布记录（2026-11-05）**：已上架 PyPI（`wme-watermark-eraser==1.0.6`，
-> 上传时间 2026-11-05T10:30:17Z）。发布链：tag `v1.0.6` → `51ffc3d` → Publish 全 12 步 success
+> 上传时间 2026-11-05T10:30:17Z）。发布链：tag `v1.0.6` → `51ffc3d` → Publish 全 13 步 success
 > （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
 > PyPI 侧实测：`requires_dist` 15 条、wheel + sdist 均在；发布物安装态自检 rc=0，
 > 从仓库外启动真机「示例 → 检测 → 一键修复」首次点击即成功。
@@ -76,7 +89,7 @@
 ## [1.0.5] - 2026-11-05
 
 > **发布记录（2026-11-05）**：已上架 PyPI（`wme-watermark-eraser==1.0.5`，
-> 上传时间 2026-11-05T09:51:19Z）。发布链：tag `v1.0.5` → `4c5df3e` → Publish 全 12 步 success
+> 上传时间 2026-11-05T09:51:19Z）。发布链：tag `v1.0.5` → `4c5df3e` → Publish 全 13 步 success
 > （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
 > PyPI 侧实测：`requires_dist` 15 条、wheel + sdist 均在。
 > ⚠ 发布后真机复验发现画布上传竞态会让「一键修复」在预处理阶段失败（阶段 380），
