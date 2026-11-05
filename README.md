@@ -15,6 +15,17 @@ pip install wme-watermark-eraser
 wme
 ```
 
+> 🇨🇳 **国内网络**：本项目的**新版本只在官方 PyPI 最快同步**，国内镜像（清华 / 阿里）实测滞后
+> （2026-11-05 两者都只到 1.0.3，而 1.0.4~1.0.6 修掉了「装完修复结果回不来」等缺陷）。
+> 官方源直连慢时，用两步装：**本体走官方源、依赖走镜像**，实测有效且不会降级：
+>
+> ```bash
+> pip install --no-deps -i https://pypi.org/simple/ wme-watermark-eraser   # 本体 1.5 MB
+> pip install -i https://mirrors.aliyun.com/pypi/simple/ wme-watermark-eraser  # 依赖（opencv 等大包）走镜像
+> ```
+>
+> 第二条命令发现本体已装好 ⇒ 只补依赖，不动版本。
+
 3）浏览器打开 `http://127.0.0.1:7860` → 点 **「🖼 没有图？试一张示例」** → **「② 自动检测水印」**
 → **「④ 一键修复」** → 在「⑥ 下载处理结果」保存。
 
@@ -2219,11 +2230,19 @@ pip install .
 >
 > （可选增强——LaMa/torch、EasyOCR、PyMuPDF——仍按 §3.1/§3.2 与 `requirements-gpu.txt` 另装。）
 >
-> ⚠ **国内网络**：默认 PyPI 的文件 CDN（`files.pythonhosted.org`）常不可达，
-> 建议整包换镜像（`--index-url` 要**连依赖一起**换，混用会卡在下载轮子那一步）：
+> ⚠ **国内网络**：默认 PyPI 的文件 CDN（`files.pythonhosted.org`）常不可达。
+> 但**不要整包换镜像**：国内镜像对本项目的同步会滞后（2026-11-05 实测清华 / 阿里都只到 1.0.3），
+> 装到的是**带缺陷的旧版**。正确做法是「本体走官方源、依赖走镜像」两步装（见 §3 分钟上手）：
 >
 > ```bash
-> pip install wme-watermark-eraser -i https://mirrors.aliyun.com/pypi/simple/
+> pip install --no-deps -i https://pypi.org/simple/ wme-watermark-eraser
+> pip install -i https://mirrors.aliyun.com/pypi/simple/ wme-watermark-eraser
+> ```
+>
+> 需要 PDF 文档处理时再补一个可选依赖（未装时界面会直接提示安装命令）：
+>
+> ```bash
+> pip install PyMuPDF
 > ```
 
 安装后可直接用控制台命令启动（命令名详见 `pyproject.toml` 的 `[project.scripts]`，阶段 296 补齐）：
