@@ -60,6 +60,9 @@
 > 上传时间 2026-11-05T06:50Z）。发布链：tag `v1.0.4` → `d4226d5` → Publish 全 12 步 success
 > （入口 `--strict-env` → build → `verify_dist_artifacts` → PyPI 上传）。
 > PyPI 侧实测：`requires_dist` **15 条**、wheel + sdist 均在。
+> 发布物安装冒烟：从 files.pythonhosted.org 下载 wheel（sha256 与 PyPI 摘要一致），装进干净的 3.11 环境、
+> 从仓库外目录 `--no-download` 起服务；页面实测 `v1.0.4` 5 次、`v1.0.3` 0 次、《本地处理、图片不上传》与
+> 对比度规则均在。即「发布物本身可安装、可运行、内容正确」有证据，而非只看元数据。
 
 > 本版汇总阶段 369–378：把「合成基准的字体」钉成量具、发布后 CI 收口到全绿、
 > 入口契约拆码 + `--strict-env`、首屏体验（不等模型下载、示例可演示、本地不上传）
