@@ -119,3 +119,22 @@ def test_build_app_css_reads_brand_tokens_at_call_time(monkeypatch):
     css = theme_mod.build_app_css()
     assert sentinel_p in css and sentinel_a in css, \
         "build_app_css() 必须在调用时读取品牌令牌（单一真值来源）"
+
+
+def test_compliance_blockquote_keeps_readable_contrast():
+    """阶段 377：引用块是浅黄底（#fffbeb），文字必须被钉成深色。
+
+    实测缺陷：深色主题下 Gradio 把 blockquote 里的 <p>/<strong> 染成近白
+    rgb(243,244,246)，与浅黄底对比度约 **1.1:1** —— 首屏《合规提醒》几乎读不清
+    （真浏览器 computed style 实测，见 docs/377）。
+
+    修法：对 blockquote 的**子元素**单独下规则、并提高特异性 + `!important`
+    （Gradio 的 `.dark .prose p` 也是 !important，同权重时按加载顺序可能胜出）。
+    """
+    css = theme_mod.build_app_css()
+    assert "background: #fffbeb" in css, "合规提醒的浅黄底不见了？"
+    assert "blockquote p" in css and "blockquote strong" in css, (
+        "缺少对 blockquote 子元素的文字颜色规则 ⇒ 深色主题下会被染成近白色")
+    seg = css[css.index("blockquote p"):]
+    seg = seg[:seg.index("}")] if "}" in seg else seg
+    assert "!important" in seg, "子元素规则没有 !important ⇒ 压不过主题规则"

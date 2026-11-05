@@ -1439,6 +1439,23 @@ raw URL 固定 `main` 分支，分支改名需同步（静态守卫的边界）�
 
 - `376-README展示图是破链与PyPI相对路径.md`
 
+### 377 · 首屏《合规提醒》对比度约 1.1:1——几乎读不清（2026-11-04）
+
+拍 Quickstart 截图时肉眼发现整块糊掉，浏览器 computed style 确认：`blockquote` 背景
+`rgb(255,251,235)`（浅黄），内部 `p/strong` 文字 `rgb(243,244,246)`（近白）⇒ 对比度约 **1.1:1**
+（WCAG AA 正文要 ≥4.5:1）——**首屏最重要的合规文字几乎不可读**。
+根因：主题只给 `blockquote` 设了颜色、没管子元素，被 Gradio 深色主题的 `.dark .prose p`
+（`!important`）染成近白；第一版 `blockquote *` 与它**同权重**（0,2,1），按加载顺序败北。
+修法：对 `p/strong/em/a/span/li` 逐个列名 + `body` 前缀把特异性抬到 **0,2,2** + `!important`；
+实测 `<p>` 变为 `rgb(71,85,105)`，对比度约 **7.5:1**。
+守卫：`test_compliance_blockquote_keeps_readable_contrast`（浅黄底 + 子元素规则 + 必须 `!important`）。
+顺带：README「3 分钟上手」补真机截图（`docs/assets/quickstart_auto.png`，1194×1149、354 KB），
+纳入 376 的资产守卫。入口第一次跑被自家编码守卫拦下（CSS 注释里的 `⇒` 是字符串常量）⇒ 改中文词。
+验证：入口 `rc=0`（3426 passed / 37 skipped / 6 deselected，449.97s）。
+⚠ 边界：只修了 `blockquote` 一处；未对表格/行内 code/链接做全量对比度审计。
+
+- `377-首屏合规提醒对比度接近不可读.md`
+
 ### 372 之后：真实样本到位与召回基线（同日）
 
 用户按清单放入了 **10 对**真实成对样本（2730×1536，`D:\wme-1.0.3\samples_grid\pairs`）。

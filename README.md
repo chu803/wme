@@ -18,6 +18,8 @@ wme
 3）浏览器打开 `http://127.0.0.1:7860` → 点 **「🖼 没有图？试一张示例」** → **「② 自动检测水印」**
 → **「④ 一键修复」** → 在「⑥ 下载处理结果」保存。
 
+![首屏（自动检测页 · 示例图已载入）](https://raw.githubusercontent.com/chu803/wme/main/docs/assets/quickstart_auto.png)
+
 - 🔒 **图片只在本机处理，不上传**；唯一联网是首次下载模型（约 205 MB）。
   想完全离线：`wme --no-download`，只用 OpenCV 引擎（效果弱于 LaMa）。
 - 窄窗口下「设置与导出 / 模型管理」会收进标签栏右侧的 **More tabs**（不是没了）。

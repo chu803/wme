@@ -1,6 +1,6 @@
 # 更新日志 / CHANGELOG
 
-> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 333 份（2026-11-04 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
+> 本文件按「里程碑」归纳项目演进（而非逐阶段流水账；逐阶段细节见 `docs/`，共 334 份（2026-11-04 实测刷新，口径 `ls docs/*.md | wc -l`，含 INDEX；守卫见 326）。
 > 版本号遵循 `MAJOR.MINOR.PATCH`；当前版本 `1.0.3`。
 
 ## [1.0.2] - 2026-10-18
@@ -58,6 +58,15 @@
 > **PyPI 侧的 `requires_dist` 实测 15 条**（与 `requirements-min.txt` 逐条一致）⇒
 > `pip install wme-watermark-eraser` 一步装齐最小可运行集（阶段 371 的 #38 在已发布产物上验证）。
 > 1.0.3 的内容 = 下文 [Unreleased] 各阶段 + 既有 `## [1.0.3]` 段。
+
+### 修复（阶段 377 · 首屏《合规提醒》对比度约 1.1:1，几乎读不清）
+- 真机 computed style：`blockquote` 背景浅黄（#fffbeb），内部 `p/strong` 文字近白（rgb(243,244,246)）
+  ⇒ 对比度约 **1.1:1**（正文要求 ≥4.5:1）。根因：主题没管引用块**子元素**，被 Gradio 深色主题的
+  `.dark .prose p !important` 染成近白；`blockquote *` 与它同权重、按加载顺序败北。
+- 修法：`p/strong/em/a/span/li` 逐个列名 + `body` 前缀（特异性 0,2,2）+ `!important`；
+  实测变为 rgb(71,85,105)，对比度约 **7.5:1**。守卫 `test_compliance_blockquote_keeps_readable_contrast`。
+- README「3 分钟上手」补真机截图 `docs/assets/quickstart_auto.png`（纳入 376 资产守卫）。
+- 验证：入口 `rc=0`（3426 passed / 37 skipped / 6 deselected，449.97s）。
 
 ### 修复（阶段 376 · README 展示图是破链；README 还是 PyPI 正文）
 - §2.2 的四张「四联对比图」指向 `docs/assets/demo_*_opencv.png` —— 文件**从未入库**（GitHub 破图）；

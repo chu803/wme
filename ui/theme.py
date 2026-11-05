@@ -161,13 +161,26 @@ APP_CSS_TEMPLATE = """
     line-height: 1.5;
 }
 
-/* 合规提醒小字：弱化但不丢失 */
+/* 合规提醒小字：弱化但不丢失。
+   实测缺陷（阶段 377）：深色主题下 Gradio 会把引用块里的 <p>/<strong> 染成近白色
+   （rgb(243,244,246)），而本块是浅黄底（#fffbeb），对比度只剩约 1.1:1，等于读不清。
+   这里连同子元素一起钉成深色；`!important` 是为了压过主题的 `.prose p` 规则。 */
 .gradio-container .prose blockquote {
     border-left: 3px solid #f59e0b;
-    color: #475569;
+    color: #475569 !important;
     background: #fffbeb;
     padding: 8px 12px;
     border-radius: 6px;
+}
+/* 子元素单独列名并加 `body` 前缀：实测 Gradio 的 `.dark .prose p{...!important}`
+   与本规则同权重时后者按加载顺序胜出，所以必须提高特异性（0,2,2 > 0,2,1）。 */
+body .gradio-container .prose blockquote p,
+body .gradio-container .prose blockquote strong,
+body .gradio-container .prose blockquote em,
+body .gradio-container .prose blockquote a,
+body .gradio-container .prose blockquote span,
+body .gradio-container .prose blockquote li {
+    color: #475569 !important;
 }
 """
 
