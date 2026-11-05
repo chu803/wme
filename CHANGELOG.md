@@ -56,7 +56,12 @@
 
 ## [1.0.7] - 2026-11-05
 
-> **发布记录**：待发布后回填（tag `v1.0.7`）。
+> **发布记录（2026-11-05）**：已上架 PyPI（`wme-watermark-eraser==1.0.7`，
+> 上传时间 2026-11-05T12:10:08Z）。发布链：tag `v1.0.7` → `51fdd8f` → Publish 全 13 步 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel + sdist 均在；发布物安装态自检 rc=0；
+> 在**全新 venv（只装声明的最小依赖）+ 默认数据目录**下真机跑通
+> 「示例 → 检测 → 一键修复」，产物落 `%LOCALAPPDATA%\wme-watermark-eraser\outputs`。
 
 ### 修复（阶段 381 · 安装指引会让人装到带缺陷的旧版）
 
