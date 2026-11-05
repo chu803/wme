@@ -140,13 +140,39 @@ def test_compliance_blockquote_keeps_readable_contrast():
     assert "!important" in seg, "子元素规则没有 !important ⇒ 压不过主题规则"
 
 
-def test_image_editor_placeholder_is_lightened():
-    """阶段 378：Gradio 画布空态提示在深色主题下只有 3.03:1，主题必须提亮它。
+def test_image_editor_placeholder_uses_theme_subdued():
+    """阶段 378：Gradio 画布空态提示的对比度由主题的 subdued 色统一兜底。
 
-    实测（真浏览器 WCAG 判据）：`Upload an image / select the draw tool...` 为
-    rgb(107,114,128) 落在 rgb(30,41,59) 上 = 3.03:1（正文要 ≥4.5）。
-    修法：`.image-container .empty.wrap` 提到 #9ca3af（约 5.6:1）。
+    实测：该提示在深色主题下只有 3.03:1；浅色主题下用固定浅灰会掉到 2.54:1。
+    修法：颜色改用 `var(--body-text-color-subdued)`，由主题的浅/深两套值保证可读
+    （主题值见 `test_secondary_text_colors_are_readable_in_both_modes`）。
     """
     css = theme_mod.build_app_css()
-    assert ".image-container .empty.wrap" in css, "画布占位文字的提亮规则不见了"
-    assert "#9ca3af" in css, "占位文字的颜色不是提亮后的 #9ca3af"
+    assert ".image-container .empty.wrap" in css, "画布占位文字的规则不见了"
+    assert "var(--body-text-color-subdued)" in css, "占位文字没有走主题的 subdued 变量"
+
+
+def test_secondary_text_colors_are_readable_in_both_modes():
+    """阶段 378b：次要文字（info / subdued）必须按明暗给可读值。
+
+    实测（真浏览器 + ?__theme=light）：Gradio Soft 主题在浅色下把 info 说明行设为极浅灰
+    （白底 1.91:1）、滑杆刻度与画布占位用 subdued（白底 2.54:1），都低于 4.5:1。
+    修法走主题 API 的 `_dark` 变体（CSS 变量方案实测会被 Gradio 的选择器重写打乱）。
+    """
+    th = theme_mod.build_app_theme()
+    assert th.body_text_color_subdued == "#6b7280"
+    assert th.body_text_color_subdued_dark == "#9ca3af"
+    assert th.block_info_text_color == "#4b5563"
+    assert th.block_info_text_color_dark == "#9ca3af"
+
+
+def test_label_text_color_is_left_to_the_theme():
+    """已知边界：标签/标题的文字色**不覆盖**。
+
+    实测：标签元素的底色是主色蓝（Gradio 的复合样式），改文字色会把**默认深色模式**
+    的对比度从 5:1 弄坏到 2.87:1。保留 Gradio 原值；浅色模式下标签 3.01:1 记入
+    docs/378 的残余清单，等 Gradio 上游或后续单独评估。
+    """
+    th = theme_mod.build_app_theme()
+    assert "block_label_text_color" not in theme_mod.APP_CSS
+    assert getattr(th, "block_label_text_color", None) not in ("#1e40af", "#93c5fd")

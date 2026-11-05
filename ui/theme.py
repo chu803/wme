@@ -84,6 +84,12 @@ def build_app_theme():
             button_primary_background_fill=brand.PRIMARY_HEX,
             button_primary_background_fill_hover=brand.PRIMARY_HOVER_HEX,
             button_primary_text_color="#ffffff",
+            # 阶段 378b：次要文字/标签在浅色模式下对比度不足（实测 1.91~3.27:1），
+            # 用主题 API 的 _dark 变体分别给可读值（CSS 变量方案会被 Gradio 重写作用域）。
+            body_text_color_subdued="#6b7280",
+            body_text_color_subdued_dark="#9ca3af",
+            block_info_text_color="#4b5563",
+            block_info_text_color_dark="#9ca3af",
             button_secondary_background_fill="#e2e8f0",
             button_secondary_background_fill_hover="#cbd5e1",
             border_color_primary="#cbd5e1",
@@ -185,11 +191,18 @@ body .gradio-container .prose blockquote li {
 
 /* 图片编辑器空状态提示（Gradio 自带 "Upload an image / select the draw tool..."）：
    深色主题下是中性灰落在页面深色底上，实测对比度 3.03:1（正文要 ≥4.5）。
-   提到 #9ca3af 后约 5.6:1。 */
+   统一用 subdued 变量（见下方按明暗覆盖），两套主题都可读。 */
 .gradio-container .image-container .empty.wrap,
 .gradio-container .image-container .empty.wrap * {
-    color: #9ca3af !important;
+    color: var(--body-text-color-subdued) !important;
 }
+
+/* 次要文字（info= 说明行、滑杆刻度、画布占位）在 Gradio 主题里过浅：
+   浅色模式下实测白底上仅 1.91~2.54:1。按明暗给可读值：
+   浅色 4b5563/6b7280（约 7.5 / 4.8:1），深色 9ca3af（约 5.6:1）。
+   注：页脚（Gradio 品牌栏）在 .gradio-container 之外，本 CSS 作用不到，属已知边界。 */
+/* 次要文字/标签/标题的可读性由 build_app_theme().set() 的 _dark 变体统一给出
+   （CSS 变量方案实测会被 Gradio 的选择器重写打乱，弃用）。 */
 """
 
 
