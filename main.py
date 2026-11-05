@@ -92,11 +92,13 @@ def run_environment_check() -> bool:
 
     # 2.2b 安装路径编码（阶段 314）：非 ASCII 路径会让 PyTorch 打不开模型权重，
     #      报「文件不存在」但文件其实在——必须在启动时就说清楚，否则用户无从排查。
-    path_warn = non_ascii_path_warning(config.PROJECT_ROOT)
+    #      检查 DATA_ROOT 而非 PROJECT_ROOT：pip 安装时权重落在用户数据目录，
+    #      而 site-packages 往往在纯 ASCII 路径下，只查后者会漏报。
+    path_warn = non_ascii_path_warning(config.DATA_ROOT)
     if path_warn:
         print(f"  [WARN] {path_warn}")
     else:
-        print("  [OK] 安装路径为纯 ASCII")
+        print("  [OK] 数据目录为纯 ASCII")
 
     # 2.3 关键依赖探测（cv2 必需；torch 用于 LaMa）。
     deps_ok = True

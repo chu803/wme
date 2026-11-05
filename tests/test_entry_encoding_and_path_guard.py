@@ -124,8 +124,9 @@ def test_non_ascii_path_warning_flags_cjk(path):
 def test_environment_check_uses_path_guard():
     """启动自检必须做路径编码检查（否则用户装到中文目录后无从排查）。"""
     src = open(os.path.join(_ROOT, "main.py"), encoding="utf-8").read()
-    assert "non_ascii_path_warning(config.PROJECT_ROOT)" in src, (
-        "run_environment_check 未检查 PROJECT_ROOT 的路径编码"
+    assert "non_ascii_path_warning(config.DATA_ROOT)" in src, (
+        "run_environment_check 未检查 DATA_ROOT 的路径编码"
+        "（pip 安装时模型落在用户数据目录，PROJECT_ROOT 是只读的 site-packages）"
     )
 
 

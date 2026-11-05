@@ -270,6 +270,24 @@ def test_launch_app_fixed_port_success_returns_zero(launch_env):
     assert fake.kwargs is not None, "launch_app 未调用 app.launch()"
 
 
+def test_launch_app_allows_runtime_dirs_for_gradio(launch_env, monkeypatch, tmp_path):
+    """阶段 379：修复结果写进用户数据目录后，必须显式放行给 Gradio。
+
+    1.0.4 实测：输出在 cwd 之外时，Gradio 回传结果抛 InvalidPathError
+    （Cannot move ... to the gradio cache dir）。
+    """
+    monkeypatch.setattr(config, "OUTPUT_DIR", tmp_path / "outputs")
+    monkeypatch.setattr(config, "EXPORT_DIR", tmp_path / "exports")
+    monkeypatch.setattr(config, "CACHE_DIR", tmp_path / "cache")
+    monkeypatch.setattr(config, "TEMP_DIR", tmp_path / "temp")
+
+    fake = _FakeApp()
+    assert app_mod.launch_app(fake) == 0
+    allowed = set(fake.kwargs.get("allowed_paths") or [])
+    expected = {str(tmp_path / n) for n in ("outputs", "exports", "cache", "temp")}
+    assert expected <= allowed, f"Gradio 放行目录缺项：{sorted(expected - allowed)}"
+
+
 def test_launch_app_returns_one_when_auto_port_exhausted(launch_env, monkeypatch):
     """自动端口探测失败必须 return 1，且**不调用** app.launch()。"""
     launch_env.SERVER_AUTO_PORT = True

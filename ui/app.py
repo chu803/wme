@@ -438,6 +438,23 @@ def build_app() -> gr.Blocks:
     return demo
 
 
+def _gradio_allowed_paths() -> list[str]:
+    """放行运行时目录，供 Gradio 回传结果。
+
+    pip 安装后这些目录位于用户数据目录（cwd 之外），Gradio 默认只服务
+    cwd 与系统临时目录，不放行会在回传修复结果时抛 InvalidPathError。
+    """
+    paths: list[str] = []
+    for attr in ("OUTPUT_DIR", "EXPORT_DIR", "CACHE_DIR", "TEMP_DIR"):
+        value = getattr(config, attr, None)
+        if value is None:
+            continue
+        text = str(value)
+        if text not in paths:
+            paths.append(text)
+    return paths
+
+
 def launch_app(app: gr.Blocks) -> int:
     """
     按 config 启动 Gradio 本地网页服务。
@@ -496,6 +513,7 @@ def launch_app(app: gr.Blocks) -> int:
             css=build_app_css(),
             js=_build_custom_js(),
             footer_links=footer_links,
+            allowed_paths=_gradio_allowed_paths(),
         )
         return 0
     except KeyboardInterrupt:

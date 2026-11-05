@@ -2245,6 +2245,16 @@ python server.py
 
 程序默认监听本地地址，用浏览器打开终端输出的 URL 即可。
 
+**文件保存位置**（阶段 379）：源码运行时，输出 / 模型 / 缓存 / 日志都在仓库根目录；
+用 pip 安装时改为用户数据目录（不写 `site-packages`）：
+
+- Windows：`%LOCALAPPDATA%\wme-watermark-eraser\`
+- macOS：`~/Library/Application Support/wme-watermark-eraser/`
+- Linux：`${XDG_DATA_HOME:-~/.local/share}/wme-watermark-eraser/`
+
+可用环境变量 `WME_DATA_DIR` 改到别处（建议绝对路径）；`WME_OUTPUT_DIR` /
+`WME_MODEL_DIR` 等单项覆盖仍然生效。PyInstaller 打包版仍保存在 EXE 所在目录。
+
 ### 3.4 生成演示素材
 
 ```bash

@@ -438,19 +438,20 @@ def _resolve_plugin_dirs() -> list[Path]:
     """
     解析插件目录列表。
 
-    优先读取 config.PLUGIN_DIRS（可以是相对 PROJECT_ROOT 的路径或绝对路径），
-    若配置缺失则回退到 <项目根>/plugins。
+    优先读取 config.PLUGIN_DIRS（相对路径以数据目录为基准，也可给绝对路径），
+    若配置缺失则回退到 <数据目录>/plugins。
     """
+    base = getattr(config, "DATA_ROOT", config.PROJECT_ROOT)
     raw = getattr(config, "PLUGIN_DIRS", None)
     dirs: list[Path] = []
     if raw:
         for d in raw:
             p = Path(d)
             if not p.is_absolute():
-                p = config.PROJECT_ROOT / p
+                p = base / p
             dirs.append(p)
     if not dirs:
-        dirs.append(config.PROJECT_ROOT / "plugins")
+        dirs.append(base / "plugins")
     return dirs
 
 

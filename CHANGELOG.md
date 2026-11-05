@@ -52,7 +52,19 @@
 
 ## [Unreleased]
 
-（下一版本待记）
+### 修复（阶段 379 · pip 安装后把 site-packages 当数据目录，Gradio 无法回传结果）
+
+- 1.0.4 发布物真机跑黄金路径暴露：修复完成、文件已存，网页抛 `InvalidPathError`
+  （结果在 cwd 之外，Gradio 默认不放行）；安装目录还被写入 outputs/models/cache/logs。
+- 根因：`PROJECT_ROOT`（config.py 所在目录）被当成可写数据根。新增 `DATA_ROOT`：
+  frozen = EXE 目录、源码树 = 仓库根、pip 安装 = 平台用户数据目录（`WME_DATA_DIR` 可覆盖）；
+  运行时目录全部改落数据根，`ASSETS_DIR` 明确为只读随包资源，插件目录以数据根为基准。
+- `launch_app` 将输出 / 导出 / 缓存 / 临时目录传给 Gradio `allowed_paths`；
+  启动自检路径告警改查 `DATA_ROOT`。
+- 验证：7 条新守卫（模拟安装布局、修前全红）+ 重装后在仓库外真机跑通
+  「试示例 → 检测 → 修复」，结果写入数据目录，安装目录时间戳未再变化；
+  全量入口 `rc=0`（3436 passed / 37 skipped / 6 deselected，472.86s）。
+- ⚠ 未在真实 macOS/Linux 安装包上验证；1.0.4 已写入 site-packages 的残留不迁移。
 
 ## [1.0.4] - 2026-11-05
 

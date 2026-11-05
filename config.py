@@ -340,35 +340,79 @@ def _detect_project_root() -> Path:
     return Path(__file__).resolve().parent
 
 
-# 项目根目录。这是所有其他路径的计算基准，全项目唯一真值来源。
+# 代码与随包资源所在目录（源码树根，或 wheel 安装后的 site-packages）。
+# 注意：它不一定是可写目录，运行时产物不能往这里写。
 PROJECT_ROOT: Final[Path] = _detect_project_root()
 
 
-def _resolve_dir(env_key: str, default_name: str) -> Path:
+def _looks_like_source_tree(root: Path) -> bool:
+    """以 pyproject.toml 判定源码树；wheel 安装后的包目录里没有这个文件。"""
+    return (root / "pyproject.toml").is_file()
+
+
+def _user_data_root() -> Path:
+    """pip 安装场景的可写数据根，按平台惯例选择，可用 WME_DATA_DIR 覆盖。"""
+    custom: str = _env_str("DATA_DIR", "")
+    if custom != "":
+        custom_path = Path(custom).expanduser()
+        return custom_path if custom_path.is_absolute() else (Path.cwd() / custom_path).resolve()
+
+    app_dir = "wme-watermark-eraser"
+    if os.name == "nt":
+        base = os.environ.get("LOCALAPPDATA") or os.environ.get("APPDATA")
+        base_path = Path(base) if base else Path.home() / "AppData" / "Local"
+        return base_path / app_dir
+    if sys.platform == "darwin":
+        return Path.home() / "Library" / "Application Support" / app_dir
+    xdg = os.environ.get("XDG_DATA_HOME") or str(Path.home() / ".local" / "share")
+    return Path(xdg) / app_dir
+
+
+def _detect_data_root(code_root: Path) -> Path:
+    """
+    探测运行时可写数据根（输出/模型/缓存/日志都落在这里）。
+
+    · PyInstaller：EXE 所在目录（用户可见、可备份）
+    · 源码树：仓库根（保持开发时产物位置不变）
+    · pip 安装：用户数据目录（site-packages 只读且升级会被替换）
+    """
+    if getattr(sys, "frozen", False):
+        return code_root
+    if _looks_like_source_tree(code_root):
+        return code_root
+    return _user_data_root()
+
+
+DATA_ROOT: Final[Path] = _detect_data_root(PROJECT_ROOT)
+
+
+def _resolve_dir(env_key: str, default_name: str, base: Path | None = None) -> Path:
     """
     解析一个目录配置项，支持用户通过环境变量指定绝对路径。
 
     参数说明：
         env_key      : 环境变量名（不含前缀）。例如 "OUTPUT_DIR"。
         default_name : 默认的子目录名。例如 "outputs"。
+        base         : 基准目录；默认数据根 DATA_ROOT（只读资源可传 PROJECT_ROOT）。
 
     返回值：
         最终生效的目录绝对路径。
 
     行为规则：
-        · 用户未配置 → 使用 项目根目录/default_name
+        · 用户未配置 → 使用 base/default_name
         · 用户配置了绝对路径（如 D:\\我的图片）→ 直接使用该路径
-        · 用户配置了相对路径（如 ..\\共享盘）→ 相对项目根目录解析
+        · 用户配置了相对路径（如 ..\\共享盘）→ 相对 base 解析
     """
+    base_dir = DATA_ROOT if base is None else base
     custom: str = _env_str(env_key, "")
     if custom == "":
-        return PROJECT_ROOT / default_name
+        return base_dir / default_name
 
     custom_path: Path = Path(custom)
     if custom_path.is_absolute():
         return custom_path.resolve()
-    # 相对路径：以项目根目录为基准展开。
-    return (PROJECT_ROOT / custom_path).resolve()
+    # 相对路径：以基准目录展开。
+    return (base_dir / custom_path).resolve()
 
 
 # ==============================================================================
@@ -402,8 +446,8 @@ LOG_DIR: Final[Path] = _resolve_dir("LOG_DIR", "logs")
 # 【临时目录】存放推理过程中的中间切片文件，程序会自动清理。
 TEMP_DIR: Final[Path] = _resolve_dir("TEMP_DIR", "temp")
 
-# 【静态资源目录】存放界面用的 CSS、图标、示例图片。
-ASSETS_DIR: Final[Path] = _resolve_dir("ASSETS_DIR", "assets")
+# 【静态资源目录】随包只读资源（界面 CSS、图标、示例图片），永远跟随代码目录。
+ASSETS_DIR: Final[Path] = _resolve_dir("ASSETS_DIR", "assets", base=PROJECT_ROOT)
 
 
 def ensure_directories() -> list[Path]:
@@ -419,15 +463,16 @@ def ensure_directories() -> list[Path]:
         而不是抛出「目录不存在」的报错让人摸不着头脑。
     """
     created: list[Path] = []
-    # 需要保证存在的目录清单。注意不含 PROJECT_ROOT，它必然已存在。
+    # 需要保证存在的目录清单（全部是可写的运行时目录）。
+    # 不含 ASSETS_DIR：它是随包只读资源，pip 安装时位于 site-packages，不应在那里建目录。
     targets: tuple[Path, ...] = (
+        DATA_ROOT,
         MODEL_DIR,
         OUTPUT_DIR,
         EXPORT_DIR,
         CACHE_DIR,
         LOG_DIR,
         TEMP_DIR,
-        ASSETS_DIR,
     )
 
     for directory in targets:
@@ -3337,6 +3382,7 @@ def get_config_snapshot() -> dict[str, Any]:
         "项目名称": APP_NAME,
         "项目版本": APP_VERSION,
         "项目根目录": str(PROJECT_ROOT),
+        "数据目录": str(DATA_ROOT),
         "是否打包运行": str(bool(getattr(sys, "frozen", False))),
         "已加载 .env 文件": str(_DOTENV_LOADED),
         "模型文件路径": str(MODEL_PATH),
