@@ -63,7 +63,9 @@
   启动自检路径告警改查 `DATA_ROOT`。
 - 验证：7 条新守卫（模拟安装布局、修前全红）+ 重装后在仓库外真机跑通
   「试示例 → 检测 → 修复」，结果写入数据目录，安装目录时间戳未再变化；
-  全量入口 `rc=0`（3436 passed / 37 skipped / 6 deselected，472.86s）。
+  全量入口 `rc=0`（3444 passed / 37 skipped / 6 deselected，458.83s）。
+- 发布前闸门：新增 `scripts/verify_installed_layout.py`（干净 venv + 仓库外 cwd 验安装布局），
+  接进 `publish.yml`；对已发布的 1.0.4 wheel 实测 `rc=1`，对修复后的 wheel `rc=0`。
 - ⚠ 未在真实 macOS/Linux 安装包上验证；1.0.4 已写入 site-packages 的残留不迁移。
 
 ## [1.0.4] - 2026-11-05

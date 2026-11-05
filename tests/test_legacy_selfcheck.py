@@ -204,6 +204,10 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/_gpu_probe_1219.py": "S GPU 实测临时探针（一次性诊断，跑真实推理；不属于运行时自检）",
     "scripts/_gpu_probe2_1219.py": "S GPU 实测临时探针（同上，一次性诊断）",
     "scripts/gpu_perf_probe.py": "S GPU 性能探针（≥2048px 最重子集 + 冷启动，分钟级 + GPU；语义同 perf_probe）",
+    # 阶段 379：发布前安装态布局校验。要建临时 venv、装 dist/ 里的真 wheel
+    # （全新 checkout 没有产物；也不该在套件里反复建 venv）。
+    # 其判定反例与 publish.yml 接线的守卫在 tests/test_verify_installed_layout379.py。
+    "scripts/verify_installed_layout.py": "S 发布前安装态布局校验（需 dist/ 产物 + 建临时 venv）",
 }
 
 

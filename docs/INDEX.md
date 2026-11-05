@@ -1490,7 +1490,10 @@ rgb(107,114,128) 落在 rgb(30,41,59) 上 = **3.03:1**；历史页 0；377 修�
 `launch_app` 把四个运行时目录传给 `allowed_paths`；启动路径告警改查 `DATA_ROOT`。
 验证：7 条新守卫（含修前全红的模拟安装布局）+ 重装后在仓库外真机跑通黄金路径，
 结果写入 `data379\outputs`，`site-packages\outputs` 时间戳未再变化；
-全量入口 `rc=0`（3436 passed / 37 skipped / 6 deselected，472.86s）。
+全量入口 `rc=0`（3444 passed / 37 skipped / 6 deselected，458.83s）。
+发布前闸门：`scripts/verify_installed_layout.py` 把 wheel 装进干净 venv 验布局，
+并接进 `publish.yml`；对已发布的 1.0.4 wheel 实测 `rc=1`（点名缺 DATA_ROOT 与安装目录被写），
+对修复后的 wheel `rc=0`。
 ⚠ 未在真实 macOS/Linux 安装包上跑；1.0.4 的历史残留不迁移，需下一版发布才到达用户。
 
 - `379-pip安装的数据根与Gradio回传.md`

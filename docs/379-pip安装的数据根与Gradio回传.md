@@ -66,7 +66,20 @@ located in either the current working directory or your system's temp directory.
   `✅ 处理完成（引擎：AUTO）`，结果写入 `data379\outputs\auto_151510_cleaned_151510.png`；
 - 网页成功拿到结果图（Gradio 缓存 URL），不再有 `InvalidPathError`；
 - `site-packages\outputs` 里旧文件时间戳保持 15:04 未变，证明新进程没有再写安装目录；
-- 全量入口 `rc=0`（3436 passed / 37 skipped / 6 deselected，472.86s）。
+- 全量入口 `rc=0`（3444 passed / 37 skipped / 6 deselected，458.83s）。
+
+## 发布前闸门
+
+只修一次不够：这个缺陷能上线，是因为发布链只核对「产物条目」、没跑「装出来的包」。
+新增 `scripts/verify_installed_layout.py`：把待发布的 wheel 装进干净 venv，
+从仓库外 cwd 导入 config，断言版本一致、`DATA_ROOT` 生效且不在包目录内、
+运行时目录都落在数据根、`ensure_directories` 不在安装目录建目录。
+
+- 对修复后的 wheel：`rc=0`，数据根为临时目录，包目录为 venv 的 site-packages；
+- 对 PyPI 上已发布的 1.0.4 wheel：`rc=1`，明确报出「没有 DATA_ROOT」以及
+  「安装目录被写入 logs/models」。
+- `publish.yml` 在 `verify_dist` 之后、上传产物之前调用它（步骤 id `installed_layout`），
+  由 `tests/test_verify_installed_layout379.py` 钉住判定反例与接线。
 
 ## 边界与后续
 
