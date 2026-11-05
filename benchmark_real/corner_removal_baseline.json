@@ -1,0 +1,534 @@
+{
+  "params": {
+    "dilate": 0,
+    "feather": 5,
+    "denoise": 3,
+    "strength": 1.0
+  },
+  "measured_at": "2026-11-05T14:14:07Z",
+  "n_images": 51,
+  "n_errors": 1,
+  "detected_rate": 0.8627,
+  "erased_rate": 0.6275,
+  "erased_rate_given_detected": 0.6136,
+  "median_ncc_before": 0.821,
+  "median_ncc_after": 0.2354,
+  "median_outside_change_ratio": 0.00751,
+  "median_inside_change_ratio": 0.4451,
+  "rows": [
+    {
+      "image": "1.png",
+      "ncc_before": 1.0,
+      "ncc_after": 0.426,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.00044,
+      "inside_change_ratio": 0.21533,
+      "seconds": 2.43
+    },
+    {
+      "image": "2.png",
+      "ncc_before": 0.9658,
+      "ncc_after": 0.8752,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.0,
+      "inside_change_ratio": 0.04936,
+      "seconds": 5.15
+    },
+    {
+      "image": "3.png",
+      "ncc_before": 0.8285,
+      "ncc_after": 0.7319,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.01917,
+      "inside_change_ratio": 0.0486,
+      "seconds": 6.31
+    },
+    {
+      "image": "4.png",
+      "ncc_before": 0.9999,
+      "ncc_after": 0.718,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.05807,
+      "inside_change_ratio": 0.10639,
+      "seconds": 6.25
+    },
+    {
+      "image": "a1.png",
+      "ncc_before": 0.1317,
+      "ncc_after": 0.1317,
+      "detected": false,
+      "erased": true,
+      "outside_change_ratio": 0.00055,
+      "inside_change_ratio": 0.0,
+      "seconds": 2.27
+    },
+    {
+      "image": "a2.png",
+      "ncc_before": 0.1339,
+      "ncc_after": 0.1476,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00274,
+      "inside_change_ratio": 0.39526,
+      "seconds": 2.57
+    },
+    {
+      "image": "a3.png",
+      "ncc_before": 0.1153,
+      "ncc_after": 0.1153,
+      "detected": false,
+      "erased": true,
+      "outside_change_ratio": 0.00024,
+      "inside_change_ratio": 0.0,
+      "seconds": 2.04
+    },
+    {
+      "image": "a4.png",
+      "error": "EmptyMaskError: 【未标记任何水印区域】\n原因：掩码为空（没有任何需要修复的区域）。\n请先用画笔涂抹或矩形框选水印区域，或使用智能自动检测模式。\n建议：\n  1. 手动模式：请用画笔在图片上涂抹要擦除的水印，或用矩形工具框选水印\n  2. 自动模式：若自动检测没有找到水印，请尝试调高「检测敏感度」滑块\n  3. 自动模式检测不到时，也可切换到手动模式自行标记"
+    },
+    {
+      "image": "ai_logo_02_snow_mountain_lake.jpg",
+      "ncc_before": 0.9999,
+      "ncc_after": 0.178,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00147,
+      "inside_change_ratio": 0.72854,
+      "seconds": 2.61
+    },
+    {
+      "image": "ai_logo_03_white_coffee_cup.jpg",
+      "ncc_before": 0.2301,
+      "ncc_after": 0.1704,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.03526,
+      "inside_change_ratio": 0.59299,
+      "seconds": 2.55
+    },
+    {
+      "image": "ai_logo_04_neon_street_night.jpg",
+      "ncc_before": 0.2582,
+      "ncc_after": 0.1868,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.03544,
+      "inside_change_ratio": 0.83989,
+      "seconds": 2.99
+    },
+    {
+      "image": "ai_logo_05_fruit_platter.jpg",
+      "ncc_before": 0.9999,
+      "ncc_after": 0.3436,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.00175,
+      "inside_change_ratio": 0.63281,
+      "seconds": 2.66
+    },
+    {
+      "image": "ai_logo_06_flower_field_portrait.jpg",
+      "ncc_before": 0.3274,
+      "ncc_after": 0.1203,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00557,
+      "inside_change_ratio": 0.76443,
+      "seconds": 2.39
+    },
+    {
+      "image": "ai_logo_07_glass_curtain_building.jpg",
+      "ncc_before": 0.2973,
+      "ncc_after": 0.2408,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.0788,
+      "inside_change_ratio": 0.24205,
+      "seconds": 3.14
+    },
+    {
+      "image": "ai_logo_08_abstract_fluid.jpg",
+      "ncc_before": 0.345,
+      "ncc_after": 0.3471,
+      "detected": false,
+      "erased": false,
+      "outside_change_ratio": 0.00501,
+      "inside_change_ratio": 0.0,
+      "seconds": 2.27
+    },
+    {
+      "image": "ai_logo_09_vintage_typewriter.jpg",
+      "ncc_before": 1.0,
+      "ncc_after": 0.4058,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.08698,
+      "inside_change_ratio": 0.31804,
+      "seconds": 3.26
+    },
+    {
+      "image": "ai_logo_10_lavender_hot_air_balloon.jpg",
+      "ncc_before": 0.183,
+      "ncc_after": 0.1079,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.03174,
+      "inside_change_ratio": 0.83876,
+      "seconds": 2.97
+    },
+    {
+      "image": "ai_logo_test_01_orange_cat.jpg",
+      "ncc_before": 0.4597,
+      "ncc_after": 0.1807,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 1e-05,
+      "inside_change_ratio": 0.68989,
+      "seconds": 2.54
+    },
+    {
+      "image": "c1.png",
+      "ncc_before": 0.8079,
+      "ncc_after": 0.1812,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00825,
+      "inside_change_ratio": 0.67521,
+      "seconds": 2.64
+    },
+    {
+      "image": "c10.png",
+      "ncc_before": 1.0,
+      "ncc_after": 0.4922,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.0061,
+      "inside_change_ratio": 0.47273,
+      "seconds": 2.31
+    },
+    {
+      "image": "c11.png",
+      "ncc_before": 0.8134,
+      "ncc_after": 0.1739,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00919,
+      "inside_change_ratio": 0.56242,
+      "seconds": 2.64
+    },
+    {
+      "image": "c13.png",
+      "ncc_before": 0.7492,
+      "ncc_after": 0.1975,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.01277,
+      "inside_change_ratio": 0.37355,
+      "seconds": 2.43
+    },
+    {
+      "image": "c14.png",
+      "ncc_before": 0.9914,
+      "ncc_after": 0.3966,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.07551,
+      "inside_change_ratio": 0.47101,
+      "seconds": 3.01
+    },
+    {
+      "image": "c15.png",
+      "ncc_before": 0.4623,
+      "ncc_after": 0.138,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.02934,
+      "inside_change_ratio": 0.38709,
+      "seconds": 2.67
+    },
+    {
+      "image": "c2.png",
+      "ncc_before": 0.9999,
+      "ncc_after": 0.457,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.00985,
+      "inside_change_ratio": 0.61945,
+      "seconds": 2.29
+    },
+    {
+      "image": "c3.png",
+      "ncc_before": 0.9361,
+      "ncc_after": 0.2843,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.01871,
+      "inside_change_ratio": 0.48804,
+      "seconds": 2.45
+    },
+    {
+      "image": "c4.png",
+      "ncc_before": 0.6679,
+      "ncc_after": 0.187,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.02074,
+      "inside_change_ratio": 0.30261,
+      "seconds": 2.56
+    },
+    {
+      "image": "c5.png",
+      "ncc_before": 0.9999,
+      "ncc_after": 0.2381,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.0308,
+      "inside_change_ratio": 0.92924,
+      "seconds": 2.83
+    },
+    {
+      "image": "c6.png",
+      "ncc_before": 0.9856,
+      "ncc_after": 0.3692,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.02247,
+      "inside_change_ratio": 0.51923,
+      "seconds": 2.48
+    },
+    {
+      "image": "c7.png",
+      "ncc_before": 0.3227,
+      "ncc_after": 0.2146,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.02635,
+      "inside_change_ratio": 0.75443,
+      "seconds": 2.78
+    },
+    {
+      "image": "c8.png",
+      "ncc_before": 0.916,
+      "ncc_after": 0.2942,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00057,
+      "inside_change_ratio": 0.45462,
+      "seconds": 3.13
+    },
+    {
+      "image": "c9.png",
+      "ncc_before": 0.7927,
+      "ncc_after": 0.1266,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00388,
+      "inside_change_ratio": 0.36501,
+      "seconds": 5.59
+    },
+    {
+      "image": "q1.png",
+      "ncc_before": 0.1211,
+      "ncc_after": 0.1211,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00103,
+      "inside_change_ratio": 0.26851,
+      "seconds": 4.05
+    },
+    {
+      "image": "q2.png",
+      "ncc_before": 0.0911,
+      "ncc_after": 0.1372,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.0234,
+      "inside_change_ratio": 0.21731,
+      "seconds": 2.76
+    },
+    {
+      "image": "q3.png",
+      "ncc_before": 0.1667,
+      "ncc_after": 0.1753,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.0084,
+      "inside_change_ratio": 0.20216,
+      "seconds": 2.53
+    },
+    {
+      "image": "q4.png",
+      "ncc_before": 0.0828,
+      "ncc_after": 0.0857,
+      "detected": false,
+      "erased": true,
+      "outside_change_ratio": 0.00965,
+      "inside_change_ratio": 0.0,
+      "seconds": 2.54
+    },
+    {
+      "image": "q5.png",
+      "ncc_before": 0.0812,
+      "ncc_after": 0.0812,
+      "detected": false,
+      "erased": true,
+      "outside_change_ratio": 0.04073,
+      "inside_change_ratio": 0.0,
+      "seconds": 2.92
+    },
+    {
+      "image": "q6.png",
+      "ncc_before": 0.09,
+      "ncc_after": 0.0893,
+      "detected": false,
+      "erased": true,
+      "outside_change_ratio": 0.00372,
+      "inside_change_ratio": 0.0,
+      "seconds": 2.11
+    },
+    {
+      "image": "s1.png",
+      "ncc_before": 1.0,
+      "ncc_after": 1.0,
+      "detected": false,
+      "erased": false,
+      "outside_change_ratio": 0.00024,
+      "inside_change_ratio": 0.0,
+      "seconds": 2.19
+    },
+    {
+      "image": "s10.png",
+      "ncc_before": 0.8429,
+      "ncc_after": 0.1207,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00751,
+      "inside_change_ratio": 0.61503,
+      "seconds": 2.25
+    },
+    {
+      "image": "s11.png",
+      "ncc_before": 0.8114,
+      "ncc_after": 0.2106,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00274,
+      "inside_change_ratio": 0.39776,
+      "seconds": 2.3
+    },
+    {
+      "image": "s12.png",
+      "ncc_before": 0.9893,
+      "ncc_after": 0.411,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.00065,
+      "inside_change_ratio": 0.44393,
+      "seconds": 2.32
+    },
+    {
+      "image": "s13.png",
+      "ncc_before": 0.713,
+      "ncc_after": 0.1613,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00135,
+      "inside_change_ratio": 0.47152,
+      "seconds": 2.27
+    },
+    {
+      "image": "s14.png",
+      "ncc_before": 0.9831,
+      "ncc_after": 0.379,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.00038,
+      "inside_change_ratio": 0.49519,
+      "seconds": 2.33
+    },
+    {
+      "image": "s2.png",
+      "ncc_before": 0.9849,
+      "ncc_after": 0.3723,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.03284,
+      "inside_change_ratio": 0.56083,
+      "seconds": 2.57
+    },
+    {
+      "image": "s3.png",
+      "ncc_before": 0.4206,
+      "ncc_after": 0.4602,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.01031,
+      "inside_change_ratio": 0.08164,
+      "seconds": 2.28
+    },
+    {
+      "image": "s4.png",
+      "ncc_before": 0.6419,
+      "ncc_after": 0.1244,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00696,
+      "inside_change_ratio": 0.49513,
+      "seconds": 2.42
+    },
+    {
+      "image": "s5.png",
+      "ncc_before": 0.9179,
+      "ncc_after": 0.3336,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.0069,
+      "inside_change_ratio": 0.4519,
+      "seconds": 2.63
+    },
+    {
+      "image": "s6.png",
+      "ncc_before": 0.9944,
+      "ncc_after": 0.3485,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.05507,
+      "inside_change_ratio": 0.49963,
+      "seconds": 2.72
+    },
+    {
+      "image": "s7.png",
+      "ncc_before": 0.8004,
+      "ncc_after": 0.6692,
+      "detected": true,
+      "erased": false,
+      "outside_change_ratio": 0.00162,
+      "inside_change_ratio": 0.1153,
+      "seconds": 2.24
+    },
+    {
+      "image": "s8.png",
+      "ncc_before": 0.9008,
+      "ncc_after": 0.2326,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00677,
+      "inside_change_ratio": 0.4451,
+      "seconds": 2.38
+    },
+    {
+      "image": "s9.png",
+      "ncc_before": 0.9611,
+      "ncc_after": 0.2675,
+      "detected": true,
+      "erased": true,
+      "outside_change_ratio": 0.00543,
+      "inside_change_ratio": 0.45992,
+      "seconds": 2.36
+    }
+  ]
+}
