@@ -2950,6 +2950,13 @@ SERVER_SHOW_API: Final[bool] = _env_bool("SERVER_SHOW_API", False)
 # 【队列最大并发请求数】Gradio 层面的并发控制。
 SERVER_MAX_THREADS: Final[int] = _env_int("SERVER_MAX_THREADS", 8, 1, 64)
 
+# 【是否允许 Gradio 匿名统计】（阶段 383）
+#   Gradio 默认**会**在启动时向 api.gradio.app 发一次匿名统计（内容是"用了哪些组件类型"，
+#   **不含图片内容**）。而本工具首屏承诺「本地处理、图片不上传，唯一联网是模型权重下载」，
+#   ⇒ 默认**关闭**，让承诺字面成立。
+#   需要给上游贡献统计时可设 WME_SERVER_ANALYTICS=1（届时首屏文案会相应变化）。
+SERVER_ANALYTICS: Final[bool] = _env_bool("SERVER_ANALYTICS", False)
+
 
 # ==============================================================================
 # 第 12.5 节：REST / 脚本化 API 配置（API）

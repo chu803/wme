@@ -1528,6 +1528,37 @@ pip 不会降级。PDF 的 PyMuPDF 仍为可选依赖，但 README 写明安装�
 
 - `381-首次安装全链路验收与镜像滞后.md`
 
+### 382 · 界面说「auto=有模型用 LaMa」，代码却是 auto 永远走 OpenCV（2026-11-05）
+
+安装态巡检时发现完成状态只显示用户选的标签「引擎：AUTO」，而「修复引擎」说明写
+「auto=有模型用 LaMa，否则降级 OpenCV」；但 `INPAINT_AUTO_PREFER` 默认 **opencv**，
+`_resolve_auto_engine` 只在偏好为 lama 且模型就绪时才给 lama ⇒ **auto 实际永远走 OpenCV**
+（阶段 55 主动改的默认，README §2 已照实写，只有界面文案没跟上）。
+修法（**不改行为、只让界面说真话**）：新增 `core.inpainter.resolve_effective_engine`
+与 `ui/engine_display.py`，`inpaint()` 改为调用同一解析（避免两处漂移），
+状态栏显示**实际引擎**并在落到 OpenCV 时说明原因（权重未就绪 / 配置默认），
+中英文案订正并给出 `WME_INPAINT_AUTO_PREFER=lama` 的切换路径。
+验证：6 条新守卫 + 真机走完「示例 → 检测 → 修复」，状态栏显示
+「✅ 处理完成（引擎：OPENCV）」并附原因说明。
+⚠ 未改任何修复行为；显式选 lama 且权重缺失仍显式报错；「auto 默认 OpenCV」对期待
+LaMa 的大水印用户仍是能力短板，要改需另开一轮基准。
+
+- `382-界面引擎说明与实际引擎不一致.md`
+
+### 383 · 隐私承诺要字面成立：默认关掉 Gradio 匿名统计（2026-11-05）
+
+逐句复核首屏承诺时发现：「唯一联网是首次使用时的模型权重下载」在**默认配置下不成立**——
+Gradio 6.x 的匿名统计默认开启（`gradio/analytics.py:46` 缺省为 True），
+启动时会向 `api.gradio.app` 发一次"用了哪些组件类型"的统计（不含图片内容）。
+修法：新增 `config.SERVER_ANALYTICS`（默认 False，`WME_SERVER_ANALYTICS=1` 可开），
+`launch_app` 把 `analytics_enabled` 透传，模块加载时同步 `GRADIO_ANALYTICS_ENABLED`，
+首屏中英文案补「匿名使用统计默认关闭」⇒ 除模型下载外默认不再出网，承诺字面成立。
+验证：4 条新守卫（含 `gradio.analytics.analytics_enabled()` 实测为 False）。
+⚠ 只覆盖 Gradio 匿名统计；公网分享与模型下载属用户主动出网；打开统计开关时启动日志
+未额外提示（本轮未做）。
+
+- `383-默认关闭Gradio匿名统计.md`
+
 
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 

@@ -94,7 +94,7 @@ TRANSLATIONS: dict = {
                 "（如您自行添加的水印）。请勿用于清除他人作品或 AI 平台第三方署名水印"
                 "（通常违反其服务条款）。\n"
                 "> 🔒 **本地处理、图片不上传**：检测与修复都在本机完成，图片不会发送到任何服务器"
-                "（唯一联网是首次使用时的模型权重大小约 205 MB 的下载）。\n"
+                "（唯一联网是首次使用时的模型权重大小约 205 MB 的下载；匿名使用统计默认关闭）。\n"
                 "> 详见控制台启动时的《合规使用声明》。"
             ),
             "tab": {
@@ -210,7 +210,7 @@ TRANSLATIONS: dict = {
             # 历史页「重新处理」只能拿到 3 个参数（引擎/力度/降噪）⇒ 独立模板（含来源标注）。
             "hist_summary_short": "引擎={engine} 力度={strength} 降噪={denoise}（重新处理）",
             "engine_label": "修复引擎",
-            "engine_info": "auto=有模型用 LaMa，否则降级 OpenCV；含已加载的插件引擎",
+            "engine_info": "auto=按配置偏好选择（默认 OpenCV：更快、更保守）；想用 LaMa 请显式选 lama，或设 WME_INPAINT_AUTO_PREFER=lama；含已加载的插件引擎",
             "dual_run_label": "双跑择优（较慢，效果更稳）",
             "dual_run_info": "主引擎与副引擎（默认 LaMa）各修复一次，按无参考质量分自动取更优结果；耗时约翻倍",
             "sensitivity_label": "自动检测敏感度",
@@ -340,7 +340,7 @@ TRANSLATIONS: dict = {
                 "title": "### 📋 当前运行配置",
                 "app": "**应用**：{name} v{version}",
                 "device": "**设备模式**：`{mode}`（auto=优先 GPU，否则 CPU）",
-                "engine": "**修复引擎**：`{engine}`（auto=有模型用 LaMa，否则 OpenCV 降级）",
+                "engine": "**修复引擎**：`{engine}`（auto 按配置偏好选择，默认 OpenCV；想用 LaMa 请显式选 lama）",
                 "concurrency": "**批量并发数**：`{n}`",
                 "cache": "**缓存开关**：`{state}`（保留 {days} 天 / 最多 {max} 条 / 总体积上限 {cap_gb} GB）",
                 "format": "**默认导出格式**：`{fmt}`（画质 {q}）",
@@ -396,6 +396,9 @@ TRANSLATIONS: dict = {
                 "no_model": "❌ {exc}\n请先运行 download_model.py 下载模型，或把「修复引擎」切换为 opencv。",
                 "fail": "❌ 处理失败：{exc}",
                 "done": "✅ 处理完成（引擎：{engine}）。\n结果已保存：{path}\n可点击下方「下载处理结果」按钮，或在图片上右键另存。",
+                # 阶段 382：如实说明"实际引擎"，不让人以为 auto 一定走了 LaMa。
+                "engine_note_opencv_default": "\n（auto 按配置默认用 OpenCV：更快、更保守、不脑补内容；想要 LaMa 请在「修复引擎」里显式选 lama。）",
+                "engine_note_no_model": "\n（auto 这次用 OpenCV：LaMa 权重尚未就绪，效果弱于 LaMa；可在「模型管理」里下载后重试。）",
                 # 阶段 190：单图结果区显示本次耗时（纯本地计时，不涉遥测）。
                 # 口径：从「开始修复」到「增强完成」，**不含**涂抹解析与落盘——
                 # 措辞必须与口径一致，否则用户会把耗时误读成「整个操作」。
@@ -957,7 +960,7 @@ TRANSLATIONS: dict = {
                 "(usually against their Terms of Service).\n"
                 "> 🔒 **Runs locally — your images are never uploaded**: detection and inpainting "
                 "happen on this machine; no image is sent to any server (the only network use is the "
-                "one-time ~205 MB model download).\n"
+                "one-time ~205 MB model download; anonymous usage statistics are off by default).\n"
                 "> See the Compliance Statement printed in the console at startup."
             ),
             "tab": {
@@ -1068,7 +1071,7 @@ TRANSLATIONS: dict = {
             "hist_summary": "engine={engine} strength={strength} denoise={denoise} dilate={dilate} feather={feather} threshold={threshold}",
             "hist_summary_short": "engine={engine} strength={strength} denoise={denoise} (reprocessed)",
             "engine_label": "Repair Engine",
-            "engine_info": "auto=LaMa if model present, else OpenCV fallback; includes loaded plugin engines",
+            "engine_info": "auto=picks by configured preference (default OpenCV: faster, conservative); pick 'lama' explicitly, or set WME_INPAINT_AUTO_PREFER=lama; includes loaded plugin engines",
             "dual_run_label": "Dual-run best-pick (slower, more robust)",
             "dual_run_info": "Runs primary + secondary engine (default LaMa) and keeps the better result by no-reference quality score; ~2x runtime",
             "sensitivity_label": "Detect Sensitivity",
@@ -1200,7 +1203,7 @@ TRANSLATIONS: dict = {
                 "title": "### 📋 Runtime Configuration",
                 "app": "**App**: {name} v{version}",
                 "device": "**Device Mode**: `{mode}` (auto=prefer GPU, else CPU)",
-                "engine": "**Repair Engine**: `{engine}` (auto=LaMa if model, else OpenCV)",
+                "engine": "**Repair Engine**: `{engine}` (auto picks by configured preference, default OpenCV; pick 'lama' explicitly for LaMa)",
                 "concurrency": "**Batch Concurrency**: `{n}`",
                 "cache": "**Cache**: `{state}` (keep {days} days / max {max} records / total cap {cap_gb} GB)",
                 "format": "**Default Export**: `{fmt}` (quality {q})",
@@ -1253,6 +1256,9 @@ TRANSLATIONS: dict = {
                 "no_model": "❌ {exc}\nRun download_model.py first, or switch the engine to opencv.",
                 "fail": "❌ Processing failed: {exc}",
                 "done": "✅ Done (engine: {engine}).\nSaved: {path}\nClick 'Download Result' below, or right-click the image to save.",
+                # Stage 382: state the engine that actually ran.
+                "engine_note_opencv_default": "\n(auto uses OpenCV by default: faster and conservative; pick 'lama' explicitly to use LaMa.)",
+                "engine_note_no_model": "\n(auto used OpenCV this time: the LaMa weights are not ready yet, so quality is below LaMa; download them in 'Model Management' and retry.)",
                 # 阶段 190：与 zh-CN 同口径（修复 + 增强；不含涂抹解析与落盘）。
                 "elapsed": "\n⏱️ Repair + enhancement took {seconds:.2f} s",
                 "save_fail": "⚠️ Repaired successfully, but auto-save failed: {exc}\nYou can right-click the result to save it.",
