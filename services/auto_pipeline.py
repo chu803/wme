@@ -128,6 +128,26 @@ def _mask_from_annotation(arr: np.ndarray) -> np.ndarray:
     return painted.astype(np.uint8) * 255
 
 
+def _apply_preset_dilate_floor(preset: str | None, dilate: int) -> int:
+    """按**预设**给掩码膨胀设下限（阶段 388）。
+
+    背景（阶段 385 的真实图实测）：角标 LOGO 是**半透明板块**，检测器往往只咬住
+    实心笔画、漏掉羽化边缘 ⇒ 修复后仍有残留（`ai_logo` 路由的图里只有约一半被完全擦净）。
+    把掩码膨胀从 0 调到 12~24 可把完全擦净率从 51% 提到 70%~75%。
+
+    为什么**只对 ai_logo**：膨胀是**按类标定**的全局参数（阶段 105 的校准）——
+    网格类用 0 更好，膨胀会让改动溢出水印区、撞上"只动水印区"的误伤红线
+    （实测把全局默认调到 12 会让 5 条标定守卫变红）。所以这里做成**按预设的下限**，
+    只影响角标这条路。
+
+    `preset` 为空/未知 ⇒ 不加下限（保持原行为）。
+    """
+    if preset != "ai_logo":
+        return dilate
+    floor = int(getattr(config, "MASK_DILATE_MIN_AI_LOGO", 0) or 0)
+    return max(int(dilate), floor)
+
+
 def process_image(
     rgb: np.ndarray,
     *,
@@ -215,6 +235,8 @@ def process_image(
     det_stats = None  # 阶段 23：检测命中率统计（仅自动检测模式有值）。
     user_pixels = 0  # 阶段 24：用户精修掩码像素数（未传 user_mask 时为 0）。
     used_mask_mode = config.MASK_EDIT_DEFAULT_MODE
+    # 阶段 388：本次实际使用的检测预设（手动模式为 None ⇒ 不套用任何预设专属参数）。
+    effective_preset = None
 
     # 阶段 25：自动预设推荐（仅当未显式指定 preset 且开启 auto_preset 时）。
     #   自动分析图像特征挑出最契合的检测预设，省去用户手动试错；推荐结果透传回调用方，
@@ -253,8 +275,10 @@ def process_image(
         #   注意：推荐到默认 general 时不覆盖裸参数（保持与旧行为完全一致）。
         if preset:
             _dkw = resolve_preset(preset, sensitivity)
+            effective_preset = preset
         elif recommended_preset and recommended_preset != config.RECOMMEND_DEFAULT_PRESET:
             _dkw = resolve_preset(recommended_preset, sensitivity)
+            effective_preset = recommended_preset
         else:
             _dkw = {"sensitivity": sensitivity}
             if enhance_tiled is not None:
@@ -301,6 +325,9 @@ def process_image(
 
     def _inp(p: float, msg: str) -> None:
         on_progress(0.45 + p * 0.45, msg)
+
+    # 阶段 388：角标 LOGO 半透明板块 ⇒ 掩码覆盖不足 ⇒ 按预设给膨胀设下限（只影响 ai_logo）。
+    dilate = _apply_preset_dilate_floor(effective_preset, dilate)
 
     result_rgb = inpaint(
         rgb,

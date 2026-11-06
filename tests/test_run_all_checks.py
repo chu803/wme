@@ -82,9 +82,10 @@ def test_full_mode_has_no_marker_filter():
 
 def test_gates_flag_appends_gate_steps():
     names = [s.name for s in rac.build_steps(gates=True)]
+    # 阶段 389 新增 corner_removal_gate（承诺类真实图擦除效果红线）。
     assert names == ["pytest", "undef_scan", "docker_static", "corner_signal_gate",
                      "clean_bench_probe", "quality_gate", "real_gate", "perf_probe",
-                     "media_gate", "removal_truth_gate"]
+                     "media_gate", "removal_truth_gate", "corner_removal_gate"]
     # 325：corner_signal_gate 只在默认段出现一次——`--gates` 连默认一起跑，写两遍就是跑两遍。
     assert names.count("corner_signal_gate") == 1
 

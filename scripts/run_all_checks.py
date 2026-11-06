@@ -197,6 +197,13 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
             Step("removal_truth_gate",
                  [sys.executable, os.path.join(root, "scripts", "removal_truth_probe.py"), "--gate"],
                  note="修复侧真值门禁（真照片自带构造保证的像素真值；检回/擦除度/净伤害/误伤四条红线）"),
+            # 阶段 389：把**承诺类**（角标 LOGO）的真实图端到端擦除效果变成红线。
+            # 修复侧真值门禁的合成用例不走 ai_logo 路径（合成角标被推荐器判成 ai_text_heavy），
+            # ⇒ 这道门禁覆盖的是"用户真实图 + 真实路由 + 承诺类"。
+            Step("corner_removal_gate",
+                 [sys.executable, os.path.join(root, "scripts", "corner_removal_probe.py"),
+                  "--gate", "--preset", "auto"],
+                 note="角标 LOGO 真实图擦除效果门禁（检出/完全擦净/框外变化三条红线；约 6 分钟）"),
             # 阶段 322b 建的 `corner_signal_gate` **不在这里重复**（阶段 325 起它是默认步骤，
             # `--gates` 会连默认一起跑 ⇒ 写两遍就是跑两遍）。
         ]

@@ -208,6 +208,13 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     # （全新 checkout 没有产物；也不该在套件里反复建 venv）。
     # 其判定反例与 publish.yml 接线的守卫在 tests/test_verify_installed_layout379.py。
     "scripts/verify_installed_layout.py": "S 发布前安装态布局校验（需 dist/ 产物 + 建临时 venv）",
+    # 阶段 385：角标 LOGO 真实图「端到端擦除效果」探针——要逐张跑真实图的检测+修复
+    # （51 张、分钟级），并写基线 JSON；不属于运行时模块自检的语义范围。
+    # 判据正确性由 tests/test_corner_removal_probe385.py 覆盖。
+    "scripts/corner_removal_probe.py": "S 角标真实图擦除效果探针（跑真实图检测+修复，分钟级）",
+    # 阶段 389：同一脚本的 --gate 模式是**门禁**（被 run_all_checks --gates 调用），
+    # 但作为模块自检跑它要几分钟 ⇒ 仍归 S 类豁免。
+
 }
 
 
