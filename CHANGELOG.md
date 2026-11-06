@@ -56,7 +56,13 @@
 
 ## [1.0.11] - 2026-11-06
 
-> **发布记录**：待发布后回填（tag `v1.0.11`）。
+> **发布记录（2026-11-06）**：已上架 PyPI（`wme-watermark-eraser==1.0.11`，
+> 上传时间 2026-11-06T13:46:02Z）。发布链：tag `v1.0.11` → `c323d03` → Publish 全 13 步 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel + sdist 均在；**发布物**跑安装态自检 rc=0
+> （布局对 + 启动冒烟响应 HTTP 200），并在全新 venv + 默认数据目录下真机跑通
+> 「示例 → 检测 → 一键修复」。本版把角标 LOGO 的膨胀下限按真实图扫参定为 **24 px**
+> （完全擦净 80.0% → **84.4%**）。
 
 ### 改进（阶段 390 · 角标膨胀下限取值由真实图扫参决定）
 
