@@ -2928,7 +2928,7 @@ LOG_DATE_FORMAT: Final[str] = "%Y-%m-%d %H:%M:%S"
 APP_NAME: Final[str] = "AI 智能水印擦除工作台"
 
 # 【项目版本号】
-APP_VERSION: Final[str] = "1.0.10"
+APP_VERSION: Final[str] = "1.0.11"
 
 # 【监听地址】
 #   127.0.0.1 : 只有本机能访问（默认，最安全）
