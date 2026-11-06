@@ -27,6 +27,10 @@ ROOT = os.path.dirname(os.path.abspath(__file__))
 if ROOT not in sys.path:
     sys.path.insert(0, ROOT)
 
+# 阶段 386：清洗代理环境变量（httpx 在导入时解析 NO_PROXY，方括号 IPv6 写法会让
+# 它直接抛 InvalidURL ⇒ 大批用例在**收集阶段**报错）。必须在任何 gradio 导入之前。
+import utils.net_env  # noqa: E402,F401  （导入即执行清洗）
+
 # 运行 pytest 时 sys.executable 即托管 venv 的 python，子进程复用它，环境与测试一致。
 PY = sys.executable
 

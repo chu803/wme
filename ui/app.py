@@ -27,6 +27,11 @@ _ROOT = _os.path.dirname(_os.path.dirname(_os.path.abspath(__file__)))
 if _ROOT not in _sys.path:
     _sys.path.insert(0, _ROOT)
 
+# 阶段 386：**必须在 import gradio 之前**清洗代理环境变量——httpx 在导入时解析
+# NO_PROXY，遇到 `[::1]` 这种方括号 IPv6 写法会直接抛 InvalidURL，
+# 结果是界面根本起不来（用户环境里存在这种写法时同样会中招）。
+import utils.net_env  # noqa: F401,E402  （导入即执行清洗）
+
 import gradio as gr
 
 import config
