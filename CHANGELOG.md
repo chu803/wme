@@ -56,7 +56,13 @@
 
 ## [1.0.10] - 2026-11-06
 
-> **发布记录**：待发布后回填（tag `v1.0.10`）。
+> **发布记录（2026-11-06）**：已上架 PyPI（`wme-watermark-eraser==1.0.10`，
+> 上传时间 2026-11-06T12:58:33Z）。发布链：tag `v1.0.10` → `163d68f` → Publish 全 13 步 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）；
+> CI 在 `163d68f` 全绿。PyPI 侧实测：`requires_dist` 15 条、wheel + sdist 均在；
+> **发布物**跑安装态自检 rc=0（布局对 + 启动冒烟响应 HTTP 200）。
+> 本版把"承诺类能不能擦干净"从描述变成红线：真实标注角标图上检出 90%、**完全擦净 80%**
+> （改前 62%），并接入 `--gates` 的 `corner_removal_gate`。
 
 ### 新增（阶段 385 · 承诺能力「角标 LOGO」在真实图上到底擦掉了多少）
 
