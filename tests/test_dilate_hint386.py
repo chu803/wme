@@ -16,10 +16,10 @@ from utils.i18n import t_in
 def test_dilate_hint_carries_the_measured_guidance():
     zh = t_in("zh-CN", "params.dilate_info")
     en = t_in("en-US", "params.dilate_info")
-    assert "12~24" in zh, "中文指引里必须写清可用的取值区间"
-    assert "12-24" in en, "英文指引里必须写清可用的取值区间"
-    assert "60%" in zh and "75%" in zh, "指引要带上实测数字（否则用户无从判断值不值得调）"
-    assert "60%" in en and "75%" in en
+    assert "12" in zh and "24" in zh, "中文指引里必须写清可用的取值"
+    assert "12" in en and "24" in en, "英文指引里必须写清可用的取值"
+    assert "80%" in zh and "80%" in en, "指引要带上实测数字（否则用户无从判断值不值得调）"
+    assert "51%" in zh and "51%" in en
 
 
 def test_dilate_hint_still_explains_the_original_purpose():

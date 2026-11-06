@@ -150,11 +150,28 @@ def _bbox_of(entry: dict):
     return None
 
 
+def _pick_preset(img: np.ndarray, mode: str):
+    """返回 (要用的预设, 路由信息)。
+
+    · `ai_logo`：强制角标预设（量的是"角标这条路本身能擦多少"）。
+    · `auto`   ：走**推荐器**（用户界面"通用检测/智能推荐"的真实路径），
+                  顺带记录这张图被推荐到了哪个预设 ⇒ 能看出"默认路径"的表现。
+    """
+    if mode == "ai_logo":
+        return "ai_logo", None
+    from core.preset_recommender import recommend_preset
+
+    rec = recommend_preset(img)
+    return rec.preset, {"confidence": round(float(rec.confidence), 3),
+                        "triggered": list(rec.triggered or [])}
+
+
 def run(limit: int | None = None, dilate: int = 0, feather: int = 5,
-        denoise: int = 3, strength: float = 1.0) -> dict:
+        denoise: int = 3, strength: float = 1.0, preset_mode: str = "ai_logo") -> dict:
     import cv2
     from core.detector import detect_watermark_mask
     from core.inpainter import inpaint
+    from services.auto_pipeline import _apply_preset_dilate_floor
 
     gt = json.load(open(GT_PATH, encoding="utf-8"))
     by_id = {e.get("image_id"): e for e in gt.get("entries", []) if e.get("image_id")}
@@ -175,12 +192,15 @@ def run(limit: int | None = None, dilate: int = 0, feather: int = 5,
         gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
         ncc_before = _corner_ncc_raw(gray)
 
+        preset_used, routing = _pick_preset(img, preset_mode)
         t0 = time.time()
         try:
-            det = detect_watermark_mask(img, preset="ai_logo")
+            det = detect_watermark_mask(img, preset=preset_used)
             mask = det.mask
+            # 与生产管线同一套"按预设的膨胀下限"（阶段 388），否则探针量不到产品真实行为。
+            dilate_used = _apply_preset_dilate_floor(preset_used, dilate)
             repaired = inpaint(img, mask, engine="auto", strength=strength,
-                               dilate=dilate, feather=feather, threshold=127,
+                               dilate=dilate_used, feather=feather, threshold=127,
                                denoise=denoise)
         except Exception as exc:  # noqa: BLE001
             rows.append({"image": name, "error": f"{type(exc).__name__}: {exc}"})
@@ -195,10 +215,13 @@ def run(limit: int | None = None, dilate: int = 0, feather: int = 5,
 
         rows.append({
             "image": name,
+            "preset_used": preset_used,
+            "routing": routing,
             "ncc_before": round(ncc_before, 4),
             "ncc_after": round(ncc_after, 4),
             "detected": detected,
             "erased": bool(ncc_after < _ncc_erased_threshold()),
+            "dilate_used": dilate_used,
             "outside_change_ratio": round(out_ratio, 5),
             "inside_change_ratio": round(in_ratio, 5),
             "seconds": round(time.time() - t0, 2),
@@ -207,9 +230,11 @@ def run(limit: int | None = None, dilate: int = 0, feather: int = 5,
             break
 
     ok = [r for r in rows if "error" not in r]
+    import collections
     summary = {
         "params": {"dilate": dilate, "feather": feather, "denoise": denoise,
-                   "strength": strength},
+                   "strength": strength, "preset_mode": preset_mode},
+        "preset_distribution": dict(collections.Counter(r["preset_used"] for r in ok)),
         "measured_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
         "n_images": len(ok),
         "n_errors": len(rows) - len(ok),
@@ -242,6 +267,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--feather", type=int, default=5, help="边缘羽化")
     parser.add_argument("--denoise", type=int, default=3, help="降噪强度")
     parser.add_argument("--strength", type=float, default=1.0, help="修复力度")
+    parser.add_argument("--preset", choices=("ai_logo", "auto"), default="ai_logo",
+                        help="ai_logo=强制角标预设；auto=走推荐器（用户默认路径）")
     args = parser.parse_args(argv)
 
     reason = _skip_reason()
@@ -250,7 +277,8 @@ def main(argv: list[str] | None = None) -> int:
         return 2
 
     summary = run(limit=args.limit, dilate=args.dilate, feather=args.feather,
-                  denoise=args.denoise, strength=args.strength)
+                  denoise=args.denoise, strength=args.strength,
+                  preset_mode=args.preset)
     with open(args.out, "w", encoding="utf-8") as fh:
         json.dump(summary, fh, ensure_ascii=False, indent=2)
 
