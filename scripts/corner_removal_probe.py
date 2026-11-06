@@ -40,6 +40,8 @@ if _ROOT not in sys.path:
 IMAGES_DIR = os.path.join(_ROOT, "benchmark_real", "images")
 GT_PATH = os.path.join(_ROOT, "benchmark_real", "ground_truth.json")
 OUT_PATH = os.path.join(_ROOT, "benchmark_real", "corner_removal_baseline.json")
+#: 用户默认路径（走推荐器）的基线，与"强制角标预设"的基线分开存，避免互相覆盖。
+OUT_PATH_AUTO = os.path.join(_ROOT, "benchmark_real", "corner_removal_auto_baseline.json")
 
 #: "角标已擦净"的判据 = **低于路由用的同一个 NCC 阈值**（读 config，避免与推荐器漂移）。
 #: 含义：修复后该角落**不再**像角标模板了（路由器不会再把它当角标）。
@@ -259,17 +261,40 @@ def run(limit: int | None = None, dilate: int = 0, feather: int = 5,
     return summary
 
 
+def judge(summary: dict) -> list[str]:
+    """按 config 的三条红线判定（纯函数，便于单测做反例）。"""
+    import config
+
+    problems: list[str] = []
+    detected = float(summary.get("detected_rate", 0.0))
+    erased = float(summary.get("erased_rate_given_detected", 0.0))
+    outside = float(summary.get("median_outside_change_ratio", 0.0))
+    if detected < config.CORNER_REMOVAL_MIN_DETECTED_RATE:
+        problems.append(f"检出率 {detected:.1%} < 红线 {config.CORNER_REMOVAL_MIN_DETECTED_RATE:.0%}")
+    if erased < config.CORNER_REMOVAL_MIN_ERASED_RATE:
+        problems.append(f"完全擦净率（已检出）{erased:.1%} < 红线 {config.CORNER_REMOVAL_MIN_ERASED_RATE:.0%}")
+    if outside > config.CORNER_REMOVAL_MAX_OUTSIDE_RATIO:
+        problems.append(f"框外变化中位数 {outside:.3%} > 红线 {config.CORNER_REMOVAL_MAX_OUTSIDE_RATIO:.0%}")
+    return problems
+
+
 def main(argv: list[str] | None = None) -> int:
     parser = argparse.ArgumentParser(description="角标 LOGO 真实图擦除效果实测")
     parser.add_argument("--limit", type=int, default=None, help="只跑前 N 张（调试用）")
-    parser.add_argument("--out", default=OUT_PATH, help="结果 JSON 路径")
+    parser.add_argument("--out", default=None,
+                        help="结果 JSON 路径（缺省按预设模式选：auto → 自动路径基线）")
     parser.add_argument("--dilate", type=int, default=0, help="掩码膨胀（像素）")
     parser.add_argument("--feather", type=int, default=5, help="边缘羽化")
     parser.add_argument("--denoise", type=int, default=3, help="降噪强度")
     parser.add_argument("--strength", type=float, default=1.0, help="修复力度")
     parser.add_argument("--preset", choices=("ai_logo", "auto"), default="ai_logo",
                         help="ai_logo=强制角标预设；auto=走推荐器（用户默认路径）")
+    parser.add_argument("--gate", action="store_true",
+                        help="门禁模式：按 config 的三条红线判定（0 通过 / 1 踩线 / 2 缺资产）")
     args = parser.parse_args(argv)
+
+    if args.out is None:
+        args.out = (OUT_PATH_AUTO if args.preset == "auto" else OUT_PATH)
 
     reason = _skip_reason()
     if reason:
@@ -279,6 +304,16 @@ def main(argv: list[str] | None = None) -> int:
     summary = run(limit=args.limit, dilate=args.dilate, feather=args.feather,
                   denoise=args.denoise, strength=args.strength,
                   preset_mode=args.preset)
+    if args.gate:
+        problems = judge(summary)
+        if problems:
+            print("[FAIL] 角标 LOGO 真实图擦除效果踩线：")
+            for item in problems:
+                print(f"  · {item}")
+            return 1
+        print(f"[OK] 角标 LOGO 真实图擦除效果通过：检出 {summary['detected_rate']:.1%}、"
+              f"完全擦净 {summary['erased_rate_given_detected']:.1%}、"
+              f"框外变化 {summary['median_outside_change_ratio']:.3%}")
     with open(args.out, "w", encoding="utf-8") as fh:
         json.dump(summary, fh, ensure_ascii=False, indent=2)
 

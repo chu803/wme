@@ -212,6 +212,9 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     # （51 张、分钟级），并写基线 JSON；不属于运行时模块自检的语义范围。
     # 判据正确性由 tests/test_corner_removal_probe385.py 覆盖。
     "scripts/corner_removal_probe.py": "S 角标真实图擦除效果探针（跑真实图检测+修复，分钟级）",
+    # 阶段 389：同一脚本的 --gate 模式是**门禁**（被 run_all_checks --gates 调用），
+    # 但作为模块自检跑它要几分钟 ⇒ 仍归 S 类豁免。
+
 }
 
 

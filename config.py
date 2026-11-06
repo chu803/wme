@@ -725,6 +725,14 @@ MASK_DILATE_STEP: Final[int] = 1
 #   设为 0 即回到旧行为；手动掩码（用户自己画的）不受此下限影响。
 MASK_DILATE_MIN_AI_LOGO: Final[int] = _env_int("MASK_DILATE_MIN_AI_LOGO", 12, 0, 100)
 
+# ---------- 承诺类（角标 LOGO）真实图「端到端擦除效果」红线（阶段 389）----------
+#   阶段 385/388 在真实标注角标图上量到：检出 86.3%、完全擦净 78.4%（默认路径 78%），
+#   框外变化中位数 1.30%。这三条线把"承诺类不许悄悄退化"变成**可拦截**的门禁。
+#   阈值留了余量：OCR 在不在会改变掩码（两个环境实测都通过）。
+CORNER_REMOVAL_MIN_DETECTED_RATE: Final[float] = 0.75
+CORNER_REMOVAL_MIN_ERASED_RATE: Final[float] = 0.65
+CORNER_REMOVAL_MAX_OUTSIDE_RATIO: Final[float] = 0.03
+
 # ---------- 6.4 边缘平滑（羽化）----------
 # 【边缘羽化默认值】单位：像素，必须是奇数（高斯核要求）。
 #   让「修复区」与「原图区」的接缝处平滑过渡，避免出现生硬的方块边框。
