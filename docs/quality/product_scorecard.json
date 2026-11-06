@@ -1,6 +1,6 @@
 {
   "project": "AI 智能水印擦除工作台 (AI Watermark Eraser Workbench)",
-  "version": "1.0.10",
+  "version": "1.0.11",
   "assessed_at": "2026-10-25",
   "assessment_stage": 326,
   "purpose": "自我质检记分卡（机器可读）。供每个阶段后刷新，量化「向龙头迈进」的进度。本版为对 116 版（2026-09-25）的刷新，并修复阶段 205 历史重写导致的 .gitignore 外壳回归。",

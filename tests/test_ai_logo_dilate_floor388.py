@@ -17,9 +17,10 @@ from services.auto_pipeline import _apply_preset_dilate_floor
 
 
 def test_floor_applies_only_to_ai_logo():
-    assert _apply_preset_dilate_floor("ai_logo", 0) == 12
-    assert _apply_preset_dilate_floor("ai_logo", 5) == 12
-    assert _apply_preset_dilate_floor("ai_logo", 30) == 30, "用户显式调大时不得被压回去"
+    floor = config.MASK_DILATE_MIN_AI_LOGO
+    assert _apply_preset_dilate_floor("ai_logo", 0) == floor
+    assert _apply_preset_dilate_floor("ai_logo", 5) == floor
+    assert _apply_preset_dilate_floor("ai_logo", 40) == 40, "用户显式调大时不得被压回去"
     for other in ("ai_grid", "ai_text_heavy", "ai_faint_tiled", "ai_gradient", "ai_multi", None):
         assert _apply_preset_dilate_floor(other, 0) == 0, f"{other} 不该被加下限"
 
@@ -30,8 +31,9 @@ def test_floor_can_be_disabled(monkeypatch):
 
 
 def test_config_default_and_env_switch():
-    assert config.MASK_DILATE_MIN_AI_LOGO == 12
-    assert config._env_int("MASK_DILATE_MIN_AI_LOGO", 12, 0, 100) == 12
+    # 默认值由真实图扫参决定（阶段 390：12/24/36 px ⇒ 擦净 80.0%/84.4%/88.9%）
+    assert config.MASK_DILATE_MIN_AI_LOGO == 24
+    assert config._env_int("MASK_DILATE_MIN_AI_LOGO", 24, 0, 100) == 24
 
 
 def test_global_default_is_untouched():
