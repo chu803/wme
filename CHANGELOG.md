@@ -78,6 +78,19 @@
   （指引必须含区间与数字、原有用途说明不能被替换掉）。
 - 本轮只改文案与守卫，**不动任何默认参数**。
 
+### 修复（阶段 387 · NO_PROXY 的方括号 IPv6 写法让 httpx 导入期崩溃）
+
+- 症状：全量入口里 44 个模块在**收集阶段**报 `httpx.InvalidURL: Invalid port: ':1]'`。
+- 根因：环境里的 `NO_PROXY=…,[::1],::1`，httpx 在导入时解析它，方括号 IPv6 被当成
+  `host:port` ⇒ 抛异常。**这同样是用户风险**：用户环境里有这种写法时 Gradio 导入即炸，
+  界面起不来。
+- 修法：新增 `utils/net_env.py` 在导入期清洗 `NO_PROXY`（去掉方括号写法），
+  并保证在 `import gradio` **之前**生效（`ui/app.py` 与 `conftest.py`）；
+  新增 4 条守卫（清洗行为 + AST 导入顺序核对）。
+- 踩坑：Windows 上 `os.environ` 键名大小写不敏感，`NO_PROXY`/`no_proxy` 是同一个键 ⇒
+  只能按"实际存在的那个键"处理。
+- 验证：全量入口 `rc=0`（3470 passed / 39 skipped / 6 deselected，586.3s）。
+
 （下一版本待记）
 
 ## [1.0.9] - 2026-11-05

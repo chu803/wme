@@ -1605,6 +1605,18 @@ Gradio 6.x 的匿名统计默认开启（`gradio/analytics.py:46` 缺省为 True
 
 - `386-把实测杠杆放进界面指引.md`
 
+### 387 · NO_PROXY 的方括号 IPv6 写法让 httpx 在导入期崩溃（2026-11-06）
+
+全量入口里 44 个模块在**收集阶段**报 `httpx.InvalidURL: Invalid port: ':1]'`。
+根因：环境里的 `NO_PROXY=…,[::1],::1` 被 httpx 在导入时解析，方括号 IPv6 被当成
+`host:port`。**这同样是用户风险**——用户环境里有这种写法时 Gradio 导入即炸、界面起不来。
+修法：`utils/net_env.py` 导入期清洗 `NO_PROXY`（去方括号），并保证在 `import gradio`
+**之前**生效（`ui/app.py`、`conftest.py`）；4 条守卫（清洗行为 + AST 导入顺序）。
+踩坑：Windows 上 `os.environ` 键名大小写不敏感，`NO_PROXY`/`no_proxy` 是同一个键。
+验证：全量入口 `rc=0`（3470 passed / 39 skipped / 6 deselected，586.3s）。
+
+- `387-NO_PROXY方括号写法导致导入期崩溃.md`
+
 
 ### 336 · 批跑结束后按「取消」会谎称「已发送取消信号」（2026-10-26）
 
