@@ -749,6 +749,19 @@ CLEAN_FP_MEDIAN_CHANGE_RATIO: Final[float] = _env_float("CLEAN_FP_MEDIAN_CHANGE_
 #   **0.0000%** ⇒ 缺口注销，不再排除于红线（否则等于把已修好的问题藏起来）。
 CLEAN_FP_KNOWN_GAP_IMAGES: Final[frozenset] = frozenset()
 
+# ---------- 角标几何覆盖率红线（阶段 398）----------
+#   承诺类（角标 LOGO）的擦净率对**角标长什么样**敏感：现役判据认的是"白底板 + 小字"
+#   （豆包系 174x59@1024² 那种），板更大、字更大的几何会漏（阶段 395/396/398 实测）。
+#   这条红线把「几何覆盖率」变成**可跟踪的数字**：挑战集 4 种几何（右下小板 / 左下小板 /
+#   半透明板 / 无底板纯文字），检出率与完全擦净率各有一条下限。
+#   挑战集由 scripts/build_challenge_set.py 从干净图集**确定性生成**（不入库）。
+CORNER_GEOMETRY_MIN_DETECTED: Final[float] = _env_float(
+    "CORNER_GEOMETRY_MIN_DETECTED", 1.0, 0.0, 1.0
+)
+CORNER_GEOMETRY_MIN_ERASED: Final[float] = _env_float(
+    "CORNER_GEOMETRY_MIN_ERASED", 0.5, 0.0, 1.0
+)
+
 # ---------- 6.4 边缘平滑（羽化）----------
 # 【边缘羽化默认值】单位：像素，必须是奇数（高斯核要求）。
 #   让「修复区」与「原图区」的接缝处平滑过渡，避免出现生硬的方块边框。

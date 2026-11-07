@@ -209,6 +209,11 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
             Step("clean_fp_gate",
                  [sys.executable, os.path.join(root, "scripts", "clean_fp_probe.py"), "--gate"],
                  note="干净图误伤门禁（单张/中位改动面积两条红线；已知缺口显式列出；约 2 分钟）"),
+            # 阶段 398：角标**几何**覆盖率红线——承诺类的擦净率对"角标长什么样"敏感，
+            # 这道门禁把"几何覆盖"变成可跟踪的数字（挑战集由脚本确定性生成，不入库）。
+            Step("corner_geometry_gate",
+                 [sys.executable, os.path.join(root, "scripts", "challenge_probe.py"), "--gate"],
+                 note="角标几何覆盖门禁（4 种角标几何的检出/完全擦净两条红线；约 2 分钟）"),
             # 阶段 322b 建的 `corner_signal_gate` **不在这里重复**（阶段 325 起它是默认步骤，
             # `--gates` 会连默认一起跑 ⇒ 写两遍就是跑两遍）。
         ]

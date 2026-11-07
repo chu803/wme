@@ -37,8 +37,18 @@ from services.auto_pipeline import _apply_preset_dilate_floor  # noqa: E402
 
 BASE = ROOT / "benchmark_real" / "challenge"
 IMAGES = BASE / "images"
-MANIFEST = json.loads((BASE / "manifest.json").read_text(encoding="utf-8"))
 OUT_REPORT = ROOT / "benchmark_real" / "challenge_report.json"
+
+
+def ensure_set() -> list:
+    """挑战集**确定性生成**（不入库）：缺图就现生成，保证门禁在干净 checkout 上也能跑。"""
+    manifest_path = BASE / "manifest.json"
+    if manifest_path.exists() and IMAGES.exists() and any(IMAGES.glob("*.png")):
+        return json.loads(manifest_path.read_text(encoding="utf-8"))
+    import build_challenge_set
+
+    build_challenge_set.main()
+    return json.loads(manifest_path.read_text(encoding="utf-8"))
 
 
 def _read(path: pathlib.Path):
@@ -115,9 +125,35 @@ def measure(entry: dict) -> dict:
     return row
 
 
-def main() -> None:
+def judge(summary: dict) -> list[str]:
+    """按 config 红线判定（返回踩线原因列表，空 = 通过）。"""
+    import config
+
+    problems: list[str] = []
+    n = int(summary.get("n_logo", 0))
+    if n == 0:
+        return ["没有带角标的挑战样本（挑战集缺失或生成失败）"]
+    if summary["detected_rate"] < config.CORNER_GEOMETRY_MIN_DETECTED:
+        problems.append(
+            f"角标几何检出率 {summary['detected_rate']:.0%} < 下限 "
+            f"{config.CORNER_GEOMETRY_MIN_DETECTED:.0%}")
+    if summary["erased_rate"] < config.CORNER_GEOMETRY_MIN_ERASED:
+        problems.append(
+            f"角标几何完全擦净率 {summary['erased_rate']:.0%} < 下限 "
+            f"{config.CORNER_GEOMETRY_MIN_ERASED:.0%}")
+    return problems
+
+
+def main(argv: list[str] | None = None) -> int:
+    import argparse
+
+    ap = argparse.ArgumentParser(description="角标几何挑战集探针")
+    ap.add_argument("--gate", action="store_true", help="按 config 红线判定（0 通过 / 1 踩线 / 2 缺资产）")
+    args = ap.parse_args(argv)
+
+    manifest = ensure_set()
     rows = []
-    for entry in MANIFEST:
+    for entry in manifest:
         try:
             rows.append(measure(entry))
         except Exception as exc:  # noqa: BLE001
@@ -136,6 +172,11 @@ def main() -> None:
 
     b = [r for r in rows if r.get("group") == "B" and "error" not in r]
     ac = [r for r in rows if r.get("group") in ("A", "C") and "error" not in r]
+    summary = {
+        "n_logo": len(b),
+        "detected_rate": (sum(1 for r in b if r["detected"]) / len(b)) if b else 0.0,
+        "erased_rate": (sum(1 for r in b if r["erased"]) / len(b)) if b else 0.0,
+    }
     if b:
         print(f"\nB 组（带角标）：检出 {sum(1 for r in b if r['detected'])}/{len(b)}，"
               f"擦净 {sum(1 for r in b if r['erased'])}/{len(b)}")
@@ -145,6 +186,19 @@ def main() -> None:
               f"最大 {max(vals):.4%}，被改动的张数 {sum(1 for v in vals if v > 0.0005)}/{len(vals)}")
     print("报告:", OUT_REPORT)
 
+    if not args.gate:
+        return 0
+    problems = judge(summary)
+    if not summary["n_logo"]:
+        return 2
+    if problems:
+        print("[FAIL] 角标几何覆盖踩线：")
+        for p in problems:
+            print("  -", p)
+        return 1
+    print("[OK] 角标几何覆盖在红线内")
+    return 0
+
 
 if __name__ == "__main__":
-    main()
+    raise SystemExit(main())
