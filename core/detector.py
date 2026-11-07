@@ -2801,6 +2801,18 @@ def _ai_logo_plate_signal(rgb: np.ndarray) -> float:
     return float(_corner_watermark_signal(gray))
 
 
+def _box_overlap_ratio(a: Tuple[int, int, int, int], b: Tuple[int, int, int, int]) -> float:
+    """两个框的交集面积 ÷ 较小框面积。"""
+    ax, ay, aw, ah = a
+    bx, by, bw, bh = b
+    x0, y0 = max(ax, bx), max(ay, by)
+    x1, y1 = min(ax + aw, bx + bw), min(ay + ah, by + bh)
+    if x1 <= x0 or y1 <= y0:
+        return 0.0
+    inter = float((x1 - x0) * (y1 - y0))
+    return inter / float(min(aw * ah, bw * bh))
+
+
 def detect_watermark_mask(
     image: np.ndarray,
     *,
@@ -3463,26 +3475,51 @@ def detect_watermark_mask(
         except Exception as exc:
             log.warning("碎片聚合失败，按未聚合结果继续：%s", exc)
 
-    # ---------- 阶段 392：角标 LOGO 的「板块整块填充」 ----------
+    # ---------- 阶段 392/396：角标 LOGO 的「板块整块填充」 ----------
     # 实测（真实标注角标图）：检测器给出的掩码只盖住板块的 5%~14%（半透明板块
-    # 只被咬住实心笔画）⇒ 修复后仍有明显残留；而按**规范化足迹**（340x128 @2048²，
-    # 随短边缩放、贴右下角）填一块实心，擦净率反而更高（83.7% → 93.0%）、
-    # 框外足迹更低（1.75% → 0.37%）。
-    # 触发条件：本次实际使用的预设为 ai_logo（承诺类）**且**角标模板信号命中
-    # （与角标信号门禁同一判据，自然图上 0 误命中 ⇒ 不会无故擦掉右下角）。
-    _eff_preset = (effective_preset or preset or "").lower()
-    if _eff_preset == "ai_logo" and config.DETECT_AI_LOGO_PLATE_FILL:
+    # 只被咬住实心笔画）⇒ 修复后仍有明显残留；而按**板块足迹**填一块实心，擦净率反而更高
+    # （83.7% → 93.0%）、框外足迹更低（1.75% → 0.37%）。
+    #
+    # 阶段 396（#42 几何泛化）：**足迹自适应**——填哪里由"检测器已经给出的角标板块区域"
+    # 决定（它的框在左下角板/半透明板上与真实板重叠 100%），不再只认写死的
+    # 340x128 贴右下角。两点纪律：
+    #   · **不新增区域**：只把已有 corner_logo 区域的框填实心 ⇒ 阶段 179 的
+    #     「补全板块」杠杆（`DETECT_PLATE_COMPLETE_FROM_SIGNAL`）语义不变，
+    #     关掉它就真的没有补全；
+    #   · **不越预设边界**：板块属角标类，只有该预设/策略真的产出了角标区域时才填
+    #     （ai_gradient 这类"整图"预设的角落本就不该开火，红线不许被踩）。
+    # 宁可漏检不可滥杀：没检测到板、信号也没命中 ⇒ 一个像素都不动。
+    if config.DETECT_AI_LOGO_PLATE_FILL:
         try:
-            # 角标信号没命中 ⇒ 这个角本来就没有角标，不许擦（宁可漏检不可滥杀）。
-            if _ai_logo_plate_signal(rgb) > 0.0:
-                _px, _py, _pw, _ph = _ai_logo_plate_box(h, w)
+            _fill_boxes: List[Tuple[int, int, int, int]] = []
+            _add_regions: List[DetectionRegion] = []
+            # ① 自适应：检测器**已给出**的角标板块区域 → 按它的框填实心（不新增区域）。
+            for _r in all_regions:
+                if _r.kind == KIND_CORNER_LOGO and _r.w > 0 and _r.h > 0:
+                    _fill_boxes.append((int(_r.x), int(_r.y), int(_r.w), int(_r.h)))
+            # ② 兜底：豆包模板信号命中时的规范化足迹（沿用阶段 392 行为，仅 ai_logo 预设）。
+            _eff_preset = (effective_preset or preset or "").lower()
+            if _eff_preset == "ai_logo" and _ai_logo_plate_signal(rgb) > 0.0:
+                _fixed = _ai_logo_plate_box(h, w)
+                if not any(_box_overlap_ratio(_fixed, _e) > 0.8 for _e in _fill_boxes):
+                    _fill_boxes.append(_fixed)
+                    _add_regions.append(DetectionRegion(
+                        x=_fixed[0], y=_fixed[1], w=_fixed[2], h=_fixed[3],
+                        kind=KIND_CORNER_LOGO, confidence=0.6,
+                    ))
+            for (_px, _py, _pw, _ph) in _fill_boxes:
+                _px, _py = max(0, int(_px)), max(0, int(_py))
+                _pw, _ph = int(_pw), int(_ph)
+                if _pw <= 0 or _ph <= 0:
+                    continue
+                _pw = min(_pw, w - _px)
+                _ph = min(_ph, h - _py)
+                if _pw <= 0 or _ph <= 0:
+                    continue
                 mask[_py:_py + _ph, _px:_px + _pw] = 255
-                all_regions.append(DetectionRegion(
-                    x=_px, y=_py, w=_pw, h=_ph,
-                    kind=KIND_CORNER_LOGO, confidence=0.6,
-                ))
-                log.info("角标 LOGO：已按规范化足迹补实心板块（%dx%d @ (%d,%d)）。",
+                log.info("角标 LOGO：已按板块足迹补实心板块（%dx%d @ (%d,%d)）。",
                          _pw, _ph, _px, _py)
+            all_regions.extend(_add_regions)
         except Exception as exc:  # noqa: BLE001
             log.warning("角标板块整块填充失败，按原掩码继续：%s", exc)
 
