@@ -9,68 +9,68 @@
   "preset_distribution": {
     "ai_logo": 51
   },
-  "measured_at": "2026-11-06T13:23:08Z",
+  "measured_at": "2026-11-07T04:55:29Z",
   "n_images": 51,
   "n_errors": 1,
-  "detected_rate": 0.8627,
-  "erased_rate": 0.8235,
-  "erased_rate_given_detected": 0.8409,
+  "detected_rate": 0.902,
+  "erased_rate": 0.9804,
+  "erased_rate_given_detected": 0.9783,
   "median_ncc_before": 0.821,
-  "median_ncc_after": 0.1641,
-  "median_outside_change_ratio": 0.02113,
-  "median_inside_change_ratio": 0.68576,
+  "median_ncc_after": 0.1635,
+  "median_outside_change_ratio": 0.02476,
+  "median_inside_change_ratio": 0.81891,
   "rows": [
     {
       "image": "1.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 1.0,
-      "ncc_after": 0.1313,
+      "ncc_after": 0.0759,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00167,
-      "inside_change_ratio": 0.37918,
-      "seconds": 3.03
+      "outside_change_ratio": 0.00176,
+      "inside_change_ratio": 0.4926,
+      "seconds": 2.62
     },
     {
       "image": "2.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9658,
-      "ncc_after": 0.8023,
+      "ncc_after": 0.1621,
       "detected": true,
-      "erased": false,
+      "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.0,
-      "inside_change_ratio": 0.10836,
-      "seconds": 2.25
+      "outside_change_ratio": 2e-05,
+      "inside_change_ratio": 0.37282,
+      "seconds": 2.29
     },
     {
       "image": "3.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.8285,
-      "ncc_after": 0.6406,
+      "ncc_after": 0.1757,
       "detected": true,
-      "erased": false,
+      "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.03584,
-      "inside_change_ratio": 0.10535,
-      "seconds": 3.41
+      "outside_change_ratio": 0.03757,
+      "inside_change_ratio": 0.394,
+      "seconds": 3.16
     },
     {
       "image": "4.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9999,
-      "ncc_after": 0.7123,
+      "ncc_after": 0.2063,
       "detected": true,
-      "erased": false,
+      "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.07417,
-      "inside_change_ratio": 0.13539,
-      "seconds": 3.42
+      "outside_change_ratio": 0.07421,
+      "inside_change_ratio": 0.34536,
+      "seconds": 3.01
     },
     {
       "image": "a1.png",
@@ -83,7 +83,7 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.00157,
       "inside_change_ratio": 0.0,
-      "seconds": 2.54
+      "seconds": 2.18
     },
     {
       "image": "a2.png",
@@ -96,7 +96,7 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.00362,
       "inside_change_ratio": 0.43318,
-      "seconds": 2.84
+      "seconds": 2.79
     },
     {
       "image": "a3.png",
@@ -109,7 +109,7 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.00146,
       "inside_change_ratio": 0.0,
-      "seconds": 2.81
+      "seconds": 2.14
     },
     {
       "image": "a4.png",
@@ -120,13 +120,13 @@
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9999,
-      "ncc_after": 0.197,
+      "ncc_after": 0.1868,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00521,
-      "inside_change_ratio": 0.82148,
-      "seconds": 2.75
+      "outside_change_ratio": 0.00605,
+      "inside_change_ratio": 0.89789,
+      "seconds": 2.69
     },
     {
       "image": "ai_logo_03_white_coffee_cup.jpg",
@@ -139,7 +139,7 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.04133,
       "inside_change_ratio": 0.86574,
-      "seconds": 3.73
+      "seconds": 2.84
     },
     {
       "image": "ai_logo_04_neon_street_night.jpg",
@@ -152,33 +152,33 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.06753,
       "inside_change_ratio": 0.87622,
-      "seconds": 4.28
+      "seconds": 3.39
     },
     {
       "image": "ai_logo_05_fruit_platter.jpg",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9999,
-      "ncc_after": 0.3135,
+      "ncc_after": 0.2953,
       "detected": true,
-      "erased": false,
+      "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00739,
-      "inside_change_ratio": 0.84288,
-      "seconds": 3.25
+      "outside_change_ratio": 0.00947,
+      "inside_change_ratio": 0.94272,
+      "seconds": 2.83
     },
     {
       "image": "ai_logo_06_flower_field_portrait.jpg",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.3274,
-      "ncc_after": 0.1156,
+      "ncc_after": 0.1349,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.01165,
-      "inside_change_ratio": 0.90163,
-      "seconds": 2.59
+      "outside_change_ratio": 0.01455,
+      "inside_change_ratio": 0.96827,
+      "seconds": 2.64
     },
     {
       "image": "ai_logo_07_glass_curtain_building.jpg",
@@ -191,33 +191,33 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.13204,
       "inside_change_ratio": 0.36103,
-      "seconds": 4.77
+      "seconds": 4.1
     },
     {
       "image": "ai_logo_08_abstract_fluid.jpg",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.345,
-      "ncc_after": 0.3482,
-      "detected": false,
-      "erased": false,
+      "ncc_after": 0.0544,
+      "detected": true,
+      "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.02113,
-      "inside_change_ratio": 0.00257,
-      "seconds": 3.13
+      "outside_change_ratio": 0.02476,
+      "inside_change_ratio": 0.83624,
+      "seconds": 2.66
     },
     {
       "image": "ai_logo_09_vintage_typewriter.jpg",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 1.0,
-      "ncc_after": 0.3426,
+      "ncc_after": 0.2234,
       "detected": true,
-      "erased": false,
+      "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.15193,
-      "inside_change_ratio": 0.58964,
-      "seconds": 5.09
+      "outside_change_ratio": 0.15671,
+      "inside_change_ratio": 0.81466,
+      "seconds": 4.38
     },
     {
       "image": "ai_logo_10_lavender_hot_air_balloon.jpg",
@@ -230,20 +230,20 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.0395,
       "inside_change_ratio": 0.92387,
-      "seconds": 3.81
+      "seconds": 3.34
     },
     {
       "image": "ai_logo_test_01_orange_cat.jpg",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.4597,
-      "ncc_after": 0.1999,
+      "ncc_after": 0.1803,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00041,
-      "inside_change_ratio": 0.73844,
-      "seconds": 3.34
+      "outside_change_ratio": 0.00096,
+      "inside_change_ratio": 0.81048,
+      "seconds": 2.67
     },
     {
       "image": "c1.png",
@@ -254,22 +254,22 @@
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.01723,
-      "inside_change_ratio": 0.87849,
-      "seconds": 2.93
+      "outside_change_ratio": 0.01862,
+      "inside_change_ratio": 0.89619,
+      "seconds": 2.86
     },
     {
       "image": "c10.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 1.0,
-      "ncc_after": 0.2787,
+      "ncc_after": 0.2579,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.01642,
-      "inside_change_ratio": 0.68576,
-      "seconds": 3.25
+      "outside_change_ratio": 0.01797,
+      "inside_change_ratio": 0.75382,
+      "seconds": 2.61
     },
     {
       "image": "c11.png",
@@ -280,22 +280,22 @@
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.02365,
-      "inside_change_ratio": 0.8169,
-      "seconds": 3.58
+      "outside_change_ratio": 0.02548,
+      "inside_change_ratio": 0.81891,
+      "seconds": 3.03
     },
     {
       "image": "c13.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.7492,
-      "ncc_after": 0.112,
+      "ncc_after": 0.1406,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.04784,
-      "inside_change_ratio": 0.80046,
-      "seconds": 3.44
+      "outside_change_ratio": 0.05068,
+      "inside_change_ratio": 0.86443,
+      "seconds": 2.95
     },
     {
       "image": "c14.png",
@@ -306,61 +306,61 @@
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.09507,
-      "inside_change_ratio": 0.70303,
-      "seconds": 3.97
+      "outside_change_ratio": 0.09701,
+      "inside_change_ratio": 0.79655,
+      "seconds": 3.49
     },
     {
       "image": "c15.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.4623,
-      "ncc_after": 0.1553,
+      "ncc_after": 0.1034,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.05035,
-      "inside_change_ratio": 0.42075,
-      "seconds": 3.44
+      "outside_change_ratio": 0.05085,
+      "inside_change_ratio": 0.52065,
+      "seconds": 3.11
     },
     {
       "image": "c2.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9999,
-      "ncc_after": 0.1669,
+      "ncc_after": 0.1649,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.02184,
-      "inside_change_ratio": 0.83095,
-      "seconds": 2.77
+      "outside_change_ratio": 0.02601,
+      "inside_change_ratio": 0.96739,
+      "seconds": 2.73
     },
     {
       "image": "c3.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9361,
-      "ncc_after": 0.0897,
+      "ncc_after": 0.0954,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.03364,
-      "inside_change_ratio": 0.67137,
-      "seconds": 3.24
+      "outside_change_ratio": 0.03787,
+      "inside_change_ratio": 0.85876,
+      "seconds": 2.8
     },
     {
       "image": "c4.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.6679,
-      "ncc_after": 0.1234,
+      "ncc_after": 0.1256,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.05569,
-      "inside_change_ratio": 0.66494,
-      "seconds": 3.93
+      "outside_change_ratio": 0.06077,
+      "inside_change_ratio": 0.91121,
+      "seconds": 3.27
     },
     {
       "image": "c5.png",
@@ -371,22 +371,22 @@
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.03865,
-      "inside_change_ratio": 0.9457,
-      "seconds": 3.52
+      "outside_change_ratio": 0.0405,
+      "inside_change_ratio": 0.94092,
+      "seconds": 3.04
     },
     {
       "image": "c6.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9856,
-      "ncc_after": 0.1378,
+      "ncc_after": 0.1491,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.02665,
-      "inside_change_ratio": 0.79039,
-      "seconds": 2.76
+      "outside_change_ratio": 0.02811,
+      "inside_change_ratio": 0.91298,
+      "seconds": 2.7
     },
     {
       "image": "c7.png",
@@ -397,35 +397,35 @@
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.02974,
-      "inside_change_ratio": 0.84292,
-      "seconds": 3.42
+      "outside_change_ratio": 0.02995,
+      "inside_change_ratio": 0.83957,
+      "seconds": 2.96
     },
     {
       "image": "c8.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.916,
-      "ncc_after": 0.1219,
+      "ncc_after": 0.1758,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00117,
-      "inside_change_ratio": 0.64748,
-      "seconds": 3.23
+      "outside_change_ratio": 0.00239,
+      "inside_change_ratio": 0.71681,
+      "seconds": 2.52
     },
     {
       "image": "c9.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.7927,
-      "ncc_after": 0.2148,
+      "ncc_after": 0.1842,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.01303,
-      "inside_change_ratio": 0.78454,
-      "seconds": 2.91
+      "outside_change_ratio": 0.01607,
+      "inside_change_ratio": 0.82553,
+      "seconds": 2.56
     },
     {
       "image": "q1.png",
@@ -438,7 +438,7 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.00312,
       "inside_change_ratio": 0.5975,
-      "seconds": 2.57
+      "seconds": 2.52
     },
     {
       "image": "q2.png",
@@ -451,7 +451,7 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.05124,
       "inside_change_ratio": 0.35254,
-      "seconds": 3.85
+      "seconds": 3.4
     },
     {
       "image": "q3.png",
@@ -464,7 +464,7 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.02762,
       "inside_change_ratio": 0.28586,
-      "seconds": 3.74
+      "seconds": 2.93
     },
     {
       "image": "q4.png",
@@ -477,7 +477,7 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.02409,
       "inside_change_ratio": 0.0,
-      "seconds": 3.41
+      "seconds": 2.86
     },
     {
       "image": "q5.png",
@@ -490,7 +490,7 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.09605,
       "inside_change_ratio": 0.0,
-      "seconds": 4.81
+      "seconds": 3.99
     },
     {
       "image": "q6.png",
@@ -503,59 +503,59 @@
       "dilate_used": 24,
       "outside_change_ratio": 0.00526,
       "inside_change_ratio": 0.0,
-      "seconds": 2.63
+      "seconds": 2.33
     },
     {
       "image": "s1.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 1.0,
-      "ncc_after": 1.0,
-      "detected": false,
+      "ncc_after": 0.7411,
+      "detected": true,
       "erased": false,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00059,
-      "inside_change_ratio": 0.0,
-      "seconds": 2.41
+      "outside_change_ratio": 0.00613,
+      "inside_change_ratio": 0.89738,
+      "seconds": 2.43
     },
     {
       "image": "s10.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.8429,
-      "ncc_after": 0.1402,
+      "ncc_after": 0.1603,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.01326,
-      "inside_change_ratio": 0.66101,
-      "seconds": 3.15
+      "outside_change_ratio": 0.01368,
+      "inside_change_ratio": 0.67831,
+      "seconds": 2.55
     },
     {
       "image": "s11.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.8114,
-      "ncc_after": 0.1108,
+      "ncc_after": 0.1286,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00906,
-      "inside_change_ratio": 0.76379,
-      "seconds": 3.01
+      "outside_change_ratio": 0.01255,
+      "inside_change_ratio": 0.79846,
+      "seconds": 2.53
     },
     {
       "image": "s12.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9893,
-      "ncc_after": 0.097,
+      "ncc_after": 0.1377,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.0021,
-      "inside_change_ratio": 0.68371,
-      "seconds": 2.53
+      "outside_change_ratio": 0.00376,
+      "inside_change_ratio": 0.73739,
+      "seconds": 2.52
     },
     {
       "image": "s13.png",
@@ -566,9 +566,9 @@
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00481,
-      "inside_change_ratio": 0.78473,
-      "seconds": 3.06
+      "outside_change_ratio": 0.00874,
+      "inside_change_ratio": 0.95345,
+      "seconds": 2.52
     },
     {
       "image": "s14.png",
@@ -579,21 +579,21 @@
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00268,
-      "inside_change_ratio": 0.76626,
-      "seconds": 3.04
+      "outside_change_ratio": 0.00563,
+      "inside_change_ratio": 0.87469,
+      "seconds": 2.45
     },
     {
       "image": "s2.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9849,
-      "ncc_after": 0.0843,
+      "ncc_after": 0.0605,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.0488,
-      "inside_change_ratio": 0.82074,
+      "outside_change_ratio": 0.05202,
+      "inside_change_ratio": 0.9226,
       "seconds": 3.0
     },
     {
@@ -601,26 +601,26 @@
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.4206,
-      "ncc_after": 0.5119,
+      "ncc_after": 0.1028,
       "detected": true,
-      "erased": false,
+      "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.02848,
-      "inside_change_ratio": 0.2676,
-      "seconds": 3.04
+      "outside_change_ratio": 0.02977,
+      "inside_change_ratio": 0.88077,
+      "seconds": 2.67
     },
     {
       "image": "s4.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.6419,
-      "ncc_after": 0.0846,
+      "ncc_after": 0.105,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.02712,
-      "inside_change_ratio": 0.84784,
-      "seconds": 3.49
+      "outside_change_ratio": 0.03225,
+      "inside_change_ratio": 0.96567,
+      "seconds": 2.79
     },
     {
       "image": "s5.png",
@@ -631,61 +631,61 @@
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.01639,
-      "inside_change_ratio": 0.83395,
-      "seconds": 3.18
+      "outside_change_ratio": 0.02178,
+      "inside_change_ratio": 0.98311,
+      "seconds": 2.87
     },
     {
       "image": "s6.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9944,
-      "ncc_after": 0.085,
+      "ncc_after": 0.1862,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.09185,
-      "inside_change_ratio": 0.71275,
-      "seconds": 3.86
+      "outside_change_ratio": 0.09255,
+      "inside_change_ratio": 0.80289,
+      "seconds": 3.32
     },
     {
       "image": "s7.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.8004,
-      "ncc_after": 0.5618,
+      "ncc_after": 0.1153,
       "detected": true,
-      "erased": false,
+      "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.00307,
-      "inside_change_ratio": 0.26112,
-      "seconds": 2.38
+      "outside_change_ratio": 0.00736,
+      "inside_change_ratio": 0.93214,
+      "seconds": 2.35
     },
     {
       "image": "s8.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9008,
-      "ncc_after": 0.1003,
+      "ncc_after": 0.1343,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.02078,
-      "inside_change_ratio": 0.84162,
-      "seconds": 3.13
+      "outside_change_ratio": 0.02481,
+      "inside_change_ratio": 0.97286,
+      "seconds": 2.7
     },
     {
       "image": "s9.png",
       "preset_used": "ai_logo",
       "routing": null,
       "ncc_before": 0.9611,
-      "ncc_after": 0.0962,
+      "ncc_after": 0.1681,
       "detected": true,
       "erased": true,
       "dilate_used": 24,
-      "outside_change_ratio": 0.01754,
-      "inside_change_ratio": 0.71057,
-      "seconds": 3.25
+      "outside_change_ratio": 0.01898,
+      "inside_change_ratio": 0.78586,
+      "seconds": 2.62
     }
   ]
 }

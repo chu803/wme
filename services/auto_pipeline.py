@@ -285,7 +285,8 @@ def process_image(
                 _dkw["enhance_tiled"] = enhance_tiled
             if search_bottom is not None:
                 _dkw["search_bottom"] = search_bottom
-        result = detect_watermark_mask(rgb, progress=_det, **_dkw)
+        # 阶段 392：把**实际使用的预设**告诉检测器（角标 LOGO 需要"板块整块填充"）。
+        result = detect_watermark_mask(rgb, progress=_det, effective_preset=effective_preset, **_dkw)
         mask = result.mask
         used_ocr = result.used_ocr
         regions = len(result.regions)

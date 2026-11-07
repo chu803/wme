@@ -1213,6 +1213,15 @@ DETECT_PLATE_COMPLETE_FROM_SIGNAL: Final[bool] = _env_bool(
     "DETECT_PLATE_COMPLETE_FROM_SIGNAL", True
 )
 
+# 【角标 LOGO：板块整块填充】（阶段 392）
+#   实测（50 张真实标注角标图）：检测器掩码只盖住板块的 5%~14%（半透明板块只被
+#   咬住实心笔画）⇒ 修复后仍明显残留；按**规范化足迹**填一块实心后，
+#   擦净率 83.7% → 93.0%，框外足迹 1.75% → 0.37%（更干净）。
+#   触发条件：本次实际预设为 ai_logo（承诺类）**且**角标模板信号命中
+#   （与角标信号门禁同一判据，自然图上 0 误命中）⇒ 不会无故擦掉右下角。
+#   置 0 即回到旧行为。
+DETECT_AI_LOGO_PLATE_FILL: Final[bool] = _env_bool("DETECT_AI_LOGO_PLATE_FILL", True)
+
 # 【牌体补全先验：牌内证据锚定阈值】浮点 0.0~1.0，默认 0.50（阶段 182 新增）。
 #   179 先验的收紧守卫：至少一个 translucent/edge_text 证据区域与**牌足迹自身**
 #   （340x128 @2048² 贴右下角）重叠 ≥ 该比例 × 区域自身面积，才允许补发整牌
@@ -2928,7 +2937,7 @@ LOG_DATE_FORMAT: Final[str] = "%Y-%m-%d %H:%M:%S"
 APP_NAME: Final[str] = "AI 智能水印擦除工作台"
 
 # 【项目版本号】
-APP_VERSION: Final[str] = "1.0.11"
+APP_VERSION: Final[str] = "1.0.12"
 
 # 【监听地址】
 #   127.0.0.1 : 只有本机能访问（默认，最安全）
