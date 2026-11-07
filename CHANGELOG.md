@@ -56,6 +56,13 @@
 
 ## [1.0.12] - 2026-11-07
 
+> **发布记录（2026-11-07）**：已上架 PyPI（`wme-watermark-eraser==1.0.12`，
+> 上传时间 2026-11-07T05:18:01Z）。发布链：tag `v1.0.12` → `6630e34` → Publish #22 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel + sdist 均在；**发布物**（从 PyPI 下载的 wheel）
+> 跑安装态自检 rc=0（布局对 + 启动冒烟响应 HTTP 200）。本版把角标 LOGO 的完全擦净率
+> 从 84.4% 提到 **97.9%**（板块整块填充、信号命中才填；50 张真实图、默认路径）。
+
 ### 改进（阶段 392 · 角标 LOGO 板块整块填充：完全擦净 84.4% → 97.9%）
 
 - 阶段 391 归因：未擦净样本里 9/11 是"看得见却没擦掉"，根因是检测器只给出板块的
