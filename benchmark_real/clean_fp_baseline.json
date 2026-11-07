@@ -1,32 +1,32 @@
 {
-  "measured_at": "2026-11-07T09:42:44Z",
+  "measured_at": "2026-11-07T10:28:57Z",
   "engine": "opencv",
   "n_images": 16,
   "n_errors": 0,
-  "median_change_ratio": 0.00085,
-  "max_change_ratio": 0.00657,
+  "median_change_ratio": 0.0,
+  "max_change_ratio": 0.00055,
   "known_gap_rows": [
     {
       "image_id": "clean_16_grid_facade",
-      "mask_ratio": 0.05612,
-      "changed_ratio": 0.05097,
-      "regions": 17,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": true
     }
   ],
   "rows": [
     {
       "image_id": "clean_01",
-      "mask_ratio": 0.00029,
-      "changed_ratio": 0.00028,
-      "regions": 1,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": false
     },
     {
       "image_id": "clean_02",
-      "mask_ratio": 0.0003,
-      "changed_ratio": 0.0003,
-      "regions": 1,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": false
     },
     {
@@ -38,9 +38,9 @@
     },
     {
       "image_id": "clean_04",
-      "mask_ratio": 0.00305,
-      "changed_ratio": 0.00291,
-      "regions": 4,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": false
     },
     {
@@ -52,37 +52,37 @@
     },
     {
       "image_id": "clean_06",
-      "mask_ratio": 0.00115,
-      "changed_ratio": 0.00104,
-      "regions": 3,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": false
     },
     {
       "image_id": "clean_07",
-      "mask_ratio": 0.00098,
-      "changed_ratio": 0.00085,
-      "regions": 2,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": false
     },
     {
       "image_id": "clean_08",
-      "mask_ratio": 0.00129,
-      "changed_ratio": 0.00099,
-      "regions": 2,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": false
     },
     {
       "image_id": "clean_09",
-      "mask_ratio": 0.00565,
-      "changed_ratio": 0.00533,
-      "regions": 9,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": false
     },
     {
       "image_id": "clean_10",
-      "mask_ratio": 0.0004,
-      "changed_ratio": 0.00035,
-      "regions": 1,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": false
     },
     {
@@ -101,30 +101,30 @@
     },
     {
       "image_id": "clean_13",
-      "mask_ratio": 0.00455,
-      "changed_ratio": 0.00433,
-      "regions": 9,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": false
     },
     {
       "image_id": "clean_14",
-      "mask_ratio": 0.0039,
-      "changed_ratio": 0.00362,
-      "regions": 2,
+      "mask_ratio": 0.00079,
+      "changed_ratio": 0.00055,
+      "regions": 1,
       "known_gap": false
     },
     {
       "image_id": "clean_15",
-      "mask_ratio": 0.00776,
-      "changed_ratio": 0.00657,
-      "regions": 8,
+      "mask_ratio": 0.00112,
+      "changed_ratio": 0.00044,
+      "regions": 1,
       "known_gap": false
     },
     {
       "image_id": "clean_16_grid_facade",
-      "mask_ratio": 0.05612,
-      "changed_ratio": 0.05097,
-      "regions": 17,
+      "mask_ratio": 0.0,
+      "changed_ratio": 0.0,
+      "regions": 0,
       "known_gap": true
     }
   ]

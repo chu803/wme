@@ -98,17 +98,27 @@ def test_dilate_range_allows_legacy_value():
 # ---------------------------------------------------------------------------
 
 def test_constant_is_wired_into_translucent(restore_dilate):
-    """增大该常量必须让半透明通路的掩码面积单调增大（证明接线生效）。"""
-    base = BASE_KINDS["textured"](7, w=640, h=640)
-    marked = CASES["corner_logo"][0](base)
+    """增大该常量必须让半透明通路的掩码面积单调增大（证明接线生效）。
 
-    areas = []
-    for v in (0, 2, 4):
-        config.DETECT_TRANSLUCENT_MASK_DILATE = v
-        m = det.detect_watermark_mask(marked, preset="general", use_ocr=False).mask
-        if m.ndim == 3:
-            m = m[:, :, 0]
-        areas.append(int(np.count_nonzero(m > 0)))
+    注（阶段 397）：结构边缘守卫会**剔除**高边缘能量的区域 ⇒ 掩码面积不再随膨胀单调，
+    本用例要验的是"膨胀常量接进了检测器"这**一件事** ⇒ 隔离守卫（单独测它的守卫在
+    `tests/test_translucent_structured_edge397.py`）。
+    """
+    saved_guard = config.DETECT_TRANSLUCENT_STRUCTURED_EDGE_GUARD
+    config.DETECT_TRANSLUCENT_STRUCTURED_EDGE_GUARD = False
+    try:
+        base = BASE_KINDS["textured"](7, w=640, h=640)
+        marked = CASES["corner_logo"][0](base)
+
+        areas = []
+        for v in (0, 2, 4):
+            config.DETECT_TRANSLUCENT_MASK_DILATE = v
+            m = det.detect_watermark_mask(marked, preset="general", use_ocr=False).mask
+            if m.ndim == 3:
+                m = m[:, :, 0]
+            areas.append(int(np.count_nonzero(m > 0)))
+    finally:
+        config.DETECT_TRANSLUCENT_STRUCTURED_EDGE_GUARD = saved_guard
     assert areas[0] <= areas[1] <= areas[2], f"掩码面积未随膨胀单调增大：{areas}"
     assert areas[0] < areas[2], f"膨胀常量未接线到检测器（面积无变化）：{areas}"
 

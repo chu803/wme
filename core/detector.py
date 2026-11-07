@@ -853,6 +853,78 @@ def _suppress_texture_like(
     return lut[labels]
 
 
+def _filter_structured_edge_regions(
+    regions: List[DetectionRegion],
+    cand: np.ndarray,
+    gray: np.ndarray,
+    rgb: Optional[np.ndarray] = None,
+) -> Tuple[List[DetectionRegion], np.ndarray]:
+    """阶段 397 · 结构边缘守卫：**区域框内的锐利结构边缘太密 ⇒ 不是"平滑叠层"**。
+
+    背景：半透明水印是"低频平滑的一层"（I_obs = (1−α)·I_bg + α·W）⇒ 区域框里的
+    梯度集中在轮廓处；而**规则结构**（玻璃幕墙窗格、百叶、砖缝、围栏）是锐利硬边，
+    中值滤波抹不掉 ⇒ 残差场上留下大量强残差 ⇒ 被半透明通路误判成水印，
+    干净照片被局部涂花（实测最坏 5.10%）。
+
+    标定（**区域粒度**，docs/397）：真半透明叠层的区域边缘能量 5.5~12.5；
+    规则网格误伤 62.3~261.9 ⇒ 阈值 40 落在两者之间。
+    （连通域粒度上两者有重叠 ⇒ 守卫必须落在**区域**这一级。）
+
+    让路条件（阶段 397 复测）：**图里有平台角标时不让路**——
+    角标板的羽化/半透明边缘本来就会被半透明通路命中（它在承诺类的擦净里出了力：
+    完全擦净 98.0%），把它们一并剔掉会**削掉承诺面的收益**。
+    判据用角标模板信号（`_ai_logo_plate_signal`）——它为 0 的图（干净图、
+    非豆包系图）才受本守卫约束。
+
+    参数说明：
+        regions : 半透明区域的候选列表。
+        cand   : (H, W) uint8 候选掩码（被剔除区域的像素会一并清掉）。
+        gray   : (H, W) float32 灰度图。
+        rgb    : 原图（可选）；给了才能做"有角标则让路"的判断。
+
+    返回值：
+        (保留的区域, 更新后的候选掩码)。
+    """
+    if not regions or not config.DETECT_TRANSLUCENT_STRUCTURED_EDGE_GUARD:
+        return regions, cand
+    if rgb is not None:
+        try:
+            if _ai_logo_plate_signal(rgb) > 0.0:
+                return regions, cand
+        except Exception as exc:  # noqa: BLE001
+            log.debug("角标信号探测失败，按无角标处理：%s", exc)
+    cv2 = _require_cv2()
+    thr = float(config.DETECT_STRUCTURED_EDGE_MAX_ENERGY)
+    g = gray.astype(np.float32)
+    gx = cv2.Sobel(g, cv2.CV_32F, 1, 0, ksize=3)
+    gy = cv2.Sobel(g, cv2.CV_32F, 0, 1, ksize=3)
+    gmag = np.sqrt(gx * gx + gy * gy)
+    h, w = cand.shape[:2]
+
+    keep: List[DetectionRegion] = []
+    dropped: List[DetectionRegion] = []
+    for r in regions:
+        x0, y0 = max(0, int(r.x)), max(0, int(r.y))
+        x1, y1 = min(w, int(r.x) + int(r.w)), min(h, int(r.y) + int(r.h))
+        if x1 <= x0 or y1 <= y0:
+            keep.append(r)
+            continue
+        energy = float(gmag[y0:y1, x0:x1].mean())
+        if energy > thr:
+            dropped.append(r)
+        else:
+            keep.append(r)
+
+    if dropped:
+        for r in dropped:
+            x0, y0 = max(0, int(r.x)), max(0, int(r.y))
+            x1, y1 = min(w, int(r.x) + int(r.w)), min(h, int(r.y) + int(r.h))
+            cand[y0:y1, x0:x1] = 0
+        log.info("结构边缘守卫：剔除 %d/%d 个规则结构误伤区域（边缘能量 > %.0f）。",
+                 len(dropped), len(regions), thr)
+    return keep, cand
+
+
 def _sensitivity_to_ksigma(sensitivity: float) -> float:
     """
     把「敏感度」滑块（0~1）映射成相对显著倍数 k_sigma（阶段 49）。
@@ -1138,7 +1210,7 @@ def detect_translucent(
         regions 为对应区域列表。
     """
     h, w = rgb.shape[:2]
-    residual_abs, signed_norm, _ = _residual_fields(rgb)
+    residual_abs, signed_norm, gray = _residual_fields(rgb)
 
     # 阶段 49：用「绝对证据门限」取代修复前的分位数阈值。
     # 分位数恒选固定比例像素（sensitivity=0.55 时为 46.8%），与图上是否有水印无关，
@@ -1166,6 +1238,10 @@ def detect_translucent(
     regions = _components_to_regions(
         cand, KIND_TRANSLUCENT, min_area, max_area, pad=4
     )
+
+    # 阶段 397 · 结构边缘守卫：区域框里的锐利硬边太密 ⇒ 是规则结构（窗格/百叶/砖缝）
+    # 被误判，不是"平滑叠层"⇒ 剔除（否则干净照片被局部涂花）。
+    regions, cand = _filter_structured_edge_regions(regions, cand, gray, rgb)
 
     # 掩码按连通域真实形状填充（包围盒填充会把覆盖率放大约 2 倍）。
     if config.DETECT_SHAPE_AWARE_MASK:

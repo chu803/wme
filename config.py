@@ -744,9 +744,10 @@ CORNER_REMOVAL_MAX_OUTSIDE_RATIO: Final[float] = 0.03
 CLEAN_FP_MAX_CHANGE_RATIO: Final[float] = _env_float("CLEAN_FP_MAX_CHANGE_RATIO", 0.01)
 CLEAN_FP_MEDIAN_CHANGE_RATIO: Final[float] = _env_float("CLEAN_FP_MEDIAN_CHANGE_RATIO", 0.005)
 #   已知缺口：**显式排除于红线聚合，但门禁报告会原样列出它的数字**（沿用阶段 243 的做法，
-#   不静默丢弃）。理由：玻璃幕墙的规则网格是"半透明"策略的已知弱项，
-#   修它需要判据层面的改造（见任务 #46），不是调参能解决的。
-CLEAN_FP_KNOWN_GAP_IMAGES: Final[frozenset] = frozenset({"clean_16_grid_facade"})
+#   不静默丢弃）。阶段 397 修掉"规则网格被半透明通路误伤"后，
+#   玻璃幕墙那张（`clean_16_grid_facade`，夹具仍在干净图集里当**回归用例**）的改动降到
+#   **0.0000%** ⇒ 缺口注销，不再排除于红线（否则等于把已修好的问题藏起来）。
+CLEAN_FP_KNOWN_GAP_IMAGES: Final[frozenset] = frozenset()
 
 # ---------- 6.4 边缘平滑（羽化）----------
 # 【边缘羽化默认值】单位：像素，必须是奇数（高斯核要求）。
@@ -1590,6 +1591,26 @@ DETECT_TRANSLUCENT_TEXTURE_GUARD: Final[bool] = _env_bool(
 #   （29/30 图 precision 提升、0 图下降）；合成四用例逐位零回归。
 DETECT_TEXTURE_GUARD_DENSITY: Final[float] = _env_float(
     "DETECT_TEXTURE_GUARD_DENSITY", 0.65, 0.0, 1.0
+)
+
+# ---------- 结构边缘守卫（阶段 397）----------
+#   半透明通路的**区域级**判据：真半透明叠层是"平滑的一层"⇒ 区域框内的**锐利结构边缘**
+#   很稀疏；规则结构（玻璃幕墙窗格、百叶、砖缝、围栏）则相反——中值滤波抹不掉那些硬边，
+#   于是在残差场上留下大量强残差，被误判成半透明水印 ⇒ 干净照片被局部涂花
+#   （实测最坏 5.10%，docs/394/397）。
+#   标定（区域粒度）：真半透明叠层（平滑叠层）的区域边缘能量 5.5~12.6 ⇒ 阈值 40 有 3.2× 余量。
+#   ⚠ **它分不开"锐利边缘的真水印"与"锐利边缘的结构"**：合成角标（锐利真水印，纹理底图）
+#     的区域边缘能量 187.6~222.0，与规则网格误伤 64.5~275.8 同区间重叠 ⇒ 本守卫实际只对
+#     **平滑叠层**有效；代价是压掉"锐利真水印在纹理背景上的半透明命中"（被牺牲的是
+#     **不承诺**的半透明平铺类，阶段 324：修复收益上界 0.026）。
+#   ⚠ 刻意取舍：这条通路服务的类本就不承诺 ⇒ 收紧它对承诺面无损，收益是"干净图不再被涂"。
+#     真阳性样本只有合成夹具（真实半透明水印样本本项目没有）⇒ 阈值可经
+#     `WME_DETECT_STRUCTURED_EDGE_MAX_ENERGY` 现场回退。
+DETECT_TRANSLUCENT_STRUCTURED_EDGE_GUARD: Final[bool] = _env_bool(
+    "DETECT_TRANSLUCENT_STRUCTURED_EDGE_GUARD", True
+)
+DETECT_STRUCTURED_EDGE_MAX_ENERGY: Final[float] = _env_float(
+    "DETECT_STRUCTURED_EDGE_MAX_ENERGY", 40.0, 1.0, 1000.0
 )
 
 # 【纹理稠密守卫：`过均值`比例常数】固定 0.5（不对用户暴露，仅内部常量）。

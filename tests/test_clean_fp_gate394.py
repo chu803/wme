@@ -34,11 +34,18 @@ def test_redlines_exist_and_are_sane():
 
 
 def test_known_gap_images_are_declared():
-    """已知缺口必须**显式登记**（门禁报告要列出它，而不是静默丢掉）。"""
-    assert config.CLEAN_FP_KNOWN_GAP_IMAGES, "已知缺口清单不能为空（否则就是静默丢弃）"
+    """已知缺口必须**显式登记**（门禁报告要列出它，而不是静默丢掉）。
+
+    阶段 397：玻璃幕墙那张（规则网格被半透明通路误伤）已修好（改动 0.0000%）⇒ 缺口注销，
+    但**夹具必须留在干净图集里**当回归用例（否则下次同样的回归没人拦）。
+    """
     for name in config.CLEAN_FP_KNOWN_GAP_IMAGES:
         path = os.path.join(_ROOT, "benchmark_real", "clean", f"{name}.jpg")
         assert os.path.exists(path), f"已知缺口 {name} 必须有真实夹具文件"
+    facade = os.path.join(_ROOT, "benchmark_real", "clean", "clean_16_grid_facade.jpg")
+    assert os.path.exists(facade), "规则网格回归夹具不能删（阶段 397 的守卫靠它）"
+    assert "clean_16_grid_facade" not in config.CLEAN_FP_KNOWN_GAP_IMAGES, (
+        "幕墙那张已修好（0.0000%）⇒ 不该再排除于红线")
 
 
 def test_judge_flags_too_large_change():

@@ -114,8 +114,14 @@ def _busy_image(n: int = 768, seed: int = 5) -> np.ndarray:
 
 
 def _coverage(img: np.ndarray, cap: float, monkeypatch) -> float:
-    """在指定覆盖率上限下跑一次检测，返回掩码覆盖率。"""
+    """在指定覆盖率上限下跑一次检测，返回掩码覆盖率。
+
+    注（阶段 397）：结构边缘守卫会**剔除**高边缘能量的区域 ⇒ 覆盖率不再只由
+    覆盖率上限决定。本文件验的是"覆盖率上限闸"这一件事 ⇒ 隔离守卫
+    （守卫自己的守卫在 tests/test_translucent_structured_edge397.py）。
+    """
     monkeypatch.setattr(config, "DETECT_MAX_COVERAGE_RATIO", cap)
+    monkeypatch.setattr(config, "DETECT_TRANSLUCENT_STRUCTURED_EDGE_GUARD", False)
     res = D.detect_watermark_mask(img, preset="general", use_ocr=False)
     mask = res.mask[:, :, 0] if res.mask.ndim == 3 else res.mask
     n = int(np.prod(img.shape[:2]))
