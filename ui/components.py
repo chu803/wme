@@ -576,7 +576,7 @@ def _kind_label(kind: str) -> str:
     return val if not val.startswith("detect.kind.") else kind
 
 
-def build_detection_stats_markdown(stats) -> str:
+def build_detection_stats_markdown(stats, ocr_available: "bool | None" = None) -> str:
     """
     把一次检测的 DetectionStats 渲染成 Markdown（阶段 22 命中率展示）。
 
@@ -586,7 +586,10 @@ def build_detection_stats_markdown(stats) -> str:
         · 入参为 core.detector.DetectionStats（或任意具备同名字段的兼容对象），
           不在此处 import core，避免组件库对检测核心产生硬依赖。
 
-    参数：stats — 检测统计对象（可能为空）。
+    参数：
+        stats — 检测统计对象（可能为空）。
+        ocr_available — OCR 通路本身是否可用（阶段 393）。`stats.used_ocr` 只表示
+            "本次命中过 OCR 文字框"，拿它当"OCR 是否启用"会写出假话。
     返回：Markdown 字符串（含「检测命中率」标题）。
     """
     label = t("detect.stats.label")
@@ -616,6 +619,8 @@ def build_detection_stats_markdown(stats) -> str:
         lines.append(
             "- " + t("detect.stats.ocr_on", conf=f"{config.DETECT_OCR_MIN_CONFIDENCE:.2f}")
         )
+    elif ocr_available is True:
+        lines.append("- " + t("detect.stats.ocr_on_no_hit"))
     else:
         lines.append("- " + t("detect.stats.ocr_off"))
     return "\n".join(lines)

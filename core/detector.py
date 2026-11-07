@@ -110,6 +110,16 @@ def _ocr_available() -> bool:
     return _OCR_AVAILABLE
 
 
+def is_ocr_available() -> bool:
+    """OCR 增强当前是否可用（对外口径，阶段 393）。
+
+    与 `used_ocr` 是两件事：那个字段表示"本次命中过 OCR 文字框"，
+    这个表示"OCR 通路本身开着"。界面提示必须用后者，否则会出现
+    "EasyOCR 明明装着，界面却说未启用 OCR"的假话。
+    """
+    return _ocr_available()
+
+
 def _get_ocr_reader():
     """
     获取（并缓存）EasyOCR 阅读器实例。

@@ -39,7 +39,7 @@ import gradio as gr
 import config
 from utils.i18n import t
 from ui.i18n_rt import reg_label, reg_label_info, reg_value, reg_textbox
-from core.detector import detect_watermark_mask, visualize_detection
+from core.detector import detect_watermark_mask, visualize_detection, is_ocr_available
 from core.detection_presets import list_presets
 from core.preset_recommender import recommend_preset
 from utils.recommend_view import markdown as _build_recommend_markdown
@@ -146,6 +146,19 @@ def process_recommend_preset(upload):
     return rec.preset, _build_recommend_markdown(rec)
 
 
+def _ocr_tip(used_ocr: bool, ocr_available: bool) -> str:
+    """OCR 提示词：区分「OCR 没装/没开」与「开着但这次没命中」（阶段 393）。
+
+    背景：`used_ocr` 只表示"本次命中过 OCR 文字框"，拿它当"OCR 是否启用"会写出
+    假话（EasyOCR 明明开着、界面却说"未启用 OCR"）⇒ 这里用两个独立事实组合。
+    """
+    if used_ocr:
+        return t("auto.msg.ocr_on")
+    if ocr_available:
+        return t("auto.msg.ocr_on_no_hit")
+    return t("auto.msg.ocr_off")
+
+
 def process_auto_detect(
     upload,
     sensitivity: float,
@@ -241,9 +254,9 @@ def process_auto_detect(
         "composite": None,
     }
 
-    ocr_tip = t("auto.msg.ocr_on") if result.used_ocr else t("auto.msg.ocr_off")
+    ocr_tip = _ocr_tip(bool(result.used_ocr), is_ocr_available())
     status = t("auto.msg.detect_done", n=len(result.regions), ocr=ocr_tip)
-    stats_md = build_detection_stats_markdown(result.stats)
+    stats_md = build_detection_stats_markdown(result.stats, ocr_available=is_ocr_available())
     return preview, editor_value, status, stats_md, mask
 
 

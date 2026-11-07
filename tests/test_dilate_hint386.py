@@ -20,6 +20,8 @@ def test_dilate_hint_carries_the_measured_guidance():
     assert "24" in en and "36" in en, "英文指引里必须写清可用的取值"
     assert "84%" in zh and "84%" in en, "指引要带上实测数字（否则用户无从判断值不值得调）"
     assert "51%" in zh and "51%" in en
+    # 阶段 392：默认路径的完全擦净率已到 97.9%（整块填充），指引若还停在 84% 会低估效果。
+    assert "97.9%" in zh and "97.9%" in en, "指引要带上当前默认口径的实测擦净率"
 
 
 def test_dilate_hint_still_explains_the_original_purpose():
