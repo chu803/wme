@@ -2769,6 +2769,28 @@ def _consolidate_fullframe(
     )
 
 
+def _ai_logo_plate_box(h: int, w: int) -> tuple[int, int, int, int]:
+    """角标 LOGO 的**规范化板块足迹**（贴右下角外侧）。
+
+    基准：2048² 上 340x128，随短边等比缩放（与阶段 172-A 实测的豆包角标一致）。
+    """
+    fw = max(8, int(round(340 * min(h, w) / 2048.0)))
+    fh = max(8, int(round(128 * min(h, w) / 2048.0)))
+    return w - fw, h - fh, fw, fh
+
+
+def _ai_logo_plate_signal(rgb: np.ndarray) -> float:
+    """角标模板信号（与角标信号门禁同一判据）；>0 表示"这个角像个角标"。
+
+    延迟导入 `core.preset_recommender`：那里没有反向依赖本模块，延迟导入避免循环。
+    """
+    from core.preset_recommender import _corner_watermark_signal
+
+    cv2 = _require_cv2()
+    gray = cv2.cvtColor(rgb, cv2.COLOR_RGB2GRAY) if rgb.ndim == 3 else rgb
+    return float(_corner_watermark_signal(gray))
+
+
 def detect_watermark_mask(
     image: np.ndarray,
     *,
@@ -2786,6 +2808,7 @@ def detect_watermark_mask(
     max_area_ratio: float = config.DETECT_MAX_AREA_RATIO,
     use_ocr: bool = config.DETECT_USE_OCR,
     preset: Optional[str] = None,
+    effective_preset: Optional[str] = None,
     enhance_tiled: bool = config.DETECT_ENHANCE_TILED,
     search_bottom: bool = config.DETECT_SEARCH_BOTTOM,
     detect_scale: int = config.DETECT_MAX_SIDE,
@@ -3429,6 +3452,29 @@ def detect_watermark_mask(
                 mask = _m2
         except Exception as exc:
             log.warning("碎片聚合失败，按未聚合结果继续：%s", exc)
+
+    # ---------- 阶段 392：角标 LOGO 的「板块整块填充」 ----------
+    # 实测（真实标注角标图）：检测器给出的掩码只盖住板块的 5%~14%（半透明板块
+    # 只被咬住实心笔画）⇒ 修复后仍有明显残留；而按**规范化足迹**（340x128 @2048²，
+    # 随短边缩放、贴右下角）填一块实心，擦净率反而更高（83.7% → 93.0%）、
+    # 框外足迹更低（1.75% → 0.37%）。
+    # 触发条件：本次实际使用的预设为 ai_logo（承诺类）**且**角标模板信号命中
+    # （与角标信号门禁同一判据，自然图上 0 误命中 ⇒ 不会无故擦掉右下角）。
+    _eff_preset = (effective_preset or preset or "").lower()
+    if _eff_preset == "ai_logo" and config.DETECT_AI_LOGO_PLATE_FILL:
+        try:
+            # 角标信号没命中 ⇒ 这个角本来就没有角标，不许擦（宁可漏检不可滥杀）。
+            if _ai_logo_plate_signal(rgb) > 0.0:
+                _px, _py, _pw, _ph = _ai_logo_plate_box(h, w)
+                mask[_py:_py + _ph, _px:_px + _pw] = 255
+                all_regions.append(DetectionRegion(
+                    x=_px, y=_py, w=_pw, h=_ph,
+                    kind=KIND_CORNER_LOGO, confidence=0.6,
+                ))
+                log.info("角标 LOGO：已按规范化足迹补实心板块（%dx%d @ (%d,%d)）。",
+                         _pw, _ph, _px, _py)
+        except Exception as exc:  # noqa: BLE001
+            log.warning("角标板块整块填充失败，按原掩码继续：%s", exc)
 
     # 命中率统计（阶段 22）。
     result_stats = compute_detection_stats(mask, all_regions, area_total, used_ocr)
