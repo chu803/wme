@@ -74,3 +74,6 @@ desktop.ini
 # Windows 保留设备名：某次命令误把输出重定向到字面量 NUL 产生的 0 字节文件。
 # git 无法索引它（short read while indexing NUL），故只忽略、不删除。
 /NUL
+
+# Gradio 运行时缓存（share 链接的证书等），不该进版本库
+/.gradio/
