@@ -260,6 +260,15 @@ def process_auto_detect(
     return preview, editor_value, status, stats_md, mask
 
 
+def _repair_area_note(ratio: float) -> str:
+    """修复前报出「本次将改动多少画面」（阶段 394：用户要能预判代价）。
+
+    背景：干净图上误检会让修复把不该动的地方涂掉（实测最坏 5.15%）⇒
+    状态栏必须先说清面积，用户才能决定要不要用橡皮擦掉再修。
+    """
+    return t("auto.msg.repair_area", pct=f"{max(0.0, float(ratio)) * 100:.1f}")
+
+
 def process_auto_repair(
     editor_value,
     engine: str,
@@ -373,6 +382,11 @@ def process_auto_repair(
             None,
         )
 
+    # 阶段 394：先把「本次要改多少画面」摆出来，用户能预判代价。
+    area_note = _repair_area_note(
+        count_mask_pixels(mask) / max(1, int(image.shape[0]) * int(image.shape[1]))
+    )
+
     # 进度回调（阶段 5 批量处理时接入实时进度条）。
     def _progress(p: float, msg: str) -> None:
         log.info("自动修复进度 %.0f%%：%s", p * 100, msg)
@@ -472,6 +486,7 @@ def process_auto_repair(
         status = (
             t("single.msg.done", engine=engine_label, path=out_path)
             + engine_note
+            + area_note
             + eval_text
             + refine_tip
             + upscaled_note

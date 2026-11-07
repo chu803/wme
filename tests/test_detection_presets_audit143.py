@@ -214,16 +214,23 @@ def test_K2_dataclass_is_always_truthy():
 # ---------------------------------------------------------------------------
 
 def test_K3_sensitivity_is_always_present():
-    """`sensitivity` 是 resolve 输出的**唯一必现键**（含全 None 的 general）。"""
-    g = get_preset("general")
-    assert g is not None
-    assert all(getattr(g, f) is None for f in (
+    """`sensitivity` 是 resolve 输出的**唯一必现键**（用全 None 的合成预设做夹具）。"""
+    blank = DetectionPreset(name="__blank__", display="", description="")
+    assert all(getattr(blank, f) is None for f in (
         "sensitivity", "enable_translucent", "enable_corner", "enable_edge",
         "enable_grid", "enable_gradient", "enable_logo", "enhance_tiled",
         "search_bottom", "use_ocr",
-    )), "夹具失效：general 不再是「全 None」预设"
+    )), "夹具失效：合成预设不再是「全 None」"
+    kw = blank.resolve(0.99)
+    assert kw == {"sensitivity": 0.99}, f"全 None 预设应只输出用 base 兜底的 sensitivity：{kw}"
+
+
+def test_K3_general_now_narrows_edge_text():
+    """阶段 394：`general` 不再是「全 None」——它显式关掉边缘小字（默认口径＝承诺面）。"""
+    g = get_preset("general")
+    assert g.enable_edge is False, "general 默认必须关边缘小字（规则网格误伤干净照片）"
     kw = g.resolve(0.99)
-    assert kw == {"sensitivity": 0.99}, f"general 应只输出用 base 兜底的 sensitivity：{kw}"
+    assert kw == {"sensitivity": 0.99, "enable_edge": False}, f"general 的 resolve 输出不对：{kw}"
 
 
 def test_K3_preset_own_sensitivity_beats_base():
@@ -281,7 +288,7 @@ def test_K4_real_unknown_name_still_warns(monkeypatch):
 
 def test_K4_known_name_unaffected():
     """正常预设名的解析行为不变（回归对照）。"""
-    assert resolve_preset("general", 0.55) == {"sensitivity": 0.55}
+    assert resolve_preset("general", 0.55) == {"sensitivity": 0.55, "enable_edge": False}
     kw = resolve_preset("ai_tiled", 0.55)
     assert kw["sensitivity"] == 0.62 and kw["enhance_tiled"] is True
 

@@ -61,6 +61,10 @@
     {
       "image_id": "clean_15",
       "watermarks": []
+    },
+    {
+      "image_id": "clean_16_grid_facade",
+      "watermarks": []
     }
   ]
 }

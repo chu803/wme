@@ -204,6 +204,11 @@ def build_steps(*, full: bool = False, gates: bool = False, root: str = _ROOT,
                  [sys.executable, os.path.join(root, "scripts", "corner_removal_probe.py"),
                   "--gate", "--preset", "auto"],
                  note="角标 LOGO 真实图擦除效果门禁（检出/完全擦净/框外变化三条红线；约 6 分钟）"),
+            # 阶段 394：干净图误伤红线（"没有水印的图被改掉多少画面"）——
+            # `clean_bench_probe` 只看"整牌误发"，看不到局部涂抹（玻璃幕墙曾被涂掉 5.15%）。
+            Step("clean_fp_gate",
+                 [sys.executable, os.path.join(root, "scripts", "clean_fp_probe.py"), "--gate"],
+                 note="干净图误伤门禁（单张/中位改动面积两条红线；已知缺口显式列出；约 2 分钟）"),
             # 阶段 322b 建的 `corner_signal_gate` **不在这里重复**（阶段 325 起它是默认步骤，
             # `--gates` 会连默认一起跑 ⇒ 写两遍就是跑两遍）。
         ]

@@ -74,7 +74,7 @@ def _report(default=0, ref_precision=0.356, ref_iou=0.257, ref_recall=0.460,
 # ---------------------------------------------------------------------------
 
 def test_default_dilate_is_zero():
-    """默认值必须收敛为 0——调回 4 会让精确率回退 6.3pp、IoU 回退 2.8pp。"""
+    """默认值必须收敛为 0——调回 4 会让精确率回退 4.1pp、IoU 回退 3.9pp（阶段 395 口径 B 实测）。"""
     assert config.DETECT_TRANSLUCENT_MASK_DILATE == 0, (
         "DETECT_TRANSLUCENT_MASK_DILATE 必须为 0（阶段 66 标定）；"
         "调大只会增加越界破坏，检测精确率与 IoU 均下降"

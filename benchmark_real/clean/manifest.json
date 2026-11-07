@@ -76,6 +76,11 @@
       "id": "clean_15",
       "path": "clean_15.jpg",
       "clean": true
+    },
+    {
+      "id": "clean_16_grid_facade",
+      "path": "clean_16_grid_facade.jpg",
+      "clean": true
     }
   ]
 }

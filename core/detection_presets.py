@@ -165,11 +165,14 @@ _BUILTIN_PRESETS: Tuple[DetectionPreset, ...] = (
     DetectionPreset(
         name="general",
         display="通用检测",
-        description="综合半透明 / 角落 / 边缘三类策略，适用于大多数水印场景。",
+        description="半透明 + 角落 LOGO 两类策略（默认口径＝承诺面）。边缘小字不在承诺面，"
+                    "默认不启用（它在规则网格上会误伤干净照片），需要时请显式选「AI 边缘小字」。",
         sensitivity=None,
         enable_translucent=None,
         enable_corner=None,
-        enable_edge=None,
+        # 阶段 394：默认关掉「边缘小字」。实测它会把玻璃幕墙/百叶/砖缝这类**规则网格**
+        # 误判成文字行 ⇒ 一张零水印的干净照被涂掉 5.15%。能力没删，显式选 ai_text_heavy 仍在。
+        enable_edge=False,
         enhance_tiled=None,
         search_bottom=None,
         use_ocr=None,
@@ -463,10 +466,11 @@ if __name__ == "__main__":
         assert got is p, f"内置预设 {p.name} 取回的不是同一对象"
         assert p.display and p.description, f"内置预设 {p.name} 缺少 display/description"
 
-    # general 除 sensitivity 外不覆盖任何字段（阶段 143：这是**有意**的例外，见 resolve docstring）。
+    # general 只覆盖 sensitivity + enable_edge（阶段 394：默认关边缘小字，其余沿用 config 默认）。
     g = resolve_preset("general", 0.55)
-    assert set(g.keys()) == {"sensitivity"}, f"general 不应覆盖其他字段：{g}"
+    assert set(g.keys()) == {"sensitivity", "enable_edge"}, f"general 覆盖字段不对：{g}"
     assert g["sensitivity"] == 0.55
+    assert g["enable_edge"] is False, "general 默认必须关掉边缘小字（阶段 394）"
 
     # ai_tiled 应覆盖 enhance_tiled=True 且 sensitivity=0.62。
     t = resolve_preset("ai_tiled", 0.55)

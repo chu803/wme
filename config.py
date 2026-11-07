@@ -736,6 +736,18 @@ CORNER_REMOVAL_MIN_DETECTED_RATE: Final[float] = 0.75
 CORNER_REMOVAL_MIN_ERASED_RATE: Final[float] = 0.65
 CORNER_REMOVAL_MAX_OUTSIDE_RATIO: Final[float] = 0.03
 
+# ---------- 干净图误伤红线（阶段 394）----------
+#   量的是"用户上传一张**没有水印**的图，默认路径会改掉多少画面"。
+#   `clean_bench_probe` 统计的是"整牌误发"（把整块牌补上去），看不到**局部涂抹**；
+#   局部涂抹才伤用户：玻璃幕墙这类高对比规则网格曾被"半透明"策略误命中，
+#   实测单张改动 5.15%（画面被抹花）。
+CLEAN_FP_MAX_CHANGE_RATIO: Final[float] = _env_float("CLEAN_FP_MAX_CHANGE_RATIO", 0.01)
+CLEAN_FP_MEDIAN_CHANGE_RATIO: Final[float] = _env_float("CLEAN_FP_MEDIAN_CHANGE_RATIO", 0.005)
+#   已知缺口：**显式排除于红线聚合，但门禁报告会原样列出它的数字**（沿用阶段 243 的做法，
+#   不静默丢弃）。理由：玻璃幕墙的规则网格是"半透明"策略的已知弱项，
+#   修它需要判据层面的改造（见任务 #46），不是调参能解决的。
+CLEAN_FP_KNOWN_GAP_IMAGES: Final[frozenset] = frozenset({"clean_16_grid_facade"})
+
 # ---------- 6.4 边缘平滑（羽化）----------
 # 【边缘羽化默认值】单位：像素，必须是奇数（高斯核要求）。
 #   让「修复区」与「原图区」的接缝处平滑过渡，避免出现生硬的方块边框。

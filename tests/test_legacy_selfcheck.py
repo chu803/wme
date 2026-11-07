@@ -214,6 +214,10 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/corner_removal_probe.py": "S 角标真实图擦除效果探针（跑真实图检测+修复，分钟级）",
     # 阶段 389：同一脚本的 --gate 模式是**门禁**（被 run_all_checks --gates 调用），
     # 但作为模块自检跑它要几分钟 ⇒ 仍归 S 类豁免。
+    # --- 阶段 394 新增（否则「含 __main__ 未登记」守卫常红）---
+    "scripts/clean_fp_probe.py": "S 干净图误伤门禁（逐张跑检测+修复，分钟级；语义同 clean_bench_probe 一族）",
+    "scripts/challenge_probe.py": "S 角标几何挑战集探针（跑检测+修复，分钟级；诊断用，不参与子进程自检）",
+    "scripts/build_challenge_set.py": "S 挑战集夹具生成器（写 benchmark_real/challenge/，非只读自检）",
 
 }
 

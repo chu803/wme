@@ -15,7 +15,8 @@
 
 本脚本用**双口径**回答「这个膨胀应该取多少」：
 
-    检测口径：端到端（general 预设）的精确率 / 召回 / IoU / 预测覆盖率 / 干净图误报
+    检测口径：端到端（**每个用例用它自己声明的预设**，阶段 395 用户拍板）的
+              精确率 / 召回 / IoU / 预测覆盖率 / 干净图误报（干净图误报用 general = 默认路径）
     修复口径：残留（真值水印区 |out−base|）与越界（真值外 12px 环带 |out−base|）
 
 红线
@@ -85,10 +86,15 @@ def set_dilate(value: int) -> None:
     config.DETECT_TRANSLUCENT_MASK_DILATE = int(value)
 
 
-def _general_mask(img: np.ndarray) -> np.ndarray:
-    """跑 `general` 预设端到端，返回单通道掩码。"""
-    m = det.detect_watermark_mask(img, preset="general", use_ocr=False).mask
+def _mask_with_preset(img: np.ndarray, preset: str) -> np.ndarray:
+    """按指定预设跑端到端检测，返回单通道掩码。"""
+    m = det.detect_watermark_mask(img, preset=preset, use_ocr=False).mask
     return m[:, :, 0] if m.ndim == 3 else m
+
+
+def _general_mask(img: np.ndarray) -> np.ndarray:
+    """跑 `general` 预设端到端，返回单通道掩码（**干净图误报**口径用：量的是默认路径）。"""
+    return _mask_with_preset(img, "general")
 
 
 def _clean_fpr() -> float:
@@ -102,17 +108,25 @@ def _clean_fpr() -> float:
 
 
 def detection_row(value: int) -> dict:
-    """检测口径：`general` 预设端到端，在全部 底图×用例 上聚合。"""
+    """检测口径：**每个用例用它自己声明的预设**跑端到端，在全部 底图×用例 上聚合。
+
+    口径说明（阶段 395，用户拍板）：此前一律用 `general` 跑所有用例——
+    阶段 394 把 `general` 收窄到承诺面（默认关掉「边缘小字」）后，
+    edge_text 类用例**在 general 下根本检测不出来** ⇒ 它们的召回/IoU 塌成 0，
+    把聚合结论带偏（出现"dilate=4 反而更好"的假象）。
+    改用各用例自带预设后（与 quality_gate 同口径），标定不再受"通用检测开哪些策略"影响，
+    阶段 66 的结论恢复成立：dilate=0 的精确率 67.1% / IoU 60.1% 均优于 dilate=4。
+    """
     set_dilate(value)
     pr, rc, iou, pc = [], [], [], []
     for kind in KINDS:
         base = BASE_KINDS[kind](7, w=SIZE, h=SIZE)
-        for _case, (wm_fn, _preset, _label) in CASES.items():
+        for _case, (wm_fn, preset, _label) in CASES.items():
             marked = wm_fn(base)
             g = gt_mask(base, marked)
             if not (g > 0).any():
                 continue
-            mm = metrics(_general_mask(marked), g)
+            mm = metrics(_mask_with_preset(marked, preset), g)
             pr.append(mm["precision"])
             rc.append(mm["recall"])
             iou.append(mm["iou"])
@@ -128,20 +142,20 @@ def detection_row(value: int) -> dict:
 
 
 def repair_row(value: int) -> dict:
-    """修复口径：`general` 掩码 → OpenCV inpaint（管线 dilate 固定 0，隔离变量）。"""
+    """修复口径：**用例自带预设**的掩码 → OpenCV inpaint（管线 dilate 固定 0，隔离变量）。"""
     set_dilate(value)
     residual, overpaint = [], []
     for kind in REPAIR_KINDS:
         base = BASE_KINDS[kind](7, w=SIZE, h=SIZE)
         for case in REPAIR_CASES:
-            wm_fn = CASES[case][0]
+            wm_fn, preset, _label = CASES[case]
             marked = wm_fn(base)
             g = gt_mask(base, marked) > 0
             kern = cv2.getStructuringElement(cv2.MORPH_ELLIPSE, (3, 3))
             ring = cv2.dilate(
                 g.astype(np.uint8), kern, iterations=12
             ).astype(bool) & (~g)
-            m = _general_mask(marked)
+            m = _mask_with_preset(marked, preset)
             if int((m > 0).sum()) == 0:
                 out = marked.astype(np.int16)  # 未检出 → 等于没擦
             else:
@@ -217,7 +231,7 @@ def to_markdown(report: dict) -> str:
     if report.get("repair"):
         lines += [
             "",
-            "修复口径（general 掩码 → OpenCV inpaint，2 底图 × 2 用例）",
+            "修复口径（用例自带预设的掩码 → OpenCV inpaint，2 底图 × 2 用例）",
             "| dilate | 残留 | 越界 |",
             "|---|---|---|",
         ]

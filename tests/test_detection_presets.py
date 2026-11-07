@@ -85,10 +85,11 @@ def test_get_preset_choices_structure():
 
 
 def test_general_does_not_override():
-    """general 全 None → resolve 仅含 sensitivity（沿用 config 默认）。"""
+    """general 只覆盖 sensitivity 与 enable_edge（阶段 394：默认关边缘小字），其余沿用 config 默认。"""
     g = resolve_preset("general", 0.55)
-    assert set(g.keys()) == {"sensitivity"}
+    assert set(g.keys()) == {"sensitivity", "enable_edge"}
     assert g["sensitivity"] == 0.55
+    assert g["enable_edge"] is False
 
 
 def test_ai_tiled_overrides_enhance_tiled():
