@@ -761,6 +761,17 @@ CORNER_GEOMETRY_MIN_DETECTED: Final[float] = _env_float(
 CORNER_GEOMETRY_MIN_ERASED: Final[float] = _env_float(
     "CORNER_GEOMETRY_MIN_ERASED", 0.5, 0.0, 1.0
 )
+#   阶段 399：**"擦没擦净"不做自动判定**——四轮自动指标都不可靠
+#   （整框 NCC 被背景稀释 / 边缘残留被抹糊削掉 / 对比度在半透明板上不降 /
+#    结构显著性被周围高能量带偏）⇒ 改为**目视裁定**：下面这组是人工看过前后对比图
+#   确认"真的擦干净了"的样本，门禁守住它们**不许退化**（NCC 不得超过阈值）。
+#   其余几何（B2 大板 / B4 无底板纯文字）是**已知缺口**：量得出、报得出，
+#   但判定交给人看图 ⇒ 不进红线，只在报告里列出。
+CORNER_GEOMETRY_ERASED_REF: Final[frozenset] = frozenset({"B1.png", "B3.png"})
+#   参考样本的"残留 NCC"上限（越小越干净；B1 实测 0.10、B3 实测 0.17）。
+CORNER_GEOMETRY_REF_MAX_NCC: Final[float] = _env_float(
+    "CORNER_GEOMETRY_REF_MAX_NCC", 0.30, 0.0, 1.0
+)
 
 # ---------- 6.4 边缘平滑（羽化）----------
 # 【边缘羽化默认值】单位：像素，必须是奇数（高斯核要求）。

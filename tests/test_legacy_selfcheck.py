@@ -218,6 +218,7 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/clean_fp_probe.py": "S 干净图误伤门禁（逐张跑检测+修复，分钟级；语义同 clean_bench_probe 一族）",
     "scripts/challenge_probe.py": "S 角标几何挑战集探针（跑检测+修复，分钟级；诊断用，不参与子进程自检）",
     "scripts/build_challenge_set.py": "S 挑战集夹具生成器（写 benchmark_real/challenge/，非只读自检）",
+    "scripts/build_challenge_visuals.py": "S 挑战集目视裁定证据图生成器（写 benchmark_real/challenge/visual/，非只读自检）",
 
 }
 

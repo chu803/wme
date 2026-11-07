@@ -78,6 +78,7 @@ desktop.ini
 # Gradio 运行时缓存（share 链接的证书等），不该进版本库
 /.gradio/
 
-# 阶段 394：挑战集（由 scripts/build_challenge_set.py 从干净图集确定性生成，不入库）
-/benchmark_real/challenge/
+# 阶段 394：挑战集的**图片**（由 scripts/build_challenge_set.py 从干净图集确定性生成，不入库）
+# 清单（manifest.json）与目视裁定的证据图（visual/）要入库——复核"擦没擦净"要靠它们。
+/benchmark_real/challenge/images/
 /benchmark_real/challenge_report.json

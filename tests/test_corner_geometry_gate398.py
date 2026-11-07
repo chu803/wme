@@ -1,13 +1,14 @@
 # -*- coding: utf-8 -*-
-"""阶段 398：角标几何覆盖率门禁的守卫。
+"""阶段 398/399：角标几何覆盖率门禁的守卫。
 
 这道门禁把「承诺类的擦净率对角标长什么样敏感」变成**可跟踪、可拦截的数字**：
-挑战集 4 种几何（右下小板 / 左下小板 / 半透明板 / 无底板纯文字），
-检出率与完全擦净率各有一条下限；挑战集由脚本**确定性生成**（不入库）。
+挑战集 4 种几何（右下小板 / 左下小板 / 半透明板 / 无底板纯文字）；
+检出率是硬红线；"擦没擦净"**不做自动判定**（阶段 399 实测：四轮自动指标都不可靠）
+⇒ 改为守住**目视确认过真的擦净了**的参考样本不许退化，其余登记为已知缺口。
 
 守卫：
-  · 红线常量存在且在合理量级；
-  · 判据函数红绿两态正确（越线判红、达标判绿）；
+  · 红线常量存在且在合理量级、参考样本集非空；
+  · 判据函数红绿两态正确（检出不足 / 参考样本退化 ⇒ 判红；达标 ⇒ 判绿）；
   · 门禁接进统一入口（--gates），否则等于永不生效；
   · 挑战集可**确定性重建**（缺图时自生成 ⇒ 干净 checkout 上门禁也能跑）。
 """
@@ -34,27 +35,51 @@ def _probe():
 
 def test_redlines_exist():
     assert 0.5 <= config.CORNER_GEOMETRY_MIN_DETECTED <= 1.0
-    assert 0.0 < config.CORNER_GEOMETRY_MIN_ERASED <= 1.0
+    assert 0.0 < config.CORNER_GEOMETRY_REF_MAX_NCC <= 1.0
+    assert config.CORNER_GEOMETRY_ERASED_REF, (
+        "参考样本集不能为空——它由**目视裁定**得出（哪些几何真的能擦净）")
 
 
-def test_judge_flags_low_coverage():
+def test_reference_samples_have_fixtures():
+    """参考样本必须在挑战集里（否则门禁守的是空气）。"""
     p = _probe()
-    bad = {"n_logo": 4, "detected_rate": 0.75, "erased_rate": 0.25}
+    manifest = p.ensure_set()
+    names = {e["image"] for e in manifest}
+    for name in config.CORNER_GEOMETRY_ERASED_REF:
+        assert name in names, f"参考样本 {name} 不在挑战集里"
+
+
+def test_judge_flags_low_detected_rate():
+    p = _probe()
+    bad = {"n_logo": 4, "detected_rate": 0.75, "rows": []}
     problems = p.judge(bad)
-    assert problems, "低于红线必须判红"
+    assert problems, "检出率不足必须判红"
     assert any("检出率" in x for x in problems)
-    assert any("擦净率" in x for x in problems)
+
+
+def test_judge_flags_reference_regression():
+    """参考样本（NCC 超上限）= 擦净退化 ⇒ 判红。"""
+    p = _probe()
+    name = sorted(config.CORNER_GEOMETRY_ERASED_REF)[0]
+    bad = {
+        "n_logo": 4, "detected_rate": 1.0,
+        "rows": [{"image": name, "residual": 0.55}],
+    }
+    problems = p.judge(bad)
+    assert problems, "参考样本擦净退化必须判红"
+    assert any("退化" in x for x in problems)
 
 
 def test_judge_passes_current_coverage():
     p = _probe()
-    ok = {"n_logo": 4, "detected_rate": 1.0, "erased_rate": 0.75}
+    rows = [{"image": n, "residual": 0.10} for n in config.CORNER_GEOMETRY_ERASED_REF]
+    ok = {"n_logo": 4, "detected_rate": 1.0, "rows": rows}
     assert p.judge(ok) == []
 
 
 def test_judge_flags_missing_samples():
     p = _probe()
-    assert p.judge({"n_logo": 0, "detected_rate": 0.0, "erased_rate": 0.0})
+    assert p.judge({"n_logo": 0, "detected_rate": 0.0, "rows": []})
 
 
 def test_challenge_set_is_rebuildable():
