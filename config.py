@@ -767,7 +767,37 @@ CORNER_GEOMETRY_MIN_ERASED: Final[float] = _env_float(
 #   确认"真的擦干净了"的样本，门禁守住它们**不许退化**（NCC 不得超过阈值）。
 #   其余几何（B2 大板 / B4 无底板纯文字）是**已知缺口**：量得出、报得出，
 #   但判定交给人看图 ⇒ 不进红线，只在报告里列出。
-CORNER_GEOMETRY_ERASED_REF: Final[frozenset] = frozenset({"B1.png", "B3.png", "B4.png"})
+# ---------- 角落「板」由文字框反推（阶段 401）----------
+#   大板（358x67）擦不干净的原因：白底板块判据靠"亮块连通域"，而大板的亮区与照片里
+#   相邻的亮背景**连成一片**（实测连通域 371x144、实心度 0.53、触碰搜索区边界）⇒ 亮块
+#   阈值法用不了。改走"角标 = 字 + 板"：用角落 OCR 文字框当种子，按放大系数反推板的范围。
+#   ⚠ 只在"文字确实坐在一块**亮板**上"时适用（深底纯文字不放大，避免误伤周围）。
+#   ⚠ 天生的歧义：照片里角落的"亮底招牌"与平台角标在像素上难分 ⇒ 放大系数保持小（1.3）。
+DETECT_CORNER_BADGE_FROM_TEXT: Final[bool] = _env_bool(
+    "DETECT_CORNER_BADGE_FROM_TEXT", True
+)
+DETECT_CORNER_BADGE_EXPAND: Final[float] = _env_float(
+    "DETECT_CORNER_BADGE_EXPAND", 1.3, 1.0, 3.0
+)
+DETECT_CORNER_BADGE_MAX_AREA: Final[float] = _env_float(
+    "DETECT_CORNER_BADGE_MAX_AREA", 0.05, 0.001, 0.5
+)
+DETECT_CORNER_BADGE_MIN_BRIGHT: Final[float] = _env_float(
+    "DETECT_CORNER_BADGE_MIN_BRIGHT", 0.55, 0.0, 1.0
+)
+#   「板」还必须是**连成一块的亮区**（不是碎亮斑）：白板实测最大亮连通块占比 0.646，
+#   深底文字/泡沫背景只有 0.218 ⇒ 阈值取 0.40（两侧各留余量）。
+DETECT_CORNER_BADGE_MIN_SOLID: Final[float] = _env_float(
+    "DETECT_CORNER_BADGE_MIN_SOLID", 0.40, 0.0, 1.0
+)
+#   填充分区额外外扩的像素：板自身的亮边若留在掩码外，会成为 inpaint 的填充来源
+#   ⇒ 填出一块比周围更亮的"白板残影"（实测板区亮度比 1.80→1.48）。外扩后边界落在
+#   照片上 ⇒ 板区亮度比回到 0.95（实测）。
+DETECT_CORNER_BADGE_MARGIN: Final[int] = _env_int(
+    "DETECT_CORNER_BADGE_MARGIN", 8, 0, 64
+)
+
+CORNER_GEOMETRY_ERASED_REF: Final[frozenset] = frozenset({"B1.png", "B2.png", "B3.png", "B4.png"})
 #   阶段 400：OCR 文字框整框进掩码后，纯文字角标（B4）也目视确认擦干净了 ⇒ 并入参考集。
 #   参考样本的"锐边残留"上限（越小越干净）。**不用 NCC**：阶段 399/400 实测
 #   NCC 会被"没变的背景"与"涂抹块"两边骗 ⇒ 与目视对不上；
@@ -775,6 +805,12 @@ CORNER_GEOMETRY_ERASED_REF: Final[frozenset] = frozenset({"B1.png", "B3.png", "B
 #   （B4 实测：文字可读 1.000 → 文字已擦 0.281）。
 CORNER_GEOMETRY_REF_MAX_SHARP: Final[float] = _env_float(
     "CORNER_GEOMETRY_REF_MAX_SHARP", 0.5, 0.0, 1.0
+)
+#   参考样本的"板/字亮度比"上限（足迹区 vs 周边环，修复后）：≤1.15 视为与周围同 level
+#   （实测擦净后 0.95~0.97；板残留时 1.48~1.80）⇒ 与目视一致的第二道口径
+#   （锐边指标看不见"残留的平整白块"）。
+CORNER_GEOMETRY_REF_MAX_PLATE_RATIO: Final[float] = _env_float(
+    "CORNER_GEOMETRY_REF_MAX_PLATE_RATIO", 1.15, 0.5, 5.0
 )
 
 # ---------- 6.4 边缘平滑（羽化）----------

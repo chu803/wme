@@ -116,6 +116,21 @@ def _sharp_visibility(gray_b: np.ndarray, gray_a: np.ndarray) -> float:
     return _p99(gray_a) / b
 
 
+def _plate_ratio(padded_gray: np.ndarray, inner_mask: np.ndarray) -> float:
+    """足迹区 vs 周边环的**亮度比**（修复后）——"板/字还在不在"的第二个口径。
+
+    阶段 401 的教训：锐边指标看不见"残留的平整白块"（板没了字、还剩一块均匀的亮板）。
+    亮度比补上这一盲区：
+      · 白板擦净后与周围同 level ⇒ 比值 ≈ 1（B1 0.96 / B3 0.97 / B4 0.95）；
+      · 板还在 ⇒ 比值明显 > 1（未修时 B2 是 1.80，修后 1.48，再修 1.04）。
+    """
+    if inner_mask.sum() == 0 or padded_gray.size == 0:
+        return 1.0
+    reg = float(padded_gray[inner_mask].mean())
+    ring = float(padded_gray[~inner_mask].mean())
+    return reg / ring if ring > 1e-6 else 1.0
+
+
 def measure(entry: dict) -> dict:
     name = entry["image"]
     path = IMAGES / name
@@ -178,6 +193,9 @@ def measure(entry: dict) -> dict:
         row["standout"] = round(standout, 4)
         # 阶段 400：与目视一致的"还在不在"（锐边残留）——参考样本的红线用它判。
         row["sharp_visibility"] = round(_sharp_visibility(cb, ca), 4)
+        # 阶段 401：板/字是否"还比周围显眼"（锐边指标看不见平整残留块）。
+        row["plate_ratio"] = round(
+            _plate_ratio(ring_gray, inner_mask), 4)
         row["erased"] = bool(standout < 1.5)
         m = mask[y:y + bh, x:x + bw]
         row["detected"] = bool(m.size and int((m > 0).sum()) > 0)
@@ -214,10 +232,15 @@ def judge(summary: dict) -> list[str]:
             problems.append(f"参考样本 {name} 缺失（挑战集不完整）")
             continue
         sharp = float(row.get("sharp_visibility", 1.0))
+        plate = float(row.get("plate_ratio", 9.0))
         if sharp >= config.CORNER_GEOMETRY_REF_MAX_SHARP:
             problems.append(
                 f"参考样本 {name} 擦净退化：锐边残留 {sharp:.3f} ≥ 上限 "
                 f"{config.CORNER_GEOMETRY_REF_MAX_SHARP:.2f}（它目视确认过是能擦净的）")
+        if plate > config.CORNER_GEOMETRY_REF_MAX_PLATE_RATIO:
+            problems.append(
+                f"参考样本 {name} 仍有残留：板/字亮度比 {plate:.3f} > 上限 "
+                f"{config.CORNER_GEOMETRY_REF_MAX_PLATE_RATIO:.2f}（它目视确认过是能擦净的）")
     return problems
 
 
@@ -265,7 +288,8 @@ def main(argv: list[str] | None = None) -> int:
             if r["image"] in ref:
                 print(f"     · {r['image']:<9} 锐边残留={r.get('sharp_visibility', 0):.3f}"
                       f"（上限 {config.CORNER_GEOMETRY_REF_MAX_SHARP:.2f}）"
-                      f"  残留NCC={r['residual']:.3f}")
+                      f"  亮度比={r.get('plate_ratio', 0):.3f}"
+                      f"（上限 {config.CORNER_GEOMETRY_REF_MAX_PLATE_RATIO:.2f}）")
         print("  已知缺口（目视确认未擦净，不进红线，只列出）：")
         for r in b:
             if r["image"] not in ref:

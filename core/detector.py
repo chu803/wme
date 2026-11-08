@@ -2877,6 +2877,93 @@ def _ai_logo_plate_signal(rgb: np.ndarray) -> float:
     return float(_corner_watermark_signal(gray))
 
 
+def _corner_badge_boxes(
+    rgb: np.ndarray,
+    h: int,
+    w: int,
+    text_boxes: List[Tuple[int, int, int, int]],
+    area_total: int,
+) -> List[Tuple[int, int, int, int]]:
+    """由角落里的 **OCR 文字框**反推「板」的范围（阶段 401）。
+
+    背景（B2 大板擦不干净的原因）：白底板块判据靠「亮块连通域」，而大板的亮区
+    **与照片里相邻的亮背景连成一片**（实测连通域 371×144、实心度 0.53、触碰搜索区边界）
+    ⇒ 任何亮块阈值法都会把板与背景一起收/一起丢。
+
+    换一条路：**角标本来就是「字 + 板」** ⇒ 用角落里的文字框当种子，按放大系数反推板的范围
+    （字在板上居中、四周留白）。只��"文字确实坐在一块**亮板**上"时适用：
+    深底纯文字（无底板）不适用 ⇒ 不放大，避免把周围一起擦（实测 B4 的亮占比近 0）。
+
+    参数说明：
+        rgb        : 整图 RGB（用于判"板是否够亮"）。
+        text_boxes : 角落 OCR 文字框（整图坐标）。
+    返回值：
+        板框列表 [(x, y, w, h), ...]（整图坐标）。
+    """
+    if not text_boxes or not config.DETECT_CORNER_BADGE_FROM_TEXT:
+        return []
+    _cv2 = _require_cv2()
+    expand = float(config.DETECT_CORNER_BADGE_EXPAND)
+    max_ratio = float(config.DETECT_CORNER_BADGE_MAX_AREA)
+    min_bright = float(config.DETECT_CORNER_BADGE_MIN_BRIGHT)
+    min_solid = float(config.DETECT_CORNER_BADGE_MIN_SOLID)
+    side = float(min(h, w))
+    # 1) 把同一块板的文字框并成一组（字可能分成多段）。
+    groups: List[List[int]] = []
+    for _x, _y, _bw, _bh in sorted(text_boxes, key=lambda b: (b[1], b[0])):
+        bx0, by0, bx1, by1 = int(_x), int(_y), int(_x) + int(_bw), int(_y) + int(_bh)
+        placed = False
+        for g in groups:
+            gx0, gy0, gx1, gy1 = g
+            v_overlap = min(gy1, by1) - max(gy0, by0)
+            v_min = min(gy1 - gy0, by1 - by0)
+            h_gap = max(0, max(gx0, bx0) - min(gx1, bx1))
+            if v_min > 0 and v_overlap >= 0.5 * v_min and h_gap <= 0.25 * side:
+                g[0], g[1] = min(gx0, bx0), min(gy0, by0)
+                g[2], g[3] = max(gx1, bx1), max(gy1, by1)
+                placed = True
+                break
+        if not placed:
+            groups.append([bx0, by0, bx1, by1])
+
+    out: List[Tuple[int, int, int, int]] = []
+    for gx0, gy0, gx1, gy1 in groups:
+        bw, bh = gx1 - gx0, gy1 - gy0
+        if bw <= 0 or bh <= 0:
+            continue
+        cx, cy = (gx0 + gx1) / 2.0, (gy0 + gy1) / 2.0
+        ew, eh = bw * expand, bh * expand
+        x0 = max(0, int(round(cx - ew / 2.0)))
+        y0 = max(0, int(round(cy - eh / 2.0)))
+        x1 = min(w, int(round(cx + ew / 2.0)))
+        y1 = min(h, int(round(cy + eh / 2.0)))
+        ew, eh = x1 - x0, y1 - y0
+        if ew <= 0 or eh <= 0:
+            continue
+        if (ew * eh) / float(max(1, area_total)) > max_ratio:
+            continue
+        # 「板」的判据在**文字并集框**上做（不是放大后的框）：
+        # 白板 ⇒ 文字坐在一片**连成块的亮区**里（实测占比 0.705 / 最大亮连通块 0.646）；
+        # 深底文字/泡沫背景 ⇒ 亮区碎、占比低（0.376 / 0.218）⇒ 不放大，避免误伤周围。
+        t_patch = rgb[gy0:gy1, gx0:gx1]
+        if t_patch.size == 0:
+            continue
+        hsv = _cv2.cvtColor(t_patch, _cv2.COLOR_RGB2HSV)
+        v = hsv[:, :, 2].astype(np.int16)
+        sat = hsv[:, :, 1].astype(np.int16)
+        bright_mask = ((v >= config.DETECT_PLATE_V_MIN) &
+                       (sat <= config.DETECT_PLATE_S_MAX)).astype(np.uint8)
+        bright = float(bright_mask.mean())
+        if bright < min_bright:
+            continue
+        _n, _lab, _st, _c = _cv2.connectedComponentsWithStats(bright_mask, 8)
+        largest = float(_st[1:, 4].max()) / float(bright_mask.size) if _n > 1 else 0.0
+        if largest < min_solid:
+            continue
+        out.append((x0, y0, ew, eh))
+    return out
+
+
 def _box_overlap_ratio(a: Tuple[int, int, int, int], b: Tuple[int, int, int, int]) -> float:
     """两个框的交集面积 ÷ 较小框面积。"""
     ax, ay, aw, ah = a
@@ -3009,6 +3096,8 @@ def detect_watermark_mask(
         dh, dw = rgb_small.shape[:2]
 
     all_regions: List[DetectionRegion] = []
+    # 阶段 401：角落 OCR 文字框（用于反推"板"）。
+    _corner_text_boxes: List[Tuple[int, int, int, int]] = []
     # 阶段 49：收集各策略自己产出的「形状感知」掩码，供合并阶段直接使用。
     # 修复前合并阶段只用区域包围盒重建掩码，把策略内部算出的精确形状重新糊成矩形——
     # 这是过度检测的最后一级放大器（候选密度 8.8% 能被放大到覆盖率 30%）。
@@ -3156,6 +3245,10 @@ def detect_watermark_mask(
                     r.h = int(round(r.h / scale))
             used_ocr = used_ocr or any(r.kind == KIND_OCR_TEXT for r in c_regions)
             all_regions.extend(c_regions)
+            # 阶段 401：角落里的 OCR 文字框（整图坐标）留作"板反推"的种子。
+            for _r in c_regions:
+                if _r.kind == KIND_OCR_TEXT and _r.w > 0 and _r.h > 0:
+                    _corner_text_boxes.append((int(_r.x), int(_r.y), int(_r.w), int(_r.h)))
             # 该策略只产出区域框（无独立掩码），_collect 会退化为包围盒填充。
             _collect(None, c_regions)
         except Exception as exc:
@@ -3587,7 +3680,17 @@ def detect_watermark_mask(
             for _r in all_regions:
                 if _r.kind == KIND_CORNER_LOGO and _r.w > 0 and _r.h > 0:
                     _fill_boxes.append((int(_r.x), int(_r.y), int(_r.w), int(_r.h)))
-            # ② 兜底：豆包模板信号命中时的规范化足迹（沿用阶段 392 行为，仅 ai_logo 预设）。
+            # ② 阶段 401：角落「板」由 OCR 文字框反推（大板；亮区与亮背景连片时白底判据失效）。
+            #    填充分区要**外扩一点**（margin）：板自身的亮边若留在掩码外，会成为
+            #    inpaint 的填充来源 ⇒ 填出一块比周围更亮的"白板残影"（实测板区亮度比 1.48）。
+            _bmargin = int(config.DETECT_CORNER_BADGE_MARGIN)
+            for _b in _corner_badge_boxes(rgb, h, w, _corner_text_boxes, area_total):
+                if not any(_box_overlap_ratio(_b, _e) > 0.8 for _e in _fill_boxes):
+                    _fill_boxes.append((
+                        max(0, _b[0] - _bmargin), max(0, _b[1] - _bmargin),
+                        _b[2] + 2 * _bmargin, _b[3] + 2 * _bmargin,
+                    ))
+            # ③ 兜底：豆包模板信号命中时的规范化足迹（沿用阶段 392 行为，仅 ai_logo 预设）。
             _eff_preset = (effective_preset or preset or "").lower()
             if _eff_preset == "ai_logo" and _ai_logo_plate_signal(rgb) > 0.0:
                 _fixed = _ai_logo_plate_box(h, w)

@@ -72,8 +72,8 @@ def test_judge_flags_reference_regression():
 
 def test_judge_passes_current_coverage():
     p = _probe()
-    # 阶段 400：参考样本按**锐边残留**判（NCC 不可信，见 docs/400）。
-    rows = [{"image": n, "residual": 0.10, "sharp_visibility": 0.2}
+    # 阶段 401：参考样本按**锐边残留 + 板/字亮度比**两道口径判（NCC 不可信，见 docs/400/401）。
+    rows = [{"image": n, "residual": 0.10, "sharp_visibility": 0.2, "plate_ratio": 0.97}
             for n in config.CORNER_GEOMETRY_ERASED_REF]
     ok = {"n_logo": 4, "detected_rate": 1.0, "rows": rows}
     assert p.judge(ok) == []
