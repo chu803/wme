@@ -767,10 +767,14 @@ CORNER_GEOMETRY_MIN_ERASED: Final[float] = _env_float(
 #   确认"真的擦干净了"的样本，门禁守住它们**不许退化**（NCC 不得超过阈值）。
 #   其余几何（B2 大板 / B4 无底板纯文字）是**已知缺口**：量得出、报得出，
 #   但判定交给人看图 ⇒ 不进红线，只在报告里列出。
-CORNER_GEOMETRY_ERASED_REF: Final[frozenset] = frozenset({"B1.png", "B3.png"})
-#   参考样本的"残留 NCC"上限（越小越干净；B1 实测 0.10、B3 实测 0.17）。
-CORNER_GEOMETRY_REF_MAX_NCC: Final[float] = _env_float(
-    "CORNER_GEOMETRY_REF_MAX_NCC", 0.30, 0.0, 1.0
+CORNER_GEOMETRY_ERASED_REF: Final[frozenset] = frozenset({"B1.png", "B3.png", "B4.png"})
+#   阶段 400：OCR 文字框整框进掩码后，纯文字角标（B4）也目视确认擦干净了 ⇒ 并入参考集。
+#   参考样本的"锐边残留"上限（越小越干净）。**不用 NCC**：阶段 399/400 实测
+#   NCC 会被"没变的背景"与"涂抹块"两边骗 ⇒ 与目视对不上；
+#   锐边残留（足迹内 |∇| 的 99 分位，修复后/修复前）才对应"水印还立在那儿吗"
+#   （B4 实测：文字可读 1.000 → 文字已擦 0.281）。
+CORNER_GEOMETRY_REF_MAX_SHARP: Final[float] = _env_float(
+    "CORNER_GEOMETRY_REF_MAX_SHARP", 0.5, 0.0, 1.0
 )
 
 # ---------- 6.4 边缘平滑（羽化）----------

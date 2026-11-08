@@ -169,7 +169,8 @@ def _pick_preset(img: np.ndarray, mode: str):
 
 
 def run(limit: int | None = None, dilate: int = 0, feather: int = 5,
-        denoise: int = 3, strength: float = 1.0, preset_mode: str = "ai_logo") -> dict:
+        denoise: int = 3, strength: float = 1.0, preset_mode: str = "ai_logo",
+        engine: str = "auto") -> dict:
     import cv2
     from core.detector import detect_watermark_mask
     from core.inpainter import inpaint
@@ -201,7 +202,7 @@ def run(limit: int | None = None, dilate: int = 0, feather: int = 5,
             mask = det.mask
             # 与生产管线同一套"按预设的膨胀下限"（阶段 388），否则探针量不到产品真实行为。
             dilate_used = _apply_preset_dilate_floor(preset_used, dilate)
-            repaired = inpaint(img, mask, engine="auto", strength=strength,
+            repaired = inpaint(img, mask, engine=engine, strength=strength,
                                dilate=dilate_used, feather=feather, threshold=127,
                                denoise=denoise)
         except Exception as exc:  # noqa: BLE001
@@ -233,14 +234,26 @@ def run(limit: int | None = None, dilate: int = 0, feather: int = 5,
 
     ok = [r for r in rows if "error" not in r]
     import collections
+    # 阶段 400：**出错的样本不能自己藏起来**。
+    # 旧口径只对"跑成功"的样本取平均（分母 = ok）⇒ 失败/异常的图片被踢出分母，
+    # 反而让检出率/擦净率变好看。现在额外给出**保守口径**（分母 = 全部样本，
+    # 出错一律记为"未检出/未擦净"），红线判定改用保守口径。
+    n_all = len(rows)
+    n_ok = len(ok)
+    det_all = sum(1 for r in ok if r.get("detected"))
+    era_all = sum(1 for r in ok if r.get("detected") and r.get("erased"))
     summary = {
         "params": {"dilate": dilate, "feather": feather, "denoise": denoise,
                    "strength": strength, "preset_mode": preset_mode},
         "preset_distribution": dict(collections.Counter(r["preset_used"] for r in ok)),
         "measured_at": time.strftime("%Y-%m-%dT%H:%M:%SZ", time.gmtime()),
-        "n_images": len(ok),
-        "n_errors": len(rows) - len(ok),
-        "detected_rate": round(sum(1 for r in ok if r["detected"]) / len(ok), 4) if ok else 0.0,
+        "n_images": n_ok,
+        "n_errors": n_all - n_ok,
+        # 保守口径（分母含出错样本）：出错一律记为未检出/未擦净。
+        "detected_rate_all": round(det_all / n_all, 4) if n_all else 0.0,
+        "erased_rate_given_detected_all": (
+            round(era_all / det_all, 4) if det_all else 0.0),
+        "detected_rate": round(sum(1 for r in ok if r["detected"]) / n_ok, 4) if ok else 0.0,
         "erased_rate": round(sum(1 for r in ok if r["erased"]) / len(ok), 4) if ok else 0.0,
         "erased_rate_given_detected": (
             round(sum(1 for r in ok if r["detected"] and r["erased"])
@@ -262,13 +275,22 @@ def run(limit: int | None = None, dilate: int = 0, feather: int = 5,
 
 
 def judge(summary: dict) -> list[str]:
-    """按 config 的三条红线判定（纯函数，便于单测做反例）。"""
+    """按 config 的三条红线判定（纯函数，便于单测做反例）。
+
+    阶段 400：用**保守口径**（分母含出错样本，出错记为未检出/未擦净），
+    避免"跑失败的图"把自己的失败从指标里抹掉。
+    """
     import config
 
     problems: list[str] = []
-    detected = float(summary.get("detected_rate", 0.0))
-    erased = float(summary.get("erased_rate_given_detected", 0.0))
+    detected = float(summary.get("detected_rate_all",
+                                 summary.get("detected_rate", 0.0)))
+    erased = float(summary.get("erased_rate_given_detected_all",
+                               summary.get("erased_rate_given_detected", 0.0)))
     outside = float(summary.get("median_outside_change_ratio", 0.0))
+    n_err = int(summary.get("n_errors", 0) or 0)
+    if n_err:
+        problems.append(f"有 {n_err} 张样本处理出错（已按未检出/未擦净计入分母）")
     if detected < config.CORNER_REMOVAL_MIN_DETECTED_RATE:
         problems.append(f"检出率 {detected:.1%} < 红线 {config.CORNER_REMOVAL_MIN_DETECTED_RATE:.0%}")
     if erased < config.CORNER_REMOVAL_MIN_ERASED_RATE:
@@ -287,6 +309,8 @@ def main(argv: list[str] | None = None) -> int:
     parser.add_argument("--feather", type=int, default=5, help="边缘羽化")
     parser.add_argument("--denoise", type=int, default=3, help="降噪强度")
     parser.add_argument("--strength", type=float, default=1.0, help="修复力度")
+    parser.add_argument("--engine", default="auto",
+                        help="修复引擎（auto/opencv/lama）；阶段 400 用它对比引擎口径")
     parser.add_argument("--preset", choices=("ai_logo", "auto"), default="ai_logo",
                         help="ai_logo=强制角标预设；auto=走推荐器（用户默认路径）")
     parser.add_argument("--gate", action="store_true",
@@ -303,7 +327,7 @@ def main(argv: list[str] | None = None) -> int:
 
     summary = run(limit=args.limit, dilate=args.dilate, feather=args.feather,
                   denoise=args.denoise, strength=args.strength,
-                  preset_mode=args.preset)
+                  preset_mode=args.preset, engine=args.engine)
     if args.gate:
         problems = judge(summary)
         if problems:

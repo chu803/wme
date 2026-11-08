@@ -95,6 +95,27 @@ def _standout_ratio(gray_a: np.ndarray, inner: np.ndarray, ring: np.ndarray) -> 
     return inner_e / outer_e
 
 
+def _sharp_visibility(gray_b: np.ndarray, gray_a: np.ndarray) -> float:
+    """足迹内的**锐边残留**（修复后/修复前）——与目视一致的"还在不在"。
+
+    阶段 399/400 的教训：整框 NCC / 边缘均值都会被"没变的背景"稀释，
+    也会被"涂抹块"骗 ⇒ 都不能代表人眼看到的"水印还在不在"。
+    锐边（|∇| 的 99 分位）才对应"字母/板边是否还立在那儿"：
+      · 文字还在（可读）⇒ 1.000（实测 B4 修复前）
+      · 只剩模糊块 ⇒ 0.281（实测 B4 修复后）
+    """
+    def _p99(gray: np.ndarray) -> float:
+        g = gray.astype(np.float32)
+        gx = cv2.Sobel(g, cv2.CV_32F, 1, 0, ksize=3)
+        gy = cv2.Sobel(g, cv2.CV_32F, 0, 1, ksize=3)
+        return float(np.percentile(np.sqrt(gx * gx + gy * gy), 99.0))
+
+    b = _p99(gray_b)
+    if b <= 1e-6:
+        return 0.0
+    return _p99(gray_a) / b
+
+
 def measure(entry: dict) -> dict:
     name = entry["image"]
     path = IMAGES / name
@@ -155,6 +176,8 @@ def measure(entry: dict) -> dict:
         ring_mask = ~inner_mask
         standout = _standout_ratio(ring_gray, inner_mask, ring_mask)
         row["standout"] = round(standout, 4)
+        # 阶段 400：与目视一致的"还在不在"（锐边残留）——参考样本的红线用它判。
+        row["sharp_visibility"] = round(_sharp_visibility(cb, ca), 4)
         row["erased"] = bool(standout < 1.5)
         m = mask[y:y + bh, x:x + bw]
         row["detected"] = bool(m.size and int((m > 0).sum()) > 0)
@@ -190,11 +213,11 @@ def judge(summary: dict) -> list[str]:
         if row is None:
             problems.append(f"参考样本 {name} 缺失（挑战集不完整）")
             continue
-        ncc = float(row.get("residual", 1.0))
-        if ncc >= config.CORNER_GEOMETRY_REF_MAX_NCC:
+        sharp = float(row.get("sharp_visibility", 1.0))
+        if sharp >= config.CORNER_GEOMETRY_REF_MAX_SHARP:
             problems.append(
-                f"参考样本 {name} 擦净退化：残留 NCC {ncc:.3f} ≥ 上限 "
-                f"{config.CORNER_GEOMETRY_REF_MAX_NCC:.2f}（它目视确认过是能擦净的）")
+                f"参考样本 {name} 擦净退化：锐边残留 {sharp:.3f} ≥ 上限 "
+                f"{config.CORNER_GEOMETRY_REF_MAX_SHARP:.2f}（它目视确认过是能擦净的）")
     return problems
 
 
@@ -240,8 +263,9 @@ def main(argv: list[str] | None = None) -> int:
         print("  目视裁定过的参考样本（门禁守住它们不许退化）：")
         for r in b:
             if r["image"] in ref:
-                print(f"     · {r['image']:<9} 残留NCC={r['residual']:.3f}（上限 "
-                      f"{config.CORNER_GEOMETRY_REF_MAX_NCC:.2f}）")
+                print(f"     · {r['image']:<9} 锐边残留={r.get('sharp_visibility', 0):.3f}"
+                      f"（上限 {config.CORNER_GEOMETRY_REF_MAX_SHARP:.2f}）"
+                      f"  残留NCC={r['residual']:.3f}")
         print("  已知缺口（目视确认未擦净，不进红线，只列出）：")
         for r in b:
             if r["image"] not in ref:

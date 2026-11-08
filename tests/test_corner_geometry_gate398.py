@@ -35,7 +35,7 @@ def _probe():
 
 def test_redlines_exist():
     assert 0.5 <= config.CORNER_GEOMETRY_MIN_DETECTED <= 1.0
-    assert 0.0 < config.CORNER_GEOMETRY_REF_MAX_NCC <= 1.0
+    assert 0.0 < config.CORNER_GEOMETRY_REF_MAX_SHARP <= 1.0
     assert config.CORNER_GEOMETRY_ERASED_REF, (
         "参考样本集不能为空——它由**目视裁定**得出（哪些几何真的能擦净）")
 
@@ -58,12 +58,12 @@ def test_judge_flags_low_detected_rate():
 
 
 def test_judge_flags_reference_regression():
-    """参考样本（NCC 超上限）= 擦净退化 ⇒ 判红。"""
+    """参考样本的**锐边残留**超上限 = 擦净退化 ⇒ 判红（阶段 400：不用 NCC，它不可信）。"""
     p = _probe()
     name = sorted(config.CORNER_GEOMETRY_ERASED_REF)[0]
     bad = {
         "n_logo": 4, "detected_rate": 1.0,
-        "rows": [{"image": name, "residual": 0.55}],
+        "rows": [{"image": name, "sharp_visibility": 0.9}],
     }
     problems = p.judge(bad)
     assert problems, "参考样本擦净退化必须判红"
@@ -72,7 +72,9 @@ def test_judge_flags_reference_regression():
 
 def test_judge_passes_current_coverage():
     p = _probe()
-    rows = [{"image": n, "residual": 0.10} for n in config.CORNER_GEOMETRY_ERASED_REF]
+    # 阶段 400：参考样本按**锐边残留**判（NCC 不可信，见 docs/400）。
+    rows = [{"image": n, "residual": 0.10, "sharp_visibility": 0.2}
+            for n in config.CORNER_GEOMETRY_ERASED_REF]
     ok = {"n_logo": 4, "detected_rate": 1.0, "rows": rows}
     assert p.judge(ok) == []
 

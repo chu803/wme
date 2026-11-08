@@ -1,19 +1,11 @@
 {
-  "measured_at": "2026-11-07T10:28:57Z",
+  "measured_at": "2026-11-08T04:05:56Z",
   "engine": "opencv",
   "n_images": 16,
   "n_errors": 0,
   "median_change_ratio": 0.0,
   "max_change_ratio": 0.00055,
-  "known_gap_rows": [
-    {
-      "image_id": "clean_16_grid_facade",
-      "mask_ratio": 0.0,
-      "changed_ratio": 0.0,
-      "regions": 0,
-      "known_gap": true
-    }
-  ],
+  "known_gap_rows": [],
   "rows": [
     {
       "image_id": "clean_01",
@@ -125,7 +117,7 @@
       "mask_ratio": 0.0,
       "changed_ratio": 0.0,
       "regions": 0,
-      "known_gap": true
+      "known_gap": false
     }
   ]
 }
