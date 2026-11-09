@@ -219,6 +219,9 @@ NOT_REGISTERED_BY_DESIGN: dict = {
     "scripts/challenge_probe.py": "S 角标几何挑战集探针（跑检测+修复，分钟级；诊断用，不参与子进程自检）",
     "scripts/build_challenge_set.py": "S 挑战集夹具生成器（写 benchmark_real/challenge/，非只读自检）",
     "scripts/build_challenge_visuals.py": "S 挑战集目视裁定证据图生成器（写 benchmark_real/challenge/visual/，非只读自检）",
+    # 阶段 403：界面真实截图工具（纯标准库 CDP 客户端 + 无头 Chrome）。
+    "scripts/mini_cdp.py": "S 最小 CDP 客户端（纯标准库 WebSocket，供界面截图工具使用；本身是库）",
+    "scripts/capture_ui_screenshots.py": "S 界面真实截图（需先起界面 + 本机 Chrome；写 docs/assets/ui/）",
 
 }
 
