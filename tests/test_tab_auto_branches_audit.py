@@ -187,25 +187,25 @@ def test_repair_upscaled_result_compare_ok(stub, monkeypatch):
 def test_detect_too_large_routes_to_5tuple(stub):
     stub["boom_validate"] = ImageTooLargeError("too big")
     r = ta.process_auto_detect(IMG, 0.5, True, True, True, "general")
-    assert len(r) == 5 and r[0] is not None and r[1] is None and r[4] is None
+    assert len(r) == 7 and r[0] is not None and r[1] is None and r[4] is None
 
 
 def test_detect_bad_data_routes_to_5tuple(stub):
     stub["boom_validate"] = ValueError("bad")
     r = ta.process_auto_detect(IMG, 0.5, True, True, True, "general")
-    assert len(r) == 5 and r[1] is None
+    assert len(r) == 7 and r[1] is None
 
 
 def test_detect_core_exception_routes_to_5tuple(stub):
     stub["boom_detect"] = RuntimeError("detectboom")
     r = ta.process_auto_detect(IMG, 0.5, True, True, True, "general")
-    assert len(r) == 5 and r[0] is not None and r[1] is None
+    assert len(r) == 7 and r[0] is not None and r[1] is None
 
 
 def test_detect_visualize_failure_falls_back_to_upload(stub):
     stub["boom_vis"] = RuntimeError("visboom")
     r = ta.process_auto_detect(IMG, 0.5, True, True, True, "general")
-    assert len(r) == 5 and r[0] is IMG, "可视化失败必须退回原图"
+    assert len(r) == 7 and r[0] is IMG, "可视化失败必须退回原图"
 
 
 def test_detect_no_watermark_prefills_empty_editor(stub, monkeypatch):
@@ -213,8 +213,8 @@ def test_detect_no_watermark_prefills_empty_editor(stub, monkeypatch):
     monkeypatch.setattr(ta, "detect_watermark_mask",
                         lambda img, **k: _DetResult(np.zeros((H, W), np.uint8)))
     r = ta.process_auto_detect(IMG, 0.5, True, True, True, "general")
-    assert len(r) == 5
-    assert r[1]["layers"] == [], "未检测 ⇒ 预填空图层（引导用户手涂）"
+    assert len(r) == 7
+    assert r[1]["layers"] == [], "未检测 ⇒ 编辑框保持空白（引导用户手涂）"
     assert r[4] is not None and (r[4] == 0).all(), "State 必须存零掩码"
     assert "未检测" in r[2] or "涂抹" in r[2], "状态栏应给本地化引导文案"
 
@@ -245,32 +245,8 @@ def test_recommend_normal_returns_preset_and_markdown(stub):
 
 
 # =========================================================================== #
-# 6. 工具按钮回调（_reload_detection_mask / _clear_editor）
+# 6. 工具按钮回调（_clear_editor；阶段 405 已移除「重载检测掩码」，误报走区域勾选）
 # =========================================================================== #
-def test_reload_bg_none():
-    assert ta._reload_detection_mask(DET, None) is None
-
-
-def test_reload_det_not_ndarray():
-    assert ta._reload_detection_mask("x", IMG) is None
-
-
-def test_reload_shape_mismatch():
-    assert ta._reload_detection_mask(DET, np.zeros((H * 2, W * 2, 3), np.uint8)) is None
-
-
-def test_reload_det_empty_returns_blank_canvas():
-    out = ta._reload_detection_mask(np.zeros((H, W), np.uint8), IMG)
-    assert out == {"background": IMG, "layers": [], "composite": None}
-
-
-def test_reload_normal_prefills_red_layer():
-    out = ta._reload_detection_mask(DET, IMG)
-    assert out is not None and out["layers"]
-    alpha = out["layers"][0][:, :, 3]
-    assert (alpha == DET).all(), "重载图层的 alpha 必须等于检测掩码"
-
-
 def test_clear_bg_none():
     assert ta._clear_editor(None) is None
 

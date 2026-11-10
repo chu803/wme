@@ -428,7 +428,10 @@ def reprocess(rec_id: str, engine: str, strength: float, denoise: int, compare: 
         if int(mask.sum()) == 0:
             return t("history.msg.reprocess_no_mask"), load_gallery(compare=compare)[0]
         editor_value = _build_editor_value(image, mask)
-        _, result, status, _, out_path = process_auto_repair(
+        # 返回序：orig_view, result_view, compare_view, status_text, download_file。
+        # 阶段 405：与批量页同一个错误解包（status 拿到 compare_view ndarray，
+        # out_path 拿到状态文案）⇒ 记录里会存一段状态字符串当结果路径。
+        _, result, _, status, out_path = process_auto_repair(
             editor_value,
             engine=engine,
             strength=strength,

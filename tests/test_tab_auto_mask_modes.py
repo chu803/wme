@@ -10,19 +10,19 @@
 
 | # | mode | 编辑框图层 | det(State) | 交给修复引擎的掩码 |
 |---|------|-----------|-----------|------------------|
-| 1 | merge | det+补画 | det | **编辑框所见即所得**（= det ∪ 补画） |
-| 2 | merge | 空 | det | **det** |
+| 1 | merge | 补画 | det | **det ∪ 补画** |
+| 2 | merge | 空 | det | **det**（按区域勾选裁剪后） |
 | 3 | merge | 空 | None | **自动兜底检测**（状态栏带 ℹ️ 提示） |
-| 4 | merge | 仅补画 | det | **仅补画**（det 被丢弃 —— 边界：清空编辑框即「从头开始」） |
-| 5 | manual | det+重叠补画 | det | **补画 ∩ ¬det**（剥离预填检测层） |
-| 6 | bogus | det+补画 | det | 回退 merge（同 #1）+ 告警日志 |
+| 4 | merge | 仅补画 | det | **det ∪ 补画**（阶段 405：编辑框不再预填，检测不会因画笔而丢） |
+| 5 | manual | det+重叠补画 | det | **补画 ∩ ¬det**（只保留用户笔迹） |
+| 6 | bogus | 补画 | det | 回退 merge（同 #1）+ 告警日志 |
 | 7 | merge | 空 | 3 维数组 | 视为无效 det → 自动兜底 |
 | 8 | merge | 空 | None（兜底也空） | 空掩码 → 不调引擎，状态栏提示先标记 |
 
-#4 的语义辨析：mode_info 承诺「补漏+**擦除**都生效」⇒ 编辑框必须**所见即所得**
-（否则橡皮擦擦掉误检后，`det ∪ 编辑框` 会把误检加回来）；det 只在编辑框**为空**时兜底。
-故 #4 不是缺陷，而是「擦除可用」的前提——本文件把它**显式钉死**，防止后人以
-「修复 merge 语义」为名改成严格并集、静默弄坏橡皮擦。
+阶段 405 语义变更：Gradio 6.31 对**预填图层**的编辑会按视口坐标重排（外部验收
+F5：橡皮越擦越多 1.1%→2.4%）。自动页因此不再预填检测层；「误报」通过
+`region_select` 取消勾选排除（见 `tests/test_auto_regions405.py`），merge 变为
+「检测(净) ∪ 用户笔迹」，manual 仍是「只看笔迹」。
 """
 
 from __future__ import annotations
@@ -134,12 +134,12 @@ def test_merge_empty_editor_no_det_autofallback(env):
     assert "ℹ️" in r[3], "兜底必须在状态栏给出 ℹ️ 提示"
 
 
-def test_merge_strokes_only_drops_det(env):
-    """边界钉死：清空编辑框后只补画 ⇒ det 被丢弃（所见即所得，橡皮擦可用的前提）。"""
+def test_merge_strokes_unions_with_det(env):
+    """阶段 405：编辑框只有笔迹 ⇒ 检测(净) ∪ 笔迹（预填已移除，检测不会因画笔而丢）。"""
     _repair(env, _editor(stroke), det, "merge")
     m = _captured()
-    assert m is not None and (m == stroke).all(), (
-        "merge+仅补画 ⇒ 只修补画（若变成 det∪补画，橡皮擦擦除误检将失效）")
+    assert m is not None and (m == (det | stroke)).all(), (
+        "merge+仅补画 ⇒ det ∪ stroke（误报改由区域勾选排除）")
 
 
 def test_manual_strips_det(env):
@@ -189,16 +189,15 @@ def test_repair_always_returns_5_tuple(env, case):
 
 def test_detect_no_upload(env):
     r = ta.process_auto_detect(None, 0.5, True, True, True, "general")
-    assert len(r) == 5 and r[0] is None and r[1] is None and r[4] is None
+    assert len(r) == 7 and r[0] is None and r[1] is None and r[4] is None
 
 
 def test_detect_returns_state_mask(env):
     upload = np.full((H, W, 3), 100, np.uint8)
     env["fallback"] = det
-    preview, editor_value, status, stats_md, mask = ta.process_auto_detect(
+    preview, editor_value, status, stats_md, mask, regions, region_update = ta.process_auto_detect(
         upload, 0.5, True, True, True, "general")
-    assert len((preview, editor_value, status, stats_md, mask)) == 5
     assert (mask == det).all(), "检测掩码必须原样存入 State（供修复回调合并/统计）"
-    assert editor_value["layers"], "检测到水印 ⇒ 编辑框应预填红色图层"
-    alpha = editor_value["layers"][0][:, :, 3]
-    assert (alpha == det).all(), "预填图层的 alpha 必须等于检测掩码"
+    assert editor_value["layers"] == [], "阶段 405：检测后编辑框保持空白（不预填图层）"
+    assert regions == [], "本桩未构造 DetectionRegion ⇒ 区域列表为空"
+    assert region_update is not None

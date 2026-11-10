@@ -2,7 +2,7 @@
 """真实界面捕获：自动检测页 + 上传 + 检测 + 修复，逐步截图（给用户看"实际长什么样"）。
 
 用 `scripts/mini_cdp.py`（纯标准库的最小 CDP 客户端）驱动 Chrome 无头实例：
-真鼠标事件、真文件上传、真点按钮 ⇒ 截图反映的是真实交互，不是拼出来的示意图。
+真鼠标事件、真文件上传、真点按钮 -> 截图反映的是真实交互，不是拼出来的示意图。
 
 前置：先起界面 `python main.py --no-download`（默认 7860 端口）。
 用法：`python scripts/capture_ui_screenshots.py`（截图落在 docs/assets/ui/）。
@@ -59,7 +59,7 @@ def upload_first_file(cdp: CDP, path: pathlib.Path) -> bool:
     node_id = cdp.eval("""
     (() => {
       const ins = Array.from(document.querySelectorAll('input[type=file]'));
-      // Gradio 的原生 file input 永远是隐藏的 ⇒ 用"所在面板是否被隐藏"来区分页签
+      // Gradio 的原生 file input 永远是隐藏的 -> 用"所在面板是否被隐藏"来区分页签
       const inHiddenPanel = (el) => {
         let p = el.parentElement;
         for (let i = 0; i < 12 && p; i++, p = p.parentElement) {

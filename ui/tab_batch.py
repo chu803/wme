@@ -417,7 +417,10 @@ def _process_one(
 
     # 4) 复用自动页签的修复路径。
     editor_value = _build_editor_value(image, mask)
-    _, result, status, _, out_path = process_auto_repair(
+    # 返回序：orig_view, result_view, compare_view, status_text, download_file。
+    # 阶段 405：此前写成 `_, result, status, _, out_path` ⇒ status 拿到 compare_view
+    # (ndarray)，`status or ...` 抛「数组真值含糊」，每张首跑必失败、靠重试+缓存掩盖。
+    _, result, _, status, out_path = process_auto_repair(
         editor_value,
         engine=engine,
         strength=strength,
@@ -505,6 +508,8 @@ def run_batch(
     real_superres: bool,
     real_scale: int,
     real_backend: str = config.REAL_SUPERRES_BACKEND,
+    enable_postprocess: bool = config.POSTPROCESS_ENABLED,
+    sharpen: float = config.POSTPROCESS_SHARPEN_AMOUNT,
     evaluate: bool = True,
     compare: bool = True,
     preset: str = config.DETECT_PRESET_DEFAULT,
@@ -685,8 +690,8 @@ def run_batch(
             mask_index=mask_index,
             preset=str(preset or config.DETECT_PRESET_DEFAULT),
             auto_preset=auto_preset,
-            sharpen=params.sharpen.value,
-            enable_postprocess=params.postprocess.value,
+            sharpen=float(sharpen),
+            enable_postprocess=bool(enable_postprocess),
             postprocess_eval=bool(evaluate),
             poisson_blend=poisson_blend,
             poisson_strength=poisson_strength,
@@ -1009,6 +1014,7 @@ def build_batch_tab():
             params.artifact_reduce, params.artifact_amount,
             params.superres, params.superres_amount,
             params.real_superres, params.real_scale, params.real_backend,
+            params.postprocess, params.sharpen,
             evaluate_checkbox, compare_toggle, detect_preset, auto_preset_toggle,
             dual_run,
         ],

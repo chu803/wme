@@ -101,7 +101,13 @@ def _extract_image(editor_value):
 
 def _mask_to_rgba_layer(mask: np.ndarray, color=(255, 59, 48)) -> np.ndarray:
     """
-    把二值掩码包装成「红色半透明图层」，用于预填进 ImageEditor 供用户微调。
+    把二值掩码包装成「红色半透明图层」。
+
+    ⚠ 阶段 405：自动页**不再把它预填进编辑框**。外部验收实测：Gradio 6.31 的
+    ImageEditor 对「预填图层」做画笔/橡皮编辑时，会把图层内容按视口坐标重排
+    （红块整体位移 + 撕裂），橡皮越擦掩码越多。现在编辑框只承载用户自己的笔迹，
+    误报改为「检测区域」取消勾选。本函数保留给批量页在服务端构造 editor_value
+    （不经过浏览器往返，无此问题）与测试夹具使用。
 
     参数说明：
         mask  : (H, W) uint8 0/255 掩码。
@@ -123,6 +129,82 @@ def _mask_to_rgba_layer(mask: np.ndarray, color=(255, 59, 48)) -> np.ndarray:
     rgba[on, 2] = color[2]
     rgba[:, :, 3] = mask  # alpha 仍写（RGBA 感知的通路用得上）；RGB 侧已自带掩码语义
     return rgba
+
+
+#: 取消勾选检测区域时的 bbox 外扩像素。
+#: 需覆盖：检测填充自带的 pad(4) + 修复羽化(默认 5) + 掩码边缘余量 ⇒ 取 12。
+REGION_EXCLUDE_PAD = 12
+
+
+def _region_kind_label(kind: str) -> str:
+    """把 KIND_* 映射成本地化类别名；缺翻译时回退常量名。"""
+    val = t("detect.kind." + str(kind))
+    return val if not val.startswith("detect.kind.") else str(kind)
+
+
+def _region_items(regions) -> list[dict]:
+    """把 DetectionRegion 列表转成可存进 gr.State 的纯字典（含稳定展示标签）。"""
+    items: list[dict] = []
+    for i, r in enumerate(regions or []):
+        items.append({
+            "label": t(
+                "auto.region_item", n=i + 1, kind=_region_kind_label(getattr(r, "kind", "")),
+                x=int(getattr(r, "x", 0)), y=int(getattr(r, "y", 0)),
+                w=int(getattr(r, "w", 0)), h=int(getattr(r, "h", 0)),
+            ),
+            "x": int(getattr(r, "x", 0)), "y": int(getattr(r, "y", 0)),
+            "w": int(getattr(r, "w", 0)), "h": int(getattr(r, "h", 0)),
+            "kind": str(getattr(r, "kind", "")),
+        })
+    return items
+
+
+def exclude_regions_from_mask(
+    mask: np.ndarray,
+    region_items,
+    selected_labels,
+    pad: int = REGION_EXCLUDE_PAD,
+) -> np.ndarray:
+    """从检测掩码里清掉「未勾选」的区域 bbox（阶段 405：误报走勾选，不靠橡皮）。
+
+    参数：
+        mask            : (H, W) 0/255 检测掩码。
+        region_items    : `_region_items()` 的产物（含 label/x/y/w/h）。
+        selected_labels : 仍要修复的区域标签集合；None 视为全选（不清）。
+        pad             : bbox 外扩像素，默认 4。
+    返回：
+        新掩码（不修改入参）。区域外的检测像素保持原样。
+    """
+    if mask is None or not region_items or selected_labels is None:
+        return mask if mask is None else mask.copy()
+    keep = set(selected_labels)
+    out = mask.copy()
+    h, w = out.shape[:2]
+    for item in region_items:
+        if item.get("label") in keep:
+            continue
+        x0 = max(0, int(item.get("x", 0)) - pad)
+        y0 = max(0, int(item.get("y", 0)) - pad)
+        x1 = min(w, int(item.get("x", 0)) + int(item.get("w", 0)) + pad)
+        y1 = min(h, int(item.get("y", 0)) + int(item.get("h", 0)) + pad)
+        if x1 > x0 and y1 > y0:
+            out[y0:y1, x0:x1] = 0
+    return out
+
+
+def _actual_change_ratio(before, after, threshold: int = 10) -> Optional[float]:
+    """实际改动比例：与原图逐像素比较，任一通道差 > threshold 记为改动。
+
+    阶段 405：状态栏此前按「掩码面积」预估改动，但真实写入还包括 8px 保护带
+    （POSTPROCESS_PRESERVE_BAND_PX）⇒ 外部实测宣称 1.1%、实际 3.7%。现在直接量产物。
+    形状不一致（真·超分放大画布）时返回 None，调用方跳过该行。
+    """
+    if before is None or after is None:
+        return None
+    if getattr(before, "shape", None) != getattr(after, "shape", None):
+        return None
+    d = np.abs(before.astype(np.int16) - after.astype(np.int16)).max(axis=2)
+    return float((d > threshold).mean())
 
 
 def process_recommend_preset(upload):
@@ -179,10 +261,20 @@ def process_auto_detect(
         preset           : 检测预设名（阶段 20，来自 core.detection_presets）。
 
     返回值：
-        五元组 (detect_preview, editor_value, status_text, detect_stats_md, det_mask)，
-        对应 5 个输出组件（detect_stats_md 为「检测命中率」Markdown；
-        det_mask 为本次检测掩码，存入 gr.State 供修复回调做精修合并）。
+        七元组 (detect_preview, editor_value, status_text, detect_stats_md,
+               det_mask, det_regions, region_update)：
+        · det_mask    : 本次检测掩码（gr.State，供修复回调使用）；
+        · det_regions : 区域字典列表（gr.State，供「检测区域」取消勾选）；
+        · region_update : CheckboxGroup 的 choices/value/visible 更新。
+
+    阶段 405：编辑框不再预填红色掩码。Gradio 6.31 对预填图层的编辑会把内容
+    按视口坐标重排（橡皮越擦越多），故误报改由区域勾选排除，画笔只负责补涂。
     """
+    _empty_regions = gr.update(choices=[], value=[], visible=False)
+
+    def _editor(background):
+        return {"background": background, "layers": [], "composite": None}
+
     # 未上传图片。
     if upload is None:
         return (
@@ -191,15 +283,17 @@ def process_auto_detect(
             t("auto.msg.no_upload"),
             build_detection_stats_markdown(None),
             None,
+            [],
+            _empty_regions,
         )
 
     # 分辨率防御性校验。
     try:
         validate_numpy_image(upload)
     except ImageTooLargeError as exc:
-        return upload, None, t("single.msg.too_large", exc=format_exception_for_ui(exc)), build_detection_stats_markdown(None), None
+        return upload, None, t("single.msg.too_large", exc=format_exception_for_ui(exc)), build_detection_stats_markdown(None), None, [], _empty_regions
     except ValueError as exc:
-        return upload, None, t("single.msg.bad_data", exc=format_exception_for_ui(exc)), build_detection_stats_markdown(None), None
+        return upload, None, t("single.msg.bad_data", exc=format_exception_for_ui(exc)), build_detection_stats_markdown(None), None, [], _empty_regions
 
     # 调用核心检测。
     try:
@@ -220,23 +314,22 @@ def process_auto_detect(
             t("auto.msg.detect_fail", exc=format_exception_for_ui(exc)),
             build_detection_stats_markdown(None),
             None,
+            [],
+            _empty_regions,
         )
 
     mask = result.mask
 
-    # 未检测到任何水印：预填一个空图层，引导用户手动涂抹。
+    # 未检测到任何水印：编辑框保持空白，引导用户手动涂抹。
     if count_mask_pixels(mask) == 0:
-        editor_value = {
-            "background": upload,
-            "layers": [],
-            "composite": None,
-        }
         return (
             upload,
-            editor_value,
+            _editor(upload),
             t("auto.msg.no_detect"),
             build_detection_stats_markdown(result.stats),
             mask,
+            [],
+            _empty_regions,
         )
 
     # 检测可视化：原图 + 半透明红层 + 彩色类别框。
@@ -246,27 +339,21 @@ def process_auto_detect(
         log.warning("可视化生成失败，退回原图：%s", exc)
         preview = upload
 
-    # 预填编辑框：背景=原图，图层=红色掩码（用户可在此基础上增涂/擦除）。
-    mask_rgba = _mask_to_rgba_layer(mask)
-    editor_value = {
-        "background": upload,
-        "layers": [mask_rgba],
-        "composite": None,
-    }
+    regions = _region_items(result.regions)
+    labels = [r["label"] for r in regions]
 
     ocr_tip = _ocr_tip(bool(result.used_ocr), is_ocr_available())
     status = t("auto.msg.detect_done", n=len(result.regions), ocr=ocr_tip)
     stats_md = build_detection_stats_markdown(result.stats, ocr_available=is_ocr_available())
-    return preview, editor_value, status, stats_md, mask
-
-
-def _repair_area_note(ratio: float) -> str:
-    """修复前报出「本次将改动多少画面」（阶段 394：用户要能预判代价）。
-
-    背景：干净图上误检会让修复把不该动的地方涂掉（实测最坏 5.15%）⇒
-    状态栏必须先说清面积，用户才能决定要不要用橡皮擦掉再修。
-    """
-    return t("auto.msg.repair_area", pct=f"{max(0.0, float(ratio)) * 100:.1f}")
+    return (
+        preview,
+        _editor(upload),
+        status,
+        stats_md,
+        mask,
+        regions,
+        gr.update(choices=labels, value=labels, visible=bool(labels)),
+    )
 
 
 def process_auto_repair(
@@ -292,7 +379,10 @@ def process_auto_repair(
     real_scale: Optional[int] = None,
     det_mask=None,
     mask_mode: Optional[str] = None,
+    region_select=None,
+    det_regions=None,
     real_backend: Optional[str] = None,
+    upload=None,
     dual_run: "bool | None" = None,
     record: bool = True,
 ):
@@ -315,8 +405,13 @@ def process_auto_repair(
     返回值：
         五元组 (orig_view, result_view, compare_view, status_text, download_file)。
     """
-    # 解析原图。
+    # 解析原图。阶段 405：编辑框背景经过浏览器往返会被整图重编码
+    # （实测全图 98.6% 像素有 ≤10 级漂移，噪声图会放大成大面积 >10）⇒
+    # 修复底图优先用「上传原图」数组；编辑框只负责提供笔迹掩码。
     image = _extract_image(editor_value)
+    if isinstance(upload, np.ndarray) and upload.ndim >= 2:
+        if image is None or (image.ndim >= 2 and upload.shape[:2] == image.shape[:2]):
+            image = upload
     if image is None:
         return (
             None,
@@ -345,28 +440,36 @@ def process_auto_repair(
     det = det_mask if isinstance(det_mask, np.ndarray) and det_mask.ndim == 2 else None
 
     auto_fallback = False
+    det_clean = det
     if mode == MASK_MODE_MERGE:
-        if count_mask_pixels(user_mask) == 0:
-            # 编辑框为空：merge 模式先用检测掩码；仍无则自动兜底检测（默认预设），
-            # 让「上传后直接点一键修复」也能工作。
+        # 阶段 405：编辑框只承载用户笔迹，检测结果以 det_mask 为准；
+        # 误报先按「检测区域」勾选裁剪（取消勾选 = 本次不修该区域）。
+        if det is not None and count_mask_pixels(det) > 0:
+            det_clean = exclude_regions_from_mask(det, det_regions, region_select)
+        if count_mask_pixels(user_mask) > 0:
+            base = det_clean if det_clean is not None else np.zeros(image.shape[:2], dtype=np.uint8)
+            mask = np.maximum(base, user_mask)
+        else:
             if det is None or count_mask_pixels(det) == 0:
+                # 没跑过检测：自动兜底检测（默认预设），让「上传后直接修复」也能工作。
                 try:
                     auto_res = detect_watermark_mask(
                         image,
                         preset=config.DETECT_PRESET_DEFAULT,
                         use_ocr=config.DETECT_USE_OCR,
                     )
-                    det = auto_res.mask
+                    det_clean = auto_res.mask
                     auto_fallback = True
                 except Exception as exc:  # noqa: BLE001
                     log.warning("自动兜底检测失败：%s", exc)
-                    det = None
-            mask = det if det is not None else user_mask
-        else:
-            # 编辑框所见即所得（已含预填检测层）：直接用编辑框掩码。
-            mask = user_mask
+                    det_clean = None
+            if (det is not None and count_mask_pixels(det) > 0
+                    and (det_clean is None or count_mask_pixels(det_clean) == 0)):
+                # 检测到了、但用户取消了全部区域：明确告知，不偷偷回退到全选。
+                return image, None, None, t("auto.msg.all_excluded"), None
+            mask = det_clean if det_clean is not None else user_mask
     else:
-        # 仅精修：剥离预填的检测层，只保留用户亲手绘制的笔迹。
+        # 仅精修：只保留用户亲手绘制的笔迹。
         mask = merge_masks(det, user_mask, MASK_MODE_MANUAL, target_shape=image.shape[:2])
 
     if mask is None:
@@ -381,11 +484,6 @@ def process_auto_repair(
             t("auto.msg.no_mask"),
             None,
         )
-
-    # 阶段 394：先把「本次要改多少画面」摆出来，用户能预判代价。
-    area_note = _repair_area_note(
-        count_mask_pixels(mask) / max(1, int(image.shape[0]) * int(image.shape[1]))
-    )
 
     # 进度回调（阶段 5 批量处理时接入实时进度条）。
     def _progress(p: float, msg: str) -> None:
@@ -430,6 +528,11 @@ def process_auto_repair(
         superres=superres, superres_amount=superres_amount,
         real_superres=real_superres, real_scale=real_scale, real_backend=real_backend,
     )
+    # 阶段 405：改动面积改为**实测**（掩码 + 8px 保护带都会写像素，按掩码面积会低报）。
+    _change = _actual_change_ratio(image, result)
+    area_note = "" if _change is None else t(
+        "auto.msg.repair_area", pct=f"{_change * 100:.2f}"
+    )
     # 可选：优化前 / 后 质量对比，附到状态文案（联动 quality_service）。
     if postprocess_eval:
         try:
@@ -454,13 +557,10 @@ def process_auto_repair(
     if auto_fallback:
         refine_tip += t("auto.msg.auto_fallback")
     if det is not None and count_mask_pixels(det) > 0:
-        det_px = count_mask_pixels(det)
-        added = count_mask_pixels(
-            merge_masks(det, user_mask, MASK_MODE_MANUAL, target_shape=image.shape[:2])
-        )
+        det_px = count_mask_pixels(det_clean) if det_clean is not None else 0
         refine_tip += t(
             "auto.msg.refine_stats",
-            det=det_px, user=count_mask_pixels(user_mask), added=added,
+            det=det_px, user=count_mask_pixels(user_mask),
         )
 
     # 阶段 32：真实超分可能放大输出尺寸，提示用户分辨率已提升。
@@ -567,25 +667,6 @@ def on_enhance(orig_arr, result_arr, mode: str) -> str:
             f"{_html.escape(format_exception_for_ui(exc))}</div>"
         )
     return html or t("compare.no_result")
-
-
-def _reload_detection_mask(det_mask, upload):
-    """
-    把最近一次检测掩码重新预填进编辑框（阶段 24：「重新加载检测掩码」按钮）。
-    掩码与上传原图尺寸不一致时拒绝重载（防止图层错位）。
-    """
-    bg = upload if isinstance(upload, np.ndarray) else None
-    if bg is None or not isinstance(det_mask, np.ndarray) or det_mask.ndim != 2:
-        return None
-    if det_mask.shape[:2] != bg.shape[:2]:
-        return None
-    if count_mask_pixels(det_mask) == 0:
-        return {"background": bg, "layers": [], "composite": None}
-    return {
-        "background": bg,
-        "layers": [_mask_to_rgba_layer(det_mask)],
-        "composite": None,
-    }
 
 
 def _clear_editor(upload):
@@ -716,7 +797,10 @@ def build_auto_tab():
             )
             reg_label(detect_preview, "auto.detect_preview_label")
 
-            # 微调编辑框：检测后会被预填「背景+红色掩码图层」，用户可增涂/擦除。
+            # 微调编辑框：只承载用户自己的笔迹（不再预填红色掩码）。
+            # 阶段 405：Gradio 6.31 对预填图层的编辑会把内容按视口坐标重排，
+            # 橡皮越擦掩码越多（外部验收 F5 实测 1.1%→2.4%）⇒ 检测结果改走
+            # 下方「检测区域」勾选排除；画笔只负责补涂漏检。
             editor_kwargs = dict(
                 label=t("auto.editor_label"),
                 type="numpy",
@@ -728,15 +812,21 @@ def build_auto_tab():
                 editor_kwargs["brush"] = gr.Brush(
                     default_size=40, colors=["#ff3b30"], color_mode="fixed"
                 )
-            if hasattr(gr, "Eraser"):
-                try:
-                    editor_kwargs["eraser"] = gr.Eraser(default_size=40)
-                except Exception:
-                    pass
+            # 阶段 405：误报改走「检测区域」取消勾选，不再提供橡皮（预填层擦除不可靠）。
+            editor_kwargs["eraser"] = False
             editor = gr.ImageEditor(**editor_kwargs)
             reg_label(editor, "auto.editor_label")
 
-            # 阶段 24：交互式掩码精修 —— 精修模式 + 重载 / 清空工具。
+            # 阶段 405：检测区域勾选（取消勾选 = 本次不修该区域）。
+            det_regions_state = gr.State([])
+            region_select = gr.CheckboxGroup(
+                choices=[], value=[], visible=False,
+                label=t("auto.regions_label"),
+                info=t("auto.regions_info"),
+            )
+            reg_label_info(region_select, "auto.regions_label", "auto.regions_info")
+
+            # 阶段 24：交互式掩码精修 —— 精修模式 + 清空工具。
             # 检测掩码存进 State，供修复回调做「检测 × 精修」合并与统计。
             det_mask_state = gr.State(None)
             with gr.Row():
@@ -749,10 +839,6 @@ def build_auto_tab():
                 )
                 reg_label_info(mask_mode, "mask_edit.mode_label", "mask_edit.mode_info")
             with gr.Row():
-                reload_mask_btn = gr.Button(
-                    t("mask_edit.reload_btn"), size="sm",
-                )
-                reg_value(reload_mask_btn, "mask_edit.reload_btn")
                 clear_editor_btn = gr.Button(
                     t("mask_edit.clear_btn"), size="sm",
                 )
@@ -990,7 +1076,10 @@ def build_auto_tab():
     detect_btn.click(
         fn=process_auto_detect,
         inputs=[upload, sensitivity, en_translucent, en_corner, en_edge, detect_preset],
-        outputs=[detect_preview, editor, status_box, detect_stats_md, det_mask_state],
+        outputs=[
+            detect_preview, editor, status_box, detect_stats_md,
+            det_mask_state, det_regions_state, region_select,
+        ],
     )
 
     # 阶段 320：一键载入示例图（填 上传框 + 编辑框 + 状态栏）。
@@ -1017,8 +1106,8 @@ def build_auto_tab():
             pp_poisson, pp_poisson_strength, pp_texture, pp_texture_amount,
             pp_artifact, pp_artifact_amount,             pp_superres, pp_superres_amount,
             pp_real_superres, pp_real_scale,
-            det_mask_state, mask_mode, pp_real_backend,
-            dual_run,
+            det_mask_state, mask_mode, region_select, det_regions_state,
+            pp_real_backend, upload, dual_run,
         ],
         outputs=[orig_view, result_view, compare_view, status_box, out_file],
     )
@@ -1037,11 +1126,6 @@ def build_auto_tab():
     )
 
     # 阶段 24：掩码精修工具按钮。
-    reload_mask_btn.click(
-        fn=_reload_detection_mask,
-        inputs=[det_mask_state, upload],
-        outputs=[editor],
-    )
     clear_editor_btn.click(
         fn=_clear_editor,
         inputs=[upload],

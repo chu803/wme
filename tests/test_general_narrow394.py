@@ -11,10 +11,12 @@
 守卫：
   · general 明确关掉边缘小字，且仍保留半透明 + 角落（承诺面口径）；
   · 边缘小字能力仍在（显式预设可开）；
-  · 修复前的状态文案要报出"本次将改动 x% 像素"（用户能预判代价）。
+  · 状态文案要报出"实际改动 x% 像素"（用户能判断代价）。
 """
 
 from __future__ import annotations
+
+import numpy as np
 
 from core.detection_presets import resolve_preset
 
@@ -38,10 +40,14 @@ def test_edge_text_capability_still_selectable():
     assert g.get("enable_edge") is True, "边缘小字必须仍可显式选用"
 
 
-def test_repair_area_note_reports_percentage():
-    from ui.tab_auto import _repair_area_note
+def test_actual_change_ratio_reports_pixel_diff():
+    """阶段 405：改动比例改为产物与原图逐像素测量（掩码面积会低报保护带）。"""
+    from ui.tab_auto import _actual_change_ratio
 
-    note = _repair_area_note(0.0123)
-    assert "%" in note, "修复前必须报出改动面积（用户要能预判代价）"
-    assert "1.2" in note, "百分比要带一位小数"
-    assert "%" in _repair_area_note(0.0), "面积为 0 也要有一致的说法"
+    a = np.zeros((10, 10, 3), dtype=np.uint8)
+    b = a.copy()
+    b[0, 0] = 100
+    assert abs(_actual_change_ratio(a, b) - 0.01) < 1e-9
+    assert _actual_change_ratio(a, a) == 0.0
+    # 真·超分改变画布尺寸 ⇒ 无法逐像素比较，返回 None（调用方跳过该行）。
+    assert _actual_change_ratio(a, np.zeros((5, 5, 3), dtype=np.uint8)) is None

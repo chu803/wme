@@ -422,7 +422,10 @@ TRANSLATIONS: dict = {
             "en_edge": "检测边缘小字",
             "detect_btn": "② 自动检测水印",
             "detect_preview_label": "检测结果预览（红=水印区，彩框=检测类别）",
-            "editor_label": "③ 手动微调（画笔增涂 / 橡皮擦除水印区）",
+            "editor_label": "③ 手动补涂（画笔涂抹漏检区域；误报请在「检测区域」取消勾选）",
+            "regions_label": "检测区域（取消勾选 = 本次不修复该区域）",
+            "regions_info": "默认全选。发现误报不要用橡皮擦，取消勾选对应区域即可；全部取消等于不修复。",
+            "region_item": "区域 {n} · {kind} · {w}×{h} @({x},{y})",
             "repair_accordion": "④ 修复参数调节",
             "repair_btn": "④ 一键修复",
             "result_title": "### ⑤ 结果对比（点击图片可放大查看细节）",
@@ -439,12 +442,13 @@ TRANSLATIONS: dict = {
                 "ocr_on": "（已启用 OCR 文字增强）",
                 "ocr_on_no_hit": "（已启用 OCR 文字增强，但本次没检出 OCR 文字水印）",
                 "ocr_off": "（未启用 OCR，使用 OpenCV 原生检测；装 EasyOCR 可提升文字水印精度）",
-                "repair_area": "· 本次将改动约 {pct}% 的画面（修复区；若这些不是水印，请用橡皮擦掉后重试）",
-                "detect_done": "✅ 检测完成：发现 {n} 个疑似水印区域 {ocr}。\n请在下方编辑框中用画笔增涂、或用橡皮擦除误判区域，然后点击「④ 一键修复」。\n（左图为检测预览，红色=水印区，彩色框=检测类别：橙=半透明 / 青=角落LOGO / 紫=边缘小字 / 绿=OCR文字）",
+                "repair_area": "· 本次实际改动约 {pct}% 的画面（与原图逐像素比较；若这些不是水印，请在「检测区域」取消勾选对应项后重试）",
+                "detect_done": "✅ 检测完成：发现 {n} 个疑似水印区域 {ocr}。\n左图为检测预览。误报：在下方「检测区域」取消勾选；漏检：在编辑框用画笔涂抹。然后点击「④ 一键修复」。\n（左图红色=水印区，彩色框=检测类别：橙=半透明 / 青=角落LOGO / 紫=边缘小字 / 绿=OCR文字）",
+                "all_excluded": "⚠️ 你取消了全部检测区域。\n请至少保留一个区域，或在编辑框用画笔补涂后重试。",
                 "no_editor": "⚠️ 请先上传图片并完成检测（或手动涂抹水印区域）。",
                 "no_mask": "⚠️ 尚未标记任何水印区域。\n请先点击「② 自动检测水印」，或在编辑框用画笔涂抹水印后重试。",
                 "auto_fallback": "\nℹ️ 编辑框为空，已按默认预设自动检测兜底。",
-                "refine_stats": "\n· 精修统计：检测命中 {det:,} 像素 / 编辑框 {user:,} 像素 / 编辑框比检测多 {added:,} 像素（含预填层边缘过渡，通常会比你实际补画的稍多）。",
+                "refine_stats": "\n· 精修统计：检测命中 {det:,} 像素 / 画笔补涂 {user:,} 像素。",
                 "upscaled": "\n· 已启用真·超分：输出已放大至 {factor}×（分辨率提升，可能已回退轻量超分）。",
                 # 阶段 337：此前是 `f"\n· 后处理提升：{imp['detail']}"`（UI 层硬编码中文，
                 # 且 detail 又是服务层产的中文句子）⇒ 英文界面整行都是中文。
@@ -453,11 +457,9 @@ TRANSLATIONS: dict = {
         },
         "mask_edit": {
             "mode_label": "掩码精修模式",
-            "mode_info": "合并=检测结果 ∪ 你的精修（推荐，补漏+擦除都生效）；仅精修=只修你亲手绘制的区域（自动剥离检测层）",
-            "mode_merge": "合并（检测+精修）",
+            "mode_info": "合并=检测结果（按勾选裁剪）∪ 你的画笔补涂（推荐）；仅精修=只修你亲手绘制的区域",
+            "mode_merge": "合并（检测+补涂）",
             "mode_manual": "仅精修（手动绘制）",
-            "reload_btn": "🔄 重新加载检测掩码",
-            "reload_info": "把最近一次自动检测的结果重新预填进编辑框（擦过头 / 清空后一键恢复）",
             "clear_btn": "🧹 清空编辑框",
             "clear_info": "清空所有图层，回到空白画布重新手动涂抹",
         },
@@ -1284,7 +1286,10 @@ TRANSLATIONS: dict = {
             "en_edge": "Detect Edge Text",
             "detect_btn": "② Auto-Detect Watermark",
             "detect_preview_label": "Detection Preview (red=watermark, box=category)",
-            "editor_label": "③ Manual Tuning (brush to add / eraser to remove)",
+            "editor_label": "③ Manual Add (brush over missed areas; uncheck false positives under 'Detected Regions')",
+            "regions_label": "Detected Regions (uncheck = skip that region)",
+            "regions_info": "All checked by default. Don't erase false positives — just uncheck them; unchecking all means no repair.",
+            "region_item": "Region {n} · {kind} · {w}×{h} @({x},{y})",
             "repair_accordion": "④ Repair Parameters",
             "repair_btn": "④ One-Click Repair",
             "result_title": "### ⑤ Result Comparison (click to zoom)",
@@ -1301,23 +1306,22 @@ TRANSLATIONS: dict = {
                 "ocr_on": "(OCR text enhancement enabled)",
                 "ocr_on_no_hit": "(OCR text enhancement is enabled, but no OCR text watermark was detected this time)",
                 "ocr_off": "(OCR off, using OpenCV native detection; install EasyOCR for better text watermarks)",
-                "repair_area": "· This run will change about {pct}% of the image (repair area; if those areas are not watermarks, erase them and retry)",
-                "detect_done": "✅ Detection done: found {n} suspected region(s) {ocr}.\nAdd/erase in the editor below, then click '④ One-Click Repair'.\n(Left: preview, red=watermark, box=category: orange=translucent / cyan=corner logo / purple=edge text / green=OCR text)",
+                "repair_area": "· This run actually changed about {pct}% of the image (pixel-by-pixel vs. the original; if those areas are not watermarks, uncheck the matching region(s) under 'Detected Regions' and retry)",
+                "detect_done": "✅ Detection done: found {n} suspected region(s) {ocr}.\nLeft: preview. False positives: uncheck under 'Detected Regions'; missed spots: paint with the brush below. Then click '④ One-Click Repair'.\n(Left: red=watermark, box=category: orange=translucent / cyan=corner logo / purple=edge text / green=OCR text)",
+                "all_excluded": "⚠️ You unchecked all detected regions.\nKeep at least one region, or paint the area with the brush and retry.",
                 "no_editor": "⚠️ Please upload an image and run detection (or paint the watermark) first.",
                 "no_mask": "⚠️ No watermark region marked yet.\nClick '② Auto-Detect' first, or paint the watermark in the editor, then retry.",
                 "auto_fallback": "\nℹ️ Editor is empty; ran auto-detection with default preset as fallback.",
-                "refine_stats": "\n· Refine stats: detection {det:,} px / editor {user:,} px / editor exceeds detection by {added:,} px (includes the prefill layer's anti-aliased edge — usually a bit more than you actually painted).",
+                "refine_stats": "\n· Refine stats: detection {det:,} px / brush additions {user:,} px.",
                 "upscaled": "\n· Real super-res enabled: output upscaled to {factor}× (resolution boosted, lightweight SR may have been used as fallback).",
                 "postprocess_gain": "\n· Post-processing gain: quality {before} → {after} ({delta})",
             },
         },
         "mask_edit": {
             "mode_label": "Mask Refine Mode",
-            "mode_info": "Merge=detection ∪ your refinement (recommended: covers misses & false alarms); Manual=only your own strokes (auto-strips the detection layer)",
-            "mode_merge": "Merge (detection + refine)",
+            "mode_info": "Merge=detection (filtered by your checkboxes) ∪ your brush additions (recommended); Manual=only your own strokes",
+            "mode_merge": "Merge (detection + add)",
             "mode_manual": "Manual (paint only)",
-            "reload_btn": "🔄 Reload Detection Mask",
-            "reload_info": "Re-fill the editor with the latest detection mask (restore after over-erasing / clearing)",
             "clear_btn": "🧹 Clear Editor",
             "clear_info": "Remove all layers and start painting from a blank canvas",
         },
@@ -2037,12 +2041,14 @@ if __name__ == "__main__":
               "grid_watermark", "gradient_watermark", "logo_watermark"):
         assert t(f"detect.kind.{k}") != f"detect.kind.{k}"
     # 阶段 24：掩码精修键（mask_edit.* + auto.msg 新增）。
-    for k in ("mode_label", "mode_info", "mode_merge", "mode_manual",
-              "reload_btn", "clear_btn"):
+    for k in ("mode_label", "mode_info", "mode_merge", "mode_manual", "clear_btn"):
         assert t(f"mask_edit.{k}") != f"mask_edit.{k}", f"mask_edit.{k} 缺失翻译"
-    assert t("mask_edit.mode_merge") == "合并（检测+精修）"
+    assert t("mask_edit.mode_merge") == "合并（检测+补涂）"
     assert t("auto.msg.auto_fallback").startswith("\nℹ️")
-    assert "added" in t("auto.msg.refine_stats")
+    assert "{user" in t("auto.msg.refine_stats")
+    for k in ("regions_label", "regions_info", "region_item"):
+        assert t(f"auto.{k}") != f"auto.{k}", f"auto.{k} 缺失翻译"
+    assert "{pct}" in t("auto.msg.repair_area")
     # 阶段 25：自动预设推荐键（中英文）。
     for k in ("btn", "title", "msg.no_upload", "msg.bad_image", "msg.no_result",
               "msg.fail", "list_sep", "score_line", "scores_none",
@@ -2135,9 +2141,9 @@ if __name__ == "__main__":
     assert t("media.pdf.auto_preset_label") == "🤖 Smart Preset Per Page"
     assert t("media.video.preset_dist") == "🤖 Smart preset distribution: {dist}"
     assert t("detect.preset.ai_signature.title") == "AI Signature Bar"
-    assert t("mask_edit.mode_merge") == "Merge (detection + refine)"
-    assert t("mask_edit.reload_btn") == "🔄 Reload Detection Mask"
+    assert t("mask_edit.mode_merge") == "Merge (detection + add)"
     assert t("auto.msg.refine_stats").startswith("\n· Refine stats:")
+    assert "Detected Regions" in t("auto.regions_label")
     # 阶段 30：模型管理 UI 增强键（状态面板 / 缓存热重载 / 详情）。
     set_language("zh-CN")
     for k in ("status_title", "status_device", "status_device_gpu", "status_device_cpu",
