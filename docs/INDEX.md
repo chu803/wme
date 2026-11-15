@@ -1832,6 +1832,17 @@ text_heavy 区域数 9.3→7.6（更少更大＝整框化）、faint_tiled 最�
 
 - `407-真实图门禁基线复校.md`
 
+### 408 · 批量并行提速：核数感知并发 + 按并发档耦合 torch 线程（2026-11-15）
+
+批量页默认串行（`BATCH_CONCURRENCY=1`）改核数感知并发 `min(10,max(2,逻辑核//2))`（本机⇒10），
+新增 `batch_cpu_threads(conc)` 按并发档耦合 torch intra-op 线程（`clamp(核//conc,1,进入值)`，退出恢复），
+`_get_ocr_reader` 加双重检查锁。探针 #3 实证检测最优 nt2×conc10=1.86×、掩码跨并发逐位一致；
+端到端全流水线实测 conc1=93.56s→conc10=35.10s ⇒ **2.67×**（修复/保存也并行）。检测算法/预设/阈值未动，
+承诺召回 0.8078 与面积红线不变。规划期细化：只耦合可恢复的 intra-op（避开 `set_num_interop_threads`
+一次性陷阱）。已知权衡：全局线程爆炸半径（finally 必恢复、conc1 封顶回默认）。
+
+- `408-batch-parallelism.md`
+
 
 
 

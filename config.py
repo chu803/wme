@@ -2490,6 +2490,7 @@ EMPTY_CACHE_MIN_INTERVAL_SEC: Final[float] = _env_float(
 #   False : 每次修复各自 select_device()。
 PERF_REUSE_DEVICE: Final[bool] = _env_bool("PERF_REUSE_DEVICE", True)
 
+
 def _batch_concurrency_default(cores: "int | None") -> int:
     """核数感知批量并发默认（阶段 408）：min(10, max(2, 逻辑核//2))。
 

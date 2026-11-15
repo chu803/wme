@@ -838,9 +838,11 @@ Expected: 两遍全绿（含新增 4 个测试文件、队列契约、reader 锁
 - [ ] **Step 6: 提交（不推送）**
 
 ```bash
-git add docs/408-batch-parallelism.md docs/INDEX.md CHANGELOG.md .workbuddy/memory/2026-11-15.md .scratch/bench_batch_e2e_408.py
+git add docs/408-batch-parallelism.md docs/INDEX.md CHANGELOG.md .workbuddy/memory/2026-11-15.md
 git commit -m "docs(批量并行): 阶段 408 端到端实测加速 + 门禁全绿 + 落笔四处"
 ```
+（`.scratch/bench_batch_e2e_408.py` 被 .gitignore 忽略，与探针 #3 同惯例不入库；
+基准方法 + 数字写进 docs/408 即可本地复现。）
 
 - [ ] **Step 7: 更新任务状态**
 

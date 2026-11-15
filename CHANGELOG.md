@@ -52,6 +52,20 @@
 
 ## [Unreleased]
 
+### 性能（阶段 408 · 批量并行提速）
+
+- **批量默认核数感知并发**：`BATCH_CONCURRENCY` 默认从 1 改为 `min(10, max(2, 逻辑核//2))`
+  （本机 24 逻辑核 ⇒ 10）；env `WME_BATCH_CONCURRENCY` 仍可覆盖（1–16）。
+- **按并发档耦合 torch 线程**：新增 `core.device_manager.batch_cpu_threads(conc)`，批量期间把
+  torch intra-op 线程调到 `clamp(逻辑核//conc, 1, 进入值)`，退出恢复（异常/生成器关闭安全）；
+  conc1 封顶回默认 ⇒ 单图延迟不劣化。只耦合可恢复的 intra-op（避开 interop 一次性陷阱）。
+- **端到端实测 2.67×**：10 张 2048² ai_logo 全流水线（含修复+保存，强制缓存未命中）
+  conc1=93.56s → conc10=35.10s。检测-only 探针最优 1.86×，端到端更高因非检测阶段也并行。
+- **并发安全**：`_get_ocr_reader` 加双重检查锁，并发首检只建一个共享 reader。
+- **诚实边界**：检测算法/预设/阈值未动，承诺召回 0.8078 与面积红线不变；全局线程爆炸半径是
+  已知权衡（高并发批量期间并发单图可能变慢，finally 必恢复）；上限 conc10 是实测值，更高未测。
+  新增 `docs/408-batch-parallelism.md`。
+
 ### 门禁（阶段 407 · 真实图基线复校）
 
 - **判决**：`realgate402b.log`（2026-11-09）与 Oct 22 基线口径逐项一致（general +
