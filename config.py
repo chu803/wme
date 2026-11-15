@@ -1671,6 +1671,10 @@ DETECT_TEXTURE_GUARD_DENSITY: Final[float] = _env_float(
 #   于是在残差场上留下大量强残差，被误判成半透明水印 ⇒ 干净照片被局部涂花
 #   （实测最坏 5.10%，docs/394/397）。
 #   标定（区域粒度）：真半透明叠层（平滑叠层）的区域边缘能量 5.5~12.6 ⇒ 阈值 40 有 3.2× 余量。
+#   ⚠ **阶段 410（#67 动漫干净图误报）再标定 40→15**：插画樱花簇等"柔和彩色内容"被半透明
+#     通路误判（实测 0.88%），其区域边缘能量 17.1~39.6，落在真叠层（≤12.6）与旧阈值 40 之间。
+#     收紧到 15（仍高于真叠层上界 12.6）可压掉动漫误报（0.88%→0.068%），real_gate 复测
+#     faint_tiled/text_heavy 覆盖 57/57 不变（无真实水印回归）、干净图 0/16、角标召回 7/8 不变。
 #   ⚠ **它分不开"锐利边缘的真水印"与"锐利边缘的结构"**：合成角标（锐利真水印，纹理底图）
 #     的区域边缘能量 187.6~222.0，与规则网格误伤 64.5~275.8 同区间重叠 ⇒ 本守卫实际只对
 #     **平滑叠层**有效；代价是压掉"锐利真水印在纹理背景上的半透明命中"（被牺牲的是
@@ -1682,7 +1686,7 @@ DETECT_TRANSLUCENT_STRUCTURED_EDGE_GUARD: Final[bool] = _env_bool(
     "DETECT_TRANSLUCENT_STRUCTURED_EDGE_GUARD", True
 )
 DETECT_STRUCTURED_EDGE_MAX_ENERGY: Final[float] = _env_float(
-    "DETECT_STRUCTURED_EDGE_MAX_ENERGY", 40.0, 1.0, 1000.0
+    "DETECT_STRUCTURED_EDGE_MAX_ENERGY", 15.0, 1.0, 1000.0
 )
 
 # 【纹理稠密守卫：`过均值`比例常数】固定 0.5（不对用户暴露，仅内部常量）。
