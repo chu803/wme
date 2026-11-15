@@ -19,6 +19,7 @@ from __future__ import annotations
 import os
 import platform
 import time
+from contextlib import contextmanager
 from dataclasses import dataclass, field
 from typing import Optional
 
@@ -320,6 +321,45 @@ def apply_cpu_threads(threads: Optional[int] = None) -> None:
         os.environ.setdefault("MKL_NUM_THREADS", str(n))
 
     log.debug("CPU 线程数已设置为 %s", n if n else "自动（物理核心数）")
+
+
+@contextmanager
+def batch_cpu_threads(concurrency: int):
+    """批量期间按并发档耦合 torch intra-op 线程，退出恢复进入前的值（阶段 408）。
+
+    threads = clamp(os.cpu_count() // concurrency, 1, 进入时 torch 线程数)。
+    本机 24 逻辑核：conc10 ⇒ 2（阶段 407 探针 #3 实测最优）；conc1 ⇒ 封顶回默认。
+
+    只动 torch intra-op（与探针 #3 口径一致）；不碰 interop
+    （set_num_interop_threads 一次性、无法恢复）与 cv2/env（探针未动，避免未测变更）。
+    torch 不可用时为 no-op。全局线程爆炸半径见 spec §7：finally 必恢复。
+    """
+    cores = os.cpu_count() or 2
+    conc = max(1, int(concurrency))
+    torch = None
+    entry = None
+    try:
+        import torch as _torch
+
+        torch = _torch
+        entry = torch.get_num_threads()
+    except Exception:
+        pass
+    hi = entry if entry else cores
+    target = max(1, min(cores // conc, hi))
+    if torch is not None and entry is not None:
+        try:
+            torch.set_num_threads(target)
+        except Exception:
+            pass
+    try:
+        yield target
+    finally:
+        if torch is not None and entry is not None:
+            try:
+                torch.set_num_threads(entry)
+            except Exception:
+                pass
 
 
 # 空显存释放节流：记录上次真实释放的时间戳（monotonic 秒）。
