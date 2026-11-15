@@ -94,8 +94,11 @@ _REAL_BASELINE = os.path.join(_ROOT, "benchmark_real", "quality_baseline.json")
 #:   coverage_ratio **2.83**；mask_recall 同步 0.5960→**0.7700**（红线 0.45 不动）。
 #:   红线夹逼不变式仍满足：0.0162<0.020≤0.0324、2.83<3.50≤5.66、0.20≤0.3325<0.6650。
 #: 本表语义是「快照 == 当前默认配置的实测」，故每次刷新基线都要同步（经验 81 的合法连带损伤）。
-MSER_OFF = {"precision": 0.093, "mask_iou": 0.3325,
-            "mask_coverage": 0.0162, "coverage_ratio": 2.83}
+#: ⚠ **阶段 407 基线复校再锚（408 收尾同步）**：400/401「整框文字 + 板块足迹进掩码」后
+#:   承诺面实测 precision **0.1243** / mask_iou **0.4185** / mask_coverage **0.0148** /
+#:   coverage_ratio **2.51**（mask_recall 0.8078），与 quality_baseline.json 逐位一致。
+MSER_OFF = {"precision": 0.1243, "mask_iou": 0.4185,
+            "mask_coverage": 0.0148, "coverage_ratio": 2.51}
 #: 把开关开回去后的实测（真实图跑 `WME_DETECT_CORNER_MSER_ENABLED=1` 得到；阶段 100 口径）。
 MSER_ON = {"precision": 0.0392, "mask_iou": 0.0699,
            "mask_coverage": 0.1266, "coverage_ratio": 13.00}

@@ -70,7 +70,12 @@ _REAL_BASELINE = os.path.join(_ROOT, "benchmark_real", "quality_baseline.json")
 #:   红线（0.020 / 3.50× / 0.20）**未动**，夹逼不变式仍满足：
 #:   max 型 0.0137<0.020≤0.0274、2.47<3.50≤4.94；min 型 0.1562≤0.20<0.3124。
 #:   注：过检绝对值上升同属「新图内容更易触发通路」的**构成效应**，非检测器回退。
-CONVERGED = {"mask_coverage": 0.0162, "coverage_ratio": 2.83, "mask_iou": 0.3325}
+#: ⚠ **阶段 407 基线复校再锚（408 收尾同步）**：400/401「整框文字 + 板块足迹进掩码」后
+#:   承诺面实测 mask_coverage **0.0148** / coverage_ratio **2.51** / mask_iou **0.4185**
+#:   （与 quality_baseline.json 逐位一致）。红线 mask_iou 随防哑巴不变式 0.20→**0.25**
+#:   （0.4185/2=0.20925 ≤ 0.25 < 0.4185）；mask_coverage/coverage_ratio 红线（0.020/3.50）未动，
+#:   夹逼仍满足：0.0148<0.020≤0.0296、2.51<3.50≤5.02。
+CONVERGED = {"mask_coverage": 0.0148, "coverage_ratio": 2.51, "mask_iou": 0.4185}
 #: ⚠ 阶段 S2（2026-10-17）随 `DETECT_TRANSLUCENT_SENSITIVITY` 0.55→0.50 重锚同步
 #: （与 benchmark_real/quality_baseline.json 逐位一致；经验 81 合法连带损伤）。
 #: ⚠ **阶段 P0-3（2026-10-19）再锚**：`DETECT_PLATE_COMPLETE_FROM_SIGNAL` 默认 False→True
@@ -287,9 +292,9 @@ def test_reverting_to_stage100_level_caught_by_drift():
     """阶段 106 的改进幅度（19~25%）小于红线余量 ⇒ 「退回阶段 100 级」由**漂移**兜住。
 
     这是阶段 106「双约束」标定（`scripts/e2e_real_probe.py` 同名说明）的边界如实登记：
-    · mask_coverage 0.0745 > 新红线 0.045、coverage_ratio 7.65 > 4.35 ⇒ **红线也报**；
-    · mask_iou 0.1163 **高于**新红线 0.10（该线只守「整幅塌陷」）⇒ 仅**漂移**报
-      （−31.8% 远超 15% 容差）。
+    · mask_coverage 0.0745 > 红线 0.020、coverage_ratio 7.65 > 3.50 ⇒ **红线也报**；
+    · mask_iou 0.1163 低于红线 0.25（阶段 407 复校后随防哑巴不变式 0.20→0.25）⇒ **红线与漂移都报**
+      （−72% 远超 15% 容差；本用例只要求漂移必报，红线是否同时报不强约束）。
     若本用例变红，说明漂移容差被放宽到抓不住「退回上一档」——那正是阶段 75 警告的
     「改进可静默回退」。
     """
