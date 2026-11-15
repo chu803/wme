@@ -54,12 +54,18 @@
 
 ## [1.0.13] - 2026-11-15
 
-> **发布记录（2026-11-15）**：已上架 PyPI（`wme-watermark-eraser==1.0.13`）。
-> 发布链：tag `v1.0.13` → Publish 工作流（入口 `--strict-env` → build → `verify_dist_artifacts`
-> → `verify_installed_layout`（含启动冒烟）→ PyPI 上传）。
+> **发布记录（2026-11-15）**：已上架 PyPI（`wme-watermark-eraser==1.0.13`，
+> 上传时间 2026-11-15T10:42:51Z）。发布链：tag `v1.0.13` → `7239a4d` → Publish #24 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel（1540898 B）+ sdist（1694309 B）均在；**发布物**
+> （从 PyPI 下载的 wheel）跑安装态自检 rc=0（布局对 + 启动冒烟 HTTP 200）；装进纯净 venv
+> 真机黄金路径 success（ai_logo 真实图，7 区 / 掩码 59774 px / 实际改动 1.351%）。
 > 本版头条：承诺类角标真实图完全擦净 **98.0%**（阶段 393–401 检测改进）、几何挑战集 **4/4**、
 > 干净图改动中位 **0.0000%**；**批量并行提速端到端 2.67×**（阶段 408，核数感知并发 +
 > 按并发档耦合 torch 线程；检测算法与承诺召回 0.8078 不变）。
+> 发布收口：Publish #23 首红在一条跨平台敏感校准守卫（feather 细字残留比 Ubuntu 1.026 >
+> 容差 1.02，超 0.009；Windows 绿）⇒ 容差 1.02→1.05 吸收平台噪声（仍远小于要拦的 1.41× 真回退），
+> 移 tag 重发 #24 转绿。另收口 407 遗留：基线守卫常量同步 + mask_iou 红线 0.20→0.25（防哑巴不变式）。
 
 ### 性能（阶段 408 · 批量并行提速）
 
