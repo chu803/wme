@@ -25,7 +25,7 @@
 ## 环境与命令口径（每个任务通用）
 
 - 工作目录每轮先确认：`cd /d/qoder/watermark-workbench`（SessionStart hook 会把 cwd 重置回 /d/qoder）。
-- **ci311venv**（pytest 9.2.0 + cv2 + numpy，**无 torch**）：`D:/qoder/watermark-workbench/ci311venv/Scripts/python.exe`。跑无 torch 用例与 `run_all_checks` 默认 CI 子集。
+- **ci311venv**（pytest 9.2.0 + cv2 + numpy，**无 torch**）：`D:/qoder/ci311venv/Scripts/python.exe`（venv 在 `/d/qoder/`，**不在项目内**）。跑无 torch 用例与 `run_all_checks` 默认 CI 子集。
 - **gatevenv**（torch + EasyOCR + cv2 + numpy）：`D:/qoder/gatevenv/Scripts/python.exe`。跑 `torch_required` 用例、真实图门禁、端到端基准。
 - Windows 编码：命令前置 `PYTHONUTF8=1 PYTHONIOENCODING=utf-8`。
 - 直接 pytest 用项目内 basetemp 避开 %TEMP% 清理守卫：`--basetemp=.pytest_plan`。
@@ -120,7 +120,7 @@ def test_concurrent_first_init_builds_one_reader(monkeypatch):
 Run:
 ```bash
 cd /d/qoder/watermark-workbench
-PYTHONUTF8=1 PYTHONIOENCODING=utf-8 ci311venv/Scripts/python.exe -m pytest tests/test_ocr_reader_lock.py --basetemp=.pytest_plan -v
+PYTHONUTF8=1 PYTHONIOENCODING=utf-8 D:/qoder/ci311venv/Scripts/python.exe -m pytest tests/test_ocr_reader_lock.py --basetemp=.pytest_plan -v
 ```
 Expected: FAIL — `assert len(calls) == 1` 失败（无锁时 8 个线程各建一个，calls≈8）。
 
@@ -187,7 +187,7 @@ _OCR_READER_LOCK = threading.Lock()  # 阶段 408：并发首检只建一个 rea
 Run:
 ```bash
 cd /d/qoder/watermark-workbench
-PYTHONUTF8=1 PYTHONIOENCODING=utf-8 ci311venv/Scripts/python.exe -m pytest tests/test_ocr_reader_lock.py --basetemp=.pytest_plan -v
+PYTHONUTF8=1 PYTHONIOENCODING=utf-8 D:/qoder/ci311venv/Scripts/python.exe -m pytest tests/test_ocr_reader_lock.py --basetemp=.pytest_plan -v
 ```
 Expected: PASS（calls==1，所有线程同一对象）。
 
@@ -418,7 +418,7 @@ def test_default_within_measured_range():
 Run:
 ```bash
 cd /d/qoder/watermark-workbench
-PYTHONUTF8=1 PYTHONIOENCODING=utf-8 ci311venv/Scripts/python.exe -m pytest tests/test_batch_concurrency_default.py --basetemp=.pytest_plan -v
+PYTHONUTF8=1 PYTHONIOENCODING=utf-8 D:/qoder/ci311venv/Scripts/python.exe -m pytest tests/test_batch_concurrency_default.py --basetemp=.pytest_plan -v
 ```
 Expected: FAIL — `AttributeError: module 'config' has no attribute '_batch_concurrency_default'`。
 
@@ -461,7 +461,7 @@ BATCH_CONCURRENCY: Final[int] = _env_int(
 Run:
 ```bash
 cd /d/qoder/watermark-workbench
-PYTHONUTF8=1 PYTHONIOENCODING=utf-8 ci311venv/Scripts/python.exe -m pytest tests/test_batch_concurrency_default.py --basetemp=.pytest_plan -v
+PYTHONUTF8=1 PYTHONIOENCODING=utf-8 D:/qoder/ci311venv/Scripts/python.exe -m pytest tests/test_batch_concurrency_default.py --basetemp=.pytest_plan -v
 ```
 Expected: PASS（3 个用例全绿）。
 
@@ -479,7 +479,7 @@ Expected: 无硬编码 `==1` 断言（已知 `test_queue_worker_contract.py:49` 
 Run:
 ```bash
 cd /d/qoder/watermark-workbench
-PYTHONUTF8=1 PYTHONIOENCODING=utf-8 ci311venv/Scripts/python.exe -m pytest tests/test_queue_worker_contract.py tests/test_queue_worker_branches_audit.py --basetemp=.pytest_plan -q
+PYTHONUTF8=1 PYTHONIOENCODING=utf-8 D:/qoder/ci311venv/Scripts/python.exe -m pytest tests/test_queue_worker_contract.py tests/test_queue_worker_branches_audit.py --basetemp=.pytest_plan -q
 ```
 Expected: PASS（契约全绿）。
 
@@ -741,7 +741,7 @@ def pick_images() -> list:
 
 
 def run_once(images: list, conc: int) -> float:
-    os.environ["BATCH_CONCURRENCY"] = str(conc)
+    os.environ["WME_BATCH_CONCURRENCY"] = str(conc)
     # 重新构造队列读取新并发：run_batch 内部 BatchQueue() 读 config.BATCH_CONCURRENCY，
     # 故需 reload config 让默认值随 env 生效。
     import importlib
