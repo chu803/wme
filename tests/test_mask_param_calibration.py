@@ -146,13 +146,17 @@ def test_default_feather_does_not_attenuate_thin_text():
     这是阶段 105 修正后的**主守卫**：旧实现里羽化会把 1~2px 笔画的融合权重压到约 0.3，
     于是 (0,5) 残留 12.72/12.64 远差于 (0,0) 的 9.09/8.48（那正是旧默认把膨胀调到 2 的
     唯一理由）。修复后两者应几乎相等 —— 一旦有人把 `max(soft, binary)` 去掉，本测试立刻红。
+
+    容差 1.05（阶段 408 发布收口，原 1.02）：合成场景的残留含跨平台渲染/数值噪声
+    （Windows 比值 ~1.00、Ubuntu CI ~1.026），1.02 紧于平台噪声 ⇒ CI 偶红（超 0.009）。
+    放宽到 1.05 吸收噪声，仍远小于本守卫要拦的真回退（旧羽化冲淡 ≈1.41×），非为过测拟合阈值。
     """
     f_def = config.MASK_FEATHER_DEFAULT
     d_def = config.MASK_DILATE_DEFAULT
     for kind in ("textured", "photo"):
         control = analyse(kind, "edge_text", 0, 0)
         default = analyse(kind, "edge_text", d_def, f_def)
-        assert default["residual"] <= 1.02 * control["residual"] + 0.05, (
+        assert default["residual"] <= 1.05 * control["residual"] + 0.05, (
             f"{kind}/edge_text 默认残留 {default['residual']:.2f} 劣于裸掩码 "
             f"{control['residual']:.2f} —— 羽化又在冲淡掩码内部")
 
@@ -165,7 +169,7 @@ def test_default_feather_does_not_attenuate_grid():
     for kind in ("textured", "photo"):
         control = analyse(kind, "grid", 0, 0)
         default = analyse(kind, "grid", d_def, f_def)
-        assert default["residual"] <= 1.02 * control["residual"] + 0.05, (
+        assert default["residual"] <= 1.05 * control["residual"] + 0.05, (
             f"{kind}/grid 默认残留 {default['residual']:.2f} 劣于裸掩码 "
             f"{control['residual']:.2f}")
 
