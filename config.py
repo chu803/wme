@@ -2153,8 +2153,11 @@ DEFAULT_OUTPUT_QUALITY: Final[int] = _env_int("DEFAULT_OUTPUT_QUALITY", 95, 1, 1
 # 【PNG 压缩级别】取值 0 ~ 9。
 #   0 = 不压缩（存得最快，文件最大）
 #   9 = 最大压缩（存得最慢，文件最小，画质完全无损）
-#   6 是速度与体积的平衡点。注意：PNG 是无损格式，压缩级别不影响画质。
-PNG_COMPRESS_LEVEL: Final[int] = _env_int("PNG_COMPRESS_LEVEL", 6, 0, 9)
+#   PNG 是无损格式，压缩级别不影响画质，只权衡速度/体积。
+#   ⚠ 阶段 411（大图保存提速）默认 6→1：2720×1520 实测 lvl6=1.56s/4.79MB、
+#     lvl1=0.29s/5.33MB（**5.4× 提速**、体积 +11%）、lvl3=0.51s/5.04MB。
+#     大图瓶颈在 PNG 保存，取 lvl1 提速最明显；要更小文件用 env 调高。
+PNG_COMPRESS_LEVEL: Final[int] = _env_int("PNG_COMPRESS_LEVEL", 1, 0, 9)
 
 # 【是否保留透明通道】布尔（阶段 71 起为**跨格式**主开关）。
 #   True  : 目标格式支持透明时保留 alpha（见 OUTPUT_ALPHA_FORMATS，含 PNG/WebP/TIFF）；
