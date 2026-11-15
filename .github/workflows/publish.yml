@@ -122,9 +122,10 @@ jobs:
               await github.rest.issues.create({
                 owner: context.repo.owner, repo: context.repo.repo,
                 title: '门禁失败诊断 ' + context.sha.slice(0, 7),
-                body: '## 哪一步红了\n\n```\n' + table + '\n```\n\n## FAILED 清单\n\ncommit `'
-                '## 各步骤日志尾巴\n\n```\n' + stepLogs + '\n```\n\n'
-                      + context.sha.slice(0, 10) + '`\n\n```\n' + block + '\n```\n\n_publish.yml 自动诊断；修复后请关闭/删除。_',
+                body: '## 哪一步红了\n\n```\n' + table + '\n```\n\n'
+                      + '## FAILED 清单\n\ncommit `' + context.sha.slice(0, 10) + '`\n\n```\n' + block + '\n```\n\n'
+                      + '## 各步骤日志尾巴\n\n```\n' + stepLogs + '\n```\n\n'
+                      + '_publish.yml 自动诊断；修复后请关闭/删除。_',
               });
             } catch (e) { core.warning('issue 创建失败，Summary 仍有清单: ' + e.message); }
 
