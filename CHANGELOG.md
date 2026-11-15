@@ -52,6 +52,13 @@
 
 ## [Unreleased]
 
+## [1.0.15] - 2026-11-15
+
+> **发布记录（2026-11-15）**：已上架 PyPI（`wme-watermark-eraser==1.0.15`）。
+> 发布链：tag `v1.0.15` → Publish 工作流（`--strict-env` → build → `verify_dist_artifacts`
+> → `verify_installed_layout`（含启动冒烟）→ PyPI 上传）。
+> 本版头条：**大图 PNG 保存 5.1×**（411，压缩级 6→1，无损逐像素验证）。
+
 ### 性能（阶段 411 · 大图 PNG 保存提速）
 
 - `PNG_COMPRESS_LEVEL` 默认 6→1。2720×1520 实测保存 **1.61s→0.32s（5.1×）**，体积 4.79→5.33MB（+11%）。
