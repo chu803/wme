@@ -663,6 +663,16 @@ from core.image_utils import load_image
         _CURRENT_QUEUE = None
 ```
 
+- [ ] **Step 4b: 给既有测试替身补 max_concurrency（执行期发现）**
+
+`run_batch` 新读 `queue.max_concurrency`，既有 `_FakeQueue` 替身缺此属性会 AttributeError。
+真实 `BatchQueue` 有此属性（生产无碍），但替身需补齐。grep 全部注入点：
+`grep -rln "BatchQueue" tests/ --include=*.py` 后筛 `setattr.*BatchQueue`。
+命中三处替身，各自 `__init__` 加 `self.max_concurrency = tb.config.BATCH_CONCURRENCY`：
+- `tests/test_elapsed_display_d2.py`（`_FakeQueue.__init__`）
+- `tests/test_tab_batch_branches_audit.py`（`_FakeQueue.__init__`）
+- `tests/test_batch_params_wiring405.py`（`_Queue.__init__`）
+
 - [ ] **Step 5: 跑测试确认通过**
 
 Run:
@@ -670,7 +680,11 @@ Run:
 cd /d/qoder/watermark-workbench
 PYTHONUTF8=1 PYTHONIOENCODING=utf-8 D:/qoder/gatevenv/Scripts/python.exe -m pytest tests/test_batch_wiring.py --basetemp=.pytest_plan -v
 ```
-Expected: PASS（seen["conc"]==7）。
+Expected: PASS（seen["conc"]==7）。再跑批量回归确认替身补齐无回归：
+```bash
+PYTHONUTF8=1 PYTHONIOENCODING=utf-8 D:/qoder/gatevenv/Scripts/python.exe -m pytest tests/test_batch_cancel336.py tests/test_tab_batch_branches_audit.py tests/test_batch_params_wiring405.py tests/test_elapsed_display_d2.py tests/test_batch_recommend.py tests/test_quality_i18n337.py --basetemp=.pytest_plan -q
+```
+Expected: 全绿。
 
 - [ ] **Step 6: 提交**
 

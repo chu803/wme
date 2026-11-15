@@ -39,6 +39,7 @@ def test_processor_forwards_postprocess_values(monkeypatch, tmp_path):
     class _Queue:
         def __init__(self):
             self.tasks = []
+            self.max_concurrency = tb.config.BATCH_CONCURRENCY  # 阶段 408：run_batch 读此属性耦合线程
 
         def submit(self, name, path):
             self.tasks.append((name, path))

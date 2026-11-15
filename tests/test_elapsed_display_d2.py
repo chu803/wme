@@ -159,6 +159,7 @@ def test_run_batch_includes_elapsed(tmp_path, monkeypatch):
     class _FakeQueue:
         def __init__(self):
             self._tasks = []
+            self.max_concurrency = tb.config.BATCH_CONCURRENCY  # 阶段 408：run_batch 读此属性耦合线程
 
         def submit(self, name, path):
             self._tasks.append((name, path))

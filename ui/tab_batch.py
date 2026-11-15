@@ -44,6 +44,7 @@ import config
 from utils.i18n import t
 from ui.i18n_rt import reg_label, reg_label_info, reg_value, reg_textbox, register
 from core.detector import detect_watermark_mask
+from core.device_manager import batch_cpu_threads
 from core.image_utils import load_image
 from core.preset_recommender import recommend_preset
 from services.cache_service import CacheService, compute_file_hash, get_cache
@@ -715,28 +716,30 @@ def run_batch(
     # 不含前面的文件收集 / 入队（毫秒级准备），只量真正的修复工作量。
     _t0 = _time.perf_counter()
     try:
-        for _finished_task in queue.run(_processor, on_update=_on_update):
-            s = queue.summary()
-            frac = s["progress"]
-            progress(frac, t("batch.progress_done", done=s["finished"], total=s["total"]))
-            yield frac, "\n".join(log_lines[-200:]), list(gallery), _status_md(s), _agg_stats_md()
+        # 阶段 408：批量期间按并发档耦合 torch 线程（退出恢复，异常/生成器关闭安全）。
+        with batch_cpu_threads(queue.max_concurrency):
+            for _finished_task in queue.run(_processor, on_update=_on_update):
+                s = queue.summary()
+                frac = s["progress"]
+                progress(frac, t("batch.progress_done", done=s["finished"], total=s["total"]))
+                yield frac, "\n".join(log_lines[-200:]), list(gallery), _status_md(s), _agg_stats_md()
 
-        s = queue.summary()
-        summary_line = t(
-            "batch.summary",
-            done=s["done"], failed=s["failed"],
-            cancelled=s["cancelled"], total=s["total"],
-        )
-        log_lines.append(summary_line)
-        # 阶段 193（D2）：把整批耗时拼进产物，与单图页 _compose_status 共用 format_elapsed 接缝。
-        log_lines.append(format_elapsed(_time.perf_counter() - _t0, key="batch.msg.elapsed"))
-        # 阶段 26：智能推荐预设分布（仅在开启推荐且有分布时展示）。
-        if auto_preset and _preset_counts:
-            _dist = t("batch.list_sep").join(
-                f"{_preset_display(k)}×{v}" for k, v in _preset_counts.items()
+            s = queue.summary()
+            summary_line = t(
+                "batch.summary",
+                done=s["done"], failed=s["failed"],
+                cancelled=s["cancelled"], total=s["total"],
             )
-            log_lines.append(t("batch.log_preset_dist", dist=_dist))
-        yield 1.0, "\n".join(log_lines[-200:]), list(gallery), _status_md(s), _agg_stats_md()
+            log_lines.append(summary_line)
+            # 阶段 193（D2）：把整批耗时拼进产物，与单图页 _compose_status 共用 format_elapsed 接缝。
+            log_lines.append(format_elapsed(_time.perf_counter() - _t0, key="batch.msg.elapsed"))
+            # 阶段 26：智能推荐预设分布（仅在开启推荐且有分布时展示）。
+            if auto_preset and _preset_counts:
+                _dist = t("batch.list_sep").join(
+                    f"{_preset_display(k)}×{v}" for k, v in _preset_counts.items()
+                )
+                log_lines.append(t("batch.log_preset_dist", dist=_dist))
+            yield 1.0, "\n".join(log_lines[-200:]), list(gallery), _status_md(s), _agg_stats_md()
     finally:
         # 阶段 336：批次结束（含异常、含前端提前关闭生成器）必须把「当前队列」清空，
         # 否则 `cancel_batch()` 会对着空队列声称「已发送取消信号」。
