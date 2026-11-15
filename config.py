@@ -2490,11 +2490,23 @@ EMPTY_CACHE_MIN_INTERVAL_SEC: Final[float] = _env_float(
 #   False : 每次修复各自 select_device()。
 PERF_REUSE_DEVICE: Final[bool] = _env_bool("PERF_REUSE_DEVICE", True)
 
+def _batch_concurrency_default(cores: "int | None") -> int:
+    """核数感知批量并发默认（阶段 408）：min(10, max(2, 逻辑核//2))。
+
+    上限 10 = 阶段 407 探针 #3 实测最优档（更高并发未测）；下限 2 保证小机器也并行。
+    口径用 os.cpu_count()（逻辑核），兜底 or 2 防 None。
+    """
+    return min(10, max(2, (cores or 2) // 2))
+
+
 # 【批量处理并发数】
-#   同时处理几张图片。注意：显卡模式下建议保持 1，因为显存是瓶颈，
-#   开多个并发反而会因为显存争抢而变慢甚至溢出。
-#   CPU 模式下可适当调大到 2 ~ 4。
-BATCH_CONCURRENCY: Final[int] = _env_int("BATCH_CONCURRENCY", 1, 1, 16)
+#   同时处理几张图片。CPU 模式默认核数感知（本机 24 逻辑核 ⇒ 10，阶段 407 实测最优），
+#   批量期间由 core.device_manager.batch_cpu_threads 按并发档耦合 torch 线程。
+#   显卡模式建议用 env BATCH_CONCURRENCY=1（显存是瓶颈，多并发会争抢甚至溢出）。
+#   env 范围 1–16 不变，可覆盖默认。
+BATCH_CONCURRENCY: Final[int] = _env_int(
+    "BATCH_CONCURRENCY", _batch_concurrency_default(os.cpu_count()), 1, 16
+)
 
 # =============================================================================
 # 第 8.y 节：UI 体验增强配置（阶段 15 新增）
