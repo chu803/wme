@@ -3159,12 +3159,28 @@ def detect_watermark_mask(
             _other = [r for r in regions if not (_trust and r.kind == KIND_OCR_TEXT)]
             m = np.zeros((h, w), np.uint8)
             if _ocr_regs:
-                _ev_o = _full_evidence()
-                if config.DETECT_BOX_EVIDENCE_REFINE and not _evidence_is_degenerate(_ev_o):
-                    m = np.maximum(m, _ocr_box_rescue_mask(
-                        _ocr_regs, _ev_o, h, w, config.DETECT_BOX_REFINE_PAD))
-                else:
-                    m = np.maximum(m, _regions_to_mask(_ocr_regs, h, w))
+                # 阶段 409：角落高置信 OCR 豁免证据二次确认（#42 召回缺口）。
+                # 角落是强水印先验；暗底/低对比上证据场不响应会整框丢真水印。
+                _corner_ocr, _rest_ocr = [], _ocr_regs
+                if config.DETECT_OCR_CORNER_EXEMPT:
+                    _cp = _corner_patches(h, w, config.DETECT_CORNER_RATIO)
+
+                    def _in_corner(r):
+                        cx, cy = r.x + r.w / 2.0, r.y + r.h / 2.0
+                        return any(px <= cx <= px + pw and py <= cy <= py + ph
+                                   for (px, py, pw, ph) in _cp)
+
+                    _corner_ocr = [r for r in _ocr_regs if _in_corner(r)]
+                    _rest_ocr = [r for r in _ocr_regs if not _in_corner(r)]
+                if _corner_ocr:
+                    m = np.maximum(m, _regions_to_mask(_corner_ocr, h, w))
+                if _rest_ocr:
+                    _ev_o = _full_evidence()
+                    if config.DETECT_BOX_EVIDENCE_REFINE and not _evidence_is_degenerate(_ev_o):
+                        m = np.maximum(m, _ocr_box_rescue_mask(
+                            _rest_ocr, _ev_o, h, w, config.DETECT_BOX_REFINE_PAD))
+                    else:
+                        m = np.maximum(m, _regions_to_mask(_rest_ocr, h, w))
             if _other:
                 # 阶段 103：策略只给了区域框时，不再**整框填满**，改为框内像素级二次确认。
                 # 归因依据见 _refine_regions_to_mask 的 docstring 与 config 同名开关注释。

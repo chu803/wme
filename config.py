@@ -1573,6 +1573,14 @@ DETECT_BOX_REFINE_PAD: Final[int] = _env_int("DETECT_BOX_REFINE_PAD", 1, 0, 8)
 #   已由「仅在角搜索区内 + 置信度 0.9」两道既有约束限制。
 DETECT_OCR_BOX_TRUST: Final[bool] = _env_bool("DETECT_OCR_BOX_TRUST", True)
 
+# 【角落高置信 OCR 豁免证据二次确认】布尔（阶段 409，#42 召回缺口修复）。
+#   根因（8 张真实豆包角标图 A/B 实证）：OCR 已高置信定位角标，但「框内证据二次确认」
+#   （DETECT_BOX_EVIDENCE_REFINE）在暗底/低对比/纹理底上证据场不响应 ⇒ 整框丢弃真水印
+#   （召回 3/8）。角落是强水印先验（角落罕有合法密集文字），故对「中心落在角搜索区内的
+#   OCR 框」豁免证据确认、直接保留框掩码；非角落 OCR 仍走证据确认守干净图误报红线。
+#   实测：豁免后 02/04/07 召回恢复（BR 0→3600），召回 3/8→7/8。
+DETECT_OCR_CORNER_EXEMPT: Final[bool] = _env_bool("DETECT_OCR_CORNER_EXEMPT", True)
+
 # 【框内证据二次确认：相对门限缩放】浮点（阶段 103 新增 0.5，阶段 106 收敛为 0.65）。
 #   为什么框内要单独一套门限：**先验不同**。框外任何像素都可能只是噪声，需要高置信；
 #   而框内「这里存在水印」这个先验已经由策略建立，判据只需回答「这个像素是否属于该实体」，
