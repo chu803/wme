@@ -54,9 +54,11 @@
 
 ## [1.0.14] - 2026-11-15
 
-> **发布记录（2026-11-15）**：已上架 PyPI（`wme-watermark-eraser==1.0.14`）。
-> 发布链：tag `v1.0.14` → Publish 工作流（`--strict-env` → build → `verify_dist_artifacts`
-> → `verify_installed_layout`（含启动冒烟）→ PyPI 上传）。
+> **发布记录（2026-11-15）**：已上架 PyPI（`wme-watermark-eraser==1.0.14`，
+> 上传时间 2026-11-15T13:07:21Z）。发布链：tag `v1.0.14` → `0b2b2ca` → Publish #25 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel（1541685 B）+ sdist 均在；**发布物**（PyPI 下载 wheel）
+> 安装态自检 rc=0（布局+启动冒烟 HTTP 200）；纯净 venv 黄金路径 success（7 区/掩码 59774px/改动 1.351%）。
 > 本版头条：**真实角标召回 3/8→7/8**（409 角落高置信 OCR 豁免证据二次确认）；
 > **动漫干净图误报 0.88%→0.068%**（410 结构边缘守卫阈值 40→15）；承诺面常见角标擦净 98% 不变。
 > a1–a4 宝石角标登记为已知限制（经典法不可分/样本不足，排除在承诺红线外）。
