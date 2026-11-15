@@ -54,9 +54,11 @@
 
 ## [1.0.15] - 2026-11-15
 
-> **发布记录（2026-11-15）**：已上架 PyPI（`wme-watermark-eraser==1.0.15`）。
-> 发布链：tag `v1.0.15` → Publish 工作流（`--strict-env` → build → `verify_dist_artifacts`
-> → `verify_installed_layout`（含启动冒烟）→ PyPI 上传）。
+> **发布记录（2026-11-15）**：已上架 PyPI（`wme-watermark-eraser==1.0.15`，
+> 上传时间 2026-11-15T13:35:54Z）。发布链：tag `v1.0.15` → `0927ed8` → Publish #26 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel（1541826 B）+ sdist 均在；**发布物**（PyPI 下载 wheel，
+> 核字节数防截断）安装态自检 rc=0（布局+启动冒烟）；纯净 venv 黄金路径 success（7 区/掩码 59774px/改动 1.351%）。
 > 本版头条：**大图 PNG 保存 5.1×**（411，压缩级 6→1，无损逐像素验证）。
 
 ### 性能（阶段 411 · 大图 PNG 保存提速）
