@@ -86,6 +86,7 @@ def _require_cv2():
 # OCR 阅读器缓存（EasyOCR 初始化很重，避免重复加载）。
 _OCR_READER = None
 _OCR_AVAILABLE = None  # None=尚未探测；True/False=探测结果
+_OCR_READER_LOCK = threading.Lock()  # 阶段 408：并发首检只建一个 reader（双重检查）
 
 
 def _ocr_available() -> bool:
@@ -152,44 +153,46 @@ def _get_ocr_reader():
     if not _ocr_available():
         return None
     if _OCR_READER is None:
-        try:
-            import easyocr  # type: ignore
-
-            want_gpu = bool(getattr(config, "DETECT_OCR_USE_GPU", True))
-            if want_gpu:
+        with _OCR_READER_LOCK:
+            if _OCR_READER is None:
                 try:
-                    from core.device_manager import select_device
+                    import easyocr  # type: ignore
 
-                    handle = select_device()  # auto 语义：无卡自动退 CPU，不抛
-                    want_gpu = getattr(handle.info, "kind", "cpu") == "cuda"
-                except Exception as exc:
-                    log.info("OCR 设备探测失败，回退 CPU：%s", exc)
-                    want_gpu = False
+                    want_gpu = bool(getattr(config, "DETECT_OCR_USE_GPU", True))
+                    if want_gpu:
+                        try:
+                            from core.device_manager import select_device
 
-            if want_gpu:
-                try:
-                    _OCR_READER = easyocr.Reader(
-                        ["en", "ch_sim"], gpu=True, verbose=False
-                    )
-                    log.info("EasyOCR 阅读器初始化完成（GPU 模式）。")
+                            handle = select_device()  # auto 语义：无卡自动退 CPU，不抛
+                            want_gpu = getattr(handle.info, "kind", "cpu") == "cuda"
+                        except Exception as exc:
+                            log.info("OCR 设备探测失败，回退 CPU：%s", exc)
+                            want_gpu = False
+
+                    if want_gpu:
+                        try:
+                            _OCR_READER = easyocr.Reader(
+                                ["en", "ch_sim"], gpu=True, verbose=False
+                            )
+                            log.info("EasyOCR 阅读器初始化完成（GPU 模式）。")
+                        except Exception as exc:
+                            # GPU 不可用（显存不足 / 算子不兼容）→ 回退 CPU，绝不因此中断检测。
+                            log.warning("OCR 的 GPU 初始化失败，回退 CPU：%s", exc)
+                            _OCR_READER = easyocr.Reader(
+                                ["en", "ch_sim"], gpu=False, verbose=False
+                            )
+                            log.info("EasyOCR 阅读器初始化完成（CPU 模式）。")
+                    else:
+                        # 仅检测英文 + 简体中文。
+                        # 注：此处 gpu=False 是**显式声明**（配置要求 CPU 或探测不到 GPU），
+                        # 而不再是「想当然的默认」。
+                        _OCR_READER = easyocr.Reader(
+                            ["en", "ch_sim"], gpu=False, verbose=False
+                        )
+                        log.info("EasyOCR 阅读器初始化完成（CPU 模式）。")
                 except Exception as exc:
-                    # GPU 不可用（显存不足 / 算子不兼容）→ 回退 CPU，绝不因此中断检测。
-                    log.warning("OCR 的 GPU 初始化失败，回退 CPU：%s", exc)
-                    _OCR_READER = easyocr.Reader(
-                        ["en", "ch_sim"], gpu=False, verbose=False
-                    )
-                    log.info("EasyOCR 阅读器初始化完成（CPU 模式）。")
-            else:
-                # 仅检测英文 + 简体中文。
-                # 注：此处 gpu=False 是**显式声明**（配置要求 CPU 或探测不到 GPU），
-                # 而不再是「想当然的默认」。
-                _OCR_READER = easyocr.Reader(
-                    ["en", "ch_sim"], gpu=False, verbose=False
-                )
-                log.info("EasyOCR 阅读器初始化完成（CPU 模式）。")
-        except Exception as exc:
-            log.warning("EasyOCR 初始化失败，文字检测降级：%s", exc)
-            _OCR_READER = None
+                    log.warning("EasyOCR 初始化失败，文字检测降级：%s", exc)
+                    _OCR_READER = None
     return _OCR_READER
 
 
