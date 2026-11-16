@@ -37,6 +37,8 @@ from __future__ import annotations
 import os as _os
 import sys as _sys
 import threading
+import hashlib
+from collections import OrderedDict
 from dataclasses import dataclass, field
 from typing import Dict, List, Optional, Tuple
 
@@ -87,6 +89,16 @@ def _require_cv2():
 _OCR_READER = None
 _OCR_AVAILABLE = None  # None=尚未探测；True/False=探测结果
 _OCR_READER_LOCK = threading.Lock()  # 阶段 408：并发首检只建一个 reader（双重检查）
+
+# 阶段 418（单图提速）：OCR patch 结果缓存（同图重检/调参复用，避免重复 readtext）。
+# key=(patch 内容哈希, px, py, accept_low_conf)；LRU 上限绑定内存。只缓存定位框，不缓存识别文本。
+_OCR_PATCH_CACHE: "OrderedDict[tuple, list]" = OrderedDict()
+_OCR_PATCH_CACHE_MAX = 128
+
+
+def _ocr_patch_key(rgb_patch, px: int, py: int, accept_low_conf: bool) -> tuple:
+    h = hashlib.md5(rgb_patch.tobytes()).hexdigest()
+    return (h, px, py, bool(accept_low_conf))
 
 
 def _ocr_available() -> bool:
@@ -1584,6 +1596,11 @@ def _ocr_boxes_in_patch(
     reader = _get_ocr_reader()
     if reader is None:
         return []
+    # 阶段 418：同图同 patch 复用 OCR 定位框（重检/调参不重复 readtext）。
+    key = _ocr_patch_key(rgb_patch, px, py, accept_low_conf)
+    if key in _OCR_PATCH_CACHE:
+        _OCR_PATCH_CACHE.move_to_end(key)
+        return list(_OCR_PATCH_CACHE[key])
     try:
         cv2 = _require_cv2()
         bgr = cv2.cvtColor(rgb_patch, cv2.COLOR_RGB2BGR)
@@ -1625,6 +1642,10 @@ def _ocr_boxes_in_patch(
             if 1.3 <= ar <= 25 and w >= 12 and h >= 6:
                 boxes.append((x, y, w, h))
                 break
+    _OCR_PATCH_CACHE[key] = list(boxes)
+    _OCR_PATCH_CACHE.move_to_end(key)
+    while len(_OCR_PATCH_CACHE) > _OCR_PATCH_CACHE_MAX:
+        _OCR_PATCH_CACHE.popitem(last=False)
     return boxes
 
 
@@ -1835,6 +1856,10 @@ def detect_corner_logo(
     """
     h, w = rgb.shape[:2]
     patches = _corner_patches(h, w, ratio, search_bottom=search_bottom)
+    # 阶段 418（单图提速）：中心 patch 极少角标水印，跳过其 OCR（省一次 readtext）；
+    # plate/结构通路仍跑中心，全屏/平铺水印由 translucent/grid 通路负责，召回不受影响。
+    _side = int(min(h, w) * ratio)
+    _center = (w // 2 - _side // 2, h // 2 - _side // 2)
     regions: List[DetectionRegion] = []
     # 阶段 86：白底圆角板块通路的最小边长，按与面积门限同一锚点体系换算。
     _ms = max(h, w) / float(max(1, config.DETECT_MIN_AREA_REF))
@@ -1876,8 +1901,8 @@ def detect_corner_logo(
                     x=bx, y=by, w=bw, h=bh, kind=KIND_CORNER_LOGO,
                     confidence=0.7,
                 ))
-        # 优先 OCR。
-        if use_ocr and _ocr_available():
+        # 优先 OCR（阶段 418：中心 patch 跳过，省一次 readtext）。
+        if use_ocr and _ocr_available() and (px, py) != _center:
             boxes = _ocr_boxes_in_patch(patch, px, py, accept_low_conf=True)
             if boxes:
                 # 阶段 100：此处原有 `used_ocr_here = True`，但它从未被读取——
