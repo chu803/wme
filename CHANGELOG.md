@@ -54,9 +54,11 @@
 
 ## [1.0.16] - 2026-11-16
 
-> **发布记录（2026-11-16）**：已上架 PyPI（`wme-watermark-eraser==1.0.16`）。
-> 发布链：tag `v1.0.16` → Publish 工作流（`--strict-env` → build → `verify_dist_artifacts`
-> → `verify_installed_layout`（含启动冒烟）→ PyPI 上传）。
+> **发布记录（2026-11-16）**：已上架 PyPI（`wme-watermark-eraser==1.0.16`，
+> 上传时间 2026-11-16T11:10:21Z）。发布链：tag `v1.0.16` → `c9da223` → Publish #27 success
+> （入口 `--strict-env` → build → `verify_dist_artifacts` → `verify_installed_layout` → PyPI 上传）。
+> PyPI 侧实测：`requires_dist` 15 条、wheel（1544351 B，核字节数防截断）+ sdist 均在；**发布物**
+> 安装态自检 rc=0（布局+启动冒烟）；纯净 venv 黄金路径 success（7 区/掩码 59774px/改动 1.351%）。
 > 本版＝客户端体验整备（413–417）：首屏减负+独特质感（本地信任/一键自动/工具即首页）+
 > 结果区空态/去英文占位+主题自动/浅/深三态+移动端适配+首屏再减负。检测/召回/红线不变。
 
