@@ -214,6 +214,58 @@ body .gradio-container .prose blockquote li {
 .gradio-container #hero_tagline strong {
     color: __PRIMARY__;
 }
+
+/* 阶段 415：编辑框空态去英文占位（Gradio 自带 "Upload an image / select the draw
+   tool..."），隐藏原文改中文引导；图标保留。 */
+.gradio-container #auto_editor .empty,
+.gradio-container #single_editor .empty { font-size: 0; }
+.gradio-container #auto_editor .empty::after,
+.gradio-container #single_editor .empty::after {
+    content: "上传或拖入图片开始精修";
+    font-size: 14px;
+    color: var(--body-text-color-subdued);
+}
+/* 阶段 415：结果区空态引导条。 */
+.gradio-container #auto_result_hint {
+    color: var(--body-text-color-subdued);
+    font-size: 13px;
+}
+
+/* 阶段 415（浅色主题）：默认浅色=干净产品感。Gradio 深色来自系统 prefers-color-scheme
+   媒体查询，仅 toggling .dark 不够；这里在 wme-light 类下用 !important 覆盖关键深色变量，
+   压过媒体查询，保证浅色生效。深色时移除 wme-light 即回系统深色。 */
+gradio-app.wme-light,
+.gradio-container.wme-light {
+    --body-background-fill: #eef2f7 !important;
+    --block-background-fill: #ffffff !important;
+    --body-text-color: #1e293b !important;
+    --body-text-color-subdued: #6b7280 !important;
+    --block-info-text-color: #4b5563 !important;
+    --block-border-color: #dbe3ee !important;
+    --border-color-primary: #cbd5e1 !important;
+    --input-background-fill: #f8fafc !important;
+    --button-secondary-background-fill: #e2e8f0 !important;
+    --button-secondary-background-fill-hover: #cbd5e1 !important;
+    --button-secondary-text-color: #1e293b !important;
+    --button-secondary-text-color-hover: #0f172a !important;
+    --block-label-text-color: #334155 !important;
+    --block-title-text-color: #1e293b !important;
+    --checkbox-label-text-color: #1e293b !important;
+    --radio-label-text-color: #1e293b !important;
+    --slider-label-text-color: #1e293b !important;
+    --input-text-color: #1e293b !important;
+    --input-placeholder-color: #94a3b8 !important;
+    --body-text-color-subdued: #6b7280 !important;
+    color-scheme: light;
+}
+html.wme-light body { background: #eef2f7 !important; }
+/* 浅色下折叠条标题/标签文字可读性（合规摘要必须看得清）。 */
+gradio-app.wme-light .label-wrap,
+gradio-app.wme-light .label-content,
+gradio-app.wme-light .accordion .label-wrap span,
+gradio-app.wme-light #hero_tagline {
+    color: #475569 !important;
+}
 """
 
 

@@ -419,6 +419,21 @@ def build_app() -> gr.Blocks:
                 min_width=160,
             )
             lang_status = gr.Markdown("")
+            # 阶段 415：浅/深主题切换（默认跟随系统；可一键切浅色）。
+            theme_btn = gr.Button("☀", elem_id="theme_toggle", size="sm", min_width=48)
+            theme_btn.click(
+                fn=None,
+                js="""() => {
+                    const root = document.querySelector('gradio-app') || document.body;
+                    const light = !root.classList.contains('wme-light');
+                    root.classList.toggle('wme-light', light);
+                    root.classList.toggle('dark', !light);
+                    document.documentElement.classList.toggle('wme-light', light);
+                    document.documentElement.classList.toggle('dark', !light);
+                    try { localStorage.setItem('wme_theme', light ? 'light' : 'dark'); } catch (e) {}
+                    return [];
+                }""",
+            )
         # 阶段 413（首屏减负）：合规+适用范围收进默认折叠 Accordion；
         # 折叠标题即始终可见的合规摘要，保留「本地处理·图片不上传」核心信任点
         # （test_compliance_statement 要求首屏写明不上传/本地）。全文点开可见，i18n 刷新保留。
@@ -463,6 +478,21 @@ def build_app() -> gr.Blocks:
             inputs=[lang_dropdown],
             outputs=registered_components() + [lang_status],
             js=_build_lang_js(),
+        )
+
+        # 阶段 415：加载时应用主题偏好（默认浅色=干净产品感；记住用户切换）。
+        demo.load(
+            fn=None,
+            js="""() => {
+                let pref = null; try { pref = localStorage.getItem('wme_theme'); } catch (e) {}
+                const light = pref !== 'dark';
+                const root = document.querySelector('gradio-app') || document.body;
+                root.classList.toggle('wme-light', light);
+                root.classList.toggle('dark', !light);
+                document.documentElement.classList.toggle('wme-light', light);
+                document.documentElement.classList.toggle('dark', !light);
+                return [];
+            }""",
         )
 
     log.info("应用界面构建完成。")

@@ -815,6 +815,7 @@ def build_auto_tab():
                 )
             # 阶段 405：误报改走「检测区域」取消勾选，不再提供橡皮（预填层擦除不可靠）。
             editor_kwargs["eraser"] = False
+            editor_kwargs["elem_id"] = "auto_editor"
             editor = gr.ImageEditor(**editor_kwargs)
             reg_label(editor, "auto.editor_label")
 
@@ -852,7 +853,8 @@ def build_auto_tab():
             )
             reg_value(detect_stats_md, "detect.stats.placeholder")
 
-            with gr.Accordion(t("auto.repair_accordion"), open=True) as _rep_acc:
+            # 阶段 415（首屏减负）：修复高级参数默认折叠，主链路更清爽。
+            with gr.Accordion(t("auto.repair_accordion"), open=False) as _rep_acc:
                 reg_label(_rep_acc, "auto.repair_accordion")
                 with gr.Row():
                     engine = gr.Radio(
@@ -1028,6 +1030,11 @@ def build_auto_tab():
         # ---------------- 右列：对比 + 状态 + 下载 ----------------
         with gr.Column(scale=2):
             reg_value(gr.Markdown(t("auto.result_title")), "auto.result_title")
+            # 阶段 415（结果区空态）：未处理时给引导，而非一片空图标。
+            reg_value(
+                gr.Markdown(t("auto.result_empty_hint"), elem_id="auto_result_hint"),
+                "auto.result_empty_hint",
+            )
             with gr.Row():
                 orig_view = gr.Image(
                     label=t("auto.orig_label"), type="numpy", interactive=False, height=300
