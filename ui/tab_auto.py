@@ -740,7 +740,8 @@ def build_auto_tab():
                 )
                 reg_value(sample_btn, "auto.sample_btn")
 
-            with gr.Accordion(t("auto.detect_accordion"), open=True) as _det_acc:
+            # 阶段 414（首屏减负）：高级检测参数默认折叠，首屏只留上传→检测→修复主链路。
+            with gr.Accordion(t("auto.detect_accordion"), open=False) as _det_acc:
                 reg_label(_det_acc, "auto.detect_accordion")
                 # 阶段 20：检测模式（预设）下拉，一键适配 AI 生成图常见水印样式。
                 detect_preset = gr.Dropdown(

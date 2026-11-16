@@ -203,6 +203,17 @@ body .gradio-container .prose blockquote li {
    注：页脚（Gradio 品牌栏）在 .gradio-container 之外，本 CSS 作用不到，属已知边界。 */
 /* 次要文字/标签/标题的可读性由 build_app_theme().set() 的 _dark 变体统一给出
    （CSS 变量方案实测会被 Gradio 的选择器重写打乱，弃用）。 */
+
+/* 阶段 414（独特质感）：首屏价值主张条——居中、克制，承诺数字用品牌色强调。 */
+.gradio-container #hero_tagline {
+    text-align: center;
+    color: var(--body-text-color-subdued);
+    font-size: 14px;
+    margin: 2px 0 10px;
+}
+.gradio-container #hero_tagline strong {
+    color: __PRIMARY__;
+}
 """
 
 

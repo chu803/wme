@@ -433,7 +433,14 @@ def build_app() -> gr.Blocks:
             scope_md = gr.Markdown(render_scope_note())
             register(scope_md, lambda: {"value": render_scope_note()})
 
-        with gr.Tabs():
+        # 阶段 414（独特质感）：工具即首页——一句价值主张 + 本地信任 + 实测承诺数字。
+        gr.Markdown(
+            "**一键自动去 AI 水印** · 本地离线 · 图片不上传 · "
+            "承诺角标擦净 **98%** · 几何挑战 **4/4** · 批量提速 **2.67×**",
+            elem_id="hero_tagline",
+        )
+
+        with gr.Tabs(selected="auto"):
             with gr.TabItem(t("app.tab.single"), id="single", elem_id="single"):
                 build_single_tab()
             with gr.TabItem(t("app.tab.auto"), id="auto", elem_id="auto"):
