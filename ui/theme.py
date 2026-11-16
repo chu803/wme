@@ -266,6 +266,36 @@ gradio-app.wme-light .accordion .label-wrap span,
 gradio-app.wme-light #hero_tagline {
     color: #475569 !important;
 }
+
+/* 阶段 416（移动端适配）：窄屏下所有行单列堆叠、压缩图高、加大点击目标、页签横滑。 */
+@media (max-width: 768px) {
+    .gradio-container {
+        max-width: 100% !important;
+        padding: 0 8px !important;
+    }
+    .gradio-container .row {
+        flex-direction: column !important;
+        align-items: stretch !important;
+    }
+    .gradio-container .column {
+        min-width: 0 !important;
+        width: 100% !important;
+    }
+    /* 压缩上传/编辑/结果图高度，避免一屏全是图。 */
+    .gradio-container .image-container,
+    .gradio-container .img-container,
+    .gradio-container #auto_upload,
+    .gradio-container #auto_editor,
+    .gradio-container #single_editor {
+        height: 240px !important;
+        width: 100% !important;
+    }
+    /* 触控目标 ≥44px。 */
+    .gradio-container button { min-height: 44px; }
+    .gradio-container #hero_tagline { font-size: 12px; }
+    .gradio-container h1 { font-size: 20px; }
+    .gradio-container .tabs { overflow-x: auto; flex-wrap: nowrap; }
+}
 """
 
 
