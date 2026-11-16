@@ -408,26 +408,30 @@ def build_app() -> gr.Blocks:
         # 传给它会在启动时抛 TypeError —— 1.0.8 的发布物就是这样起不来的）。
         analytics_enabled=config.SERVER_ANALYTICS,
     ) as demo:
-        gr.Markdown(f"# {config.APP_NAME}  ·  v{config.APP_VERSION}")
-        compliance_md = gr.Markdown(_compliance_brief())
-        # 合规声明随语言切换刷新（值由 t() 实时取，不冻结）。
-        register(compliance_md, lambda: {"value": _compliance_brief()})
-        # 适用范围提示（阶段 95）：紧挨合规声明——两者都是「用之前必须知道的事」。
-        # 承诺面与类型名由 config 派生（见 ui.components.render_scope_note），
-        # 因此 config 里改一处 committed，界面文案自动同步（不会留下人读副本）。
-        scope_md = gr.Markdown(render_scope_note())
-        register(scope_md, lambda: {"value": render_scope_note()})
-
-        # ---- 顶部语言切换器 ----
+        # 阶段 413（首屏减负）：标题与语言选择同排，省掉独立语言卡。
         with gr.Row():
+            gr.Markdown(f"# {config.APP_NAME}  ·  v{config.APP_VERSION}")
             lang_dropdown = gr.Dropdown(
                 choices=[(t("lang.zh"), "zh-CN"), (t("lang.en"), "en-US")],
                 value=current_language(),
                 label=t("lang.label"),
-                info=t("lang.info"),
-                scale=2,
+                scale=1,
+                min_width=160,
             )
             lang_status = gr.Markdown("")
+        # 阶段 413（首屏减负）：合规+适用范围收进默认折叠 Accordion；
+        # 折叠标题即始终可见的合规摘要，保留「本地处理·图片不上传」核心信任点
+        # （test_compliance_statement 要求首屏写明不上传/本地）。全文点开可见，i18n 刷新保留。
+        with gr.Accordion(
+            "⚠ 仅去本人 AI 生成图水印 · 本地处理、图片不上传（展开详情与适用范围 / details & scope）",
+            open=False,
+        ):
+            compliance_md = gr.Markdown(_compliance_brief())
+            # 合规声明随语言切换刷新（值由 t() 实时取，不冻结）。
+            register(compliance_md, lambda: {"value": _compliance_brief()})
+            # 适用范围提示（阶段 95）：承诺面与类型名由 config 派生，改一处界面自动同步。
+            scope_md = gr.Markdown(render_scope_note())
+            register(scope_md, lambda: {"value": render_scope_note()})
 
         with gr.Tabs():
             with gr.TabItem(t("app.tab.single"), id="single", elem_id="single"):
