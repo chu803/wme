@@ -791,60 +791,63 @@ def build_auto_tab():
             )
             reg_value(detect_btn, "auto.detect_btn")
 
-            # 检测可视化预览（红层 + 彩色类别框）。
-            detect_preview = gr.Image(
-                label=t("auto.detect_preview_label"),
-                type="numpy", interactive=False, height=360,
-            )
-            reg_label(detect_preview, "auto.detect_preview_label")
-
-            # 微调编辑框：只承载用户自己的笔迹（不再预填红色掩码）。
-            # 阶段 405：Gradio 6.31 对预填图层的编辑会把内容按视口坐标重排，
-            # 橡皮越擦掩码越多（外部验收 F5 实测 1.1%→2.4%）⇒ 检测结果改走
-            # 下方「检测区域」勾选排除；画笔只负责补涂漏检。
-            editor_kwargs = dict(
-                label=t("auto.editor_label"),
-                type="numpy",
-                image_mode="RGB",
-                interactive=True,
-                height=360,
-            )
-            if hasattr(gr, "Brush"):
-                editor_kwargs["brush"] = gr.Brush(
-                    default_size=40, colors=["#ff3b30"], color_mode="fixed"
+            # 阶段 417（首屏再减负）：空的检测预览/补涂编辑收进折叠条，检测后再展开。
+            with gr.Accordion(t("auto.refine_accordion"), open=False) as _ref_acc:
+                reg_label(_ref_acc, "auto.refine_accordion")
+                # 检测可视化预览（红层 + 彩色类别框）。
+                detect_preview = gr.Image(
+                    label=t("auto.detect_preview_label"),
+                    type="numpy", interactive=False, height=360,
                 )
-            # 阶段 405：误报改走「检测区域」取消勾选，不再提供橡皮（预填层擦除不可靠）。
-            editor_kwargs["eraser"] = False
-            editor_kwargs["elem_id"] = "auto_editor"
-            editor = gr.ImageEditor(**editor_kwargs)
-            reg_label(editor, "auto.editor_label")
+                reg_label(detect_preview, "auto.detect_preview_label")
 
-            # 阶段 405：检测区域勾选（取消勾选 = 本次不修该区域）。
-            det_regions_state = gr.State([])
-            region_select = gr.CheckboxGroup(
-                choices=[], value=[], visible=False,
-                label=t("auto.regions_label"),
-                info=t("auto.regions_info"),
-            )
-            reg_label_info(region_select, "auto.regions_label", "auto.regions_info")
+                # 微调编辑框：只承载用户自己的笔迹（不再预填红色掩码）。
+                # 阶段 405：Gradio 6.31 对预填图层的编辑会把内容按视口坐标重排，
+                # 橡皮越擦掩码越多（外部验收 F5 实测 1.1%→2.4%）⇒ 检测结果改走
+                # 下方「检测区域」勾选排除；画笔只负责补涂漏检。
+                editor_kwargs = dict(
+                    label=t("auto.editor_label"),
+                    type="numpy",
+                    image_mode="RGB",
+                    interactive=True,
+                    height=360,
+                )
+                if hasattr(gr, "Brush"):
+                    editor_kwargs["brush"] = gr.Brush(
+                        default_size=40, colors=["#ff3b30"], color_mode="fixed"
+                    )
+                # 阶段 405：误报改走「检测区域」取消勾选，不再提供橡皮（预填层擦除不可靠）。
+                editor_kwargs["eraser"] = False
+                editor_kwargs["elem_id"] = "auto_editor"
+                editor = gr.ImageEditor(**editor_kwargs)
+                reg_label(editor, "auto.editor_label")
 
-            # 阶段 24：交互式掩码精修 —— 精修模式 + 清空工具。
-            # 检测掩码存进 State，供修复回调做「检测 × 精修」合并与统计。
-            det_mask_state = gr.State(None)
-            with gr.Row():
-                mask_mode = gr.Radio(
-                    choices=[(t("mask_edit.mode_merge"), MASK_MODE_MERGE),
-                             (t("mask_edit.mode_manual"), MASK_MODE_MANUAL)],
-                    value=config.MASK_EDIT_DEFAULT_MODE,
-                    label=t("mask_edit.mode_label"),
-                    info=t("mask_edit.mode_info"),
+                # 阶段 405：检测区域勾选（取消勾选 = 本次不修该区域）。
+                det_regions_state = gr.State([])
+                region_select = gr.CheckboxGroup(
+                    choices=[], value=[], visible=False,
+                    label=t("auto.regions_label"),
+                    info=t("auto.regions_info"),
                 )
-                reg_label_info(mask_mode, "mask_edit.mode_label", "mask_edit.mode_info")
-            with gr.Row():
-                clear_editor_btn = gr.Button(
-                    t("mask_edit.clear_btn"), size="sm",
-                )
-                reg_value(clear_editor_btn, "mask_edit.clear_btn")
+                reg_label_info(region_select, "auto.regions_label", "auto.regions_info")
+
+                # 阶段 24：交互式掩码精修 —— 精修模式 + 清空工具。
+                # 检测掩码存进 State，供修复回调做「检测 × 精修」合并与统计。
+                det_mask_state = gr.State(None)
+                with gr.Row():
+                    mask_mode = gr.Radio(
+                        choices=[(t("mask_edit.mode_merge"), MASK_MODE_MERGE),
+                                 (t("mask_edit.mode_manual"), MASK_MODE_MANUAL)],
+                        value=config.MASK_EDIT_DEFAULT_MODE,
+                        label=t("mask_edit.mode_label"),
+                        info=t("mask_edit.mode_info"),
+                    )
+                    reg_label_info(mask_mode, "mask_edit.mode_label", "mask_edit.mode_info")
+                with gr.Row():
+                    clear_editor_btn = gr.Button(
+                        t("mask_edit.clear_btn"), size="sm",
+                    )
+                    reg_value(clear_editor_btn, "mask_edit.clear_btn")
 
             # 阶段 22：检测命中率统计展示（Markdown，随检测实时刷新）。
             detect_stats_md = gr.Markdown(
