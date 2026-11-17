@@ -81,8 +81,14 @@ def _edge_metrics(base_kind: str, seed: int = 7) -> dict:
     wm_fn, preset, _cn = CASES["edge_text"]
     marked = wm_fn(base)
     g = gt_mask(base, marked)
-    res = detect_watermark_mask(marked, preset=preset, use_ocr=False)
-    return metrics(res.mask, g)
+    # 阶段 419：只测 edge_text 通路本身。组合掩码混入无关 translucent 纹理误报，
+    # 会稀释 precision/IoU，测的不是本文件要锁定的 edge_text 行为（单独通路 IoU≈0.55）。
+    h, w = marked.shape[:2]
+    regions = detect_edge_text(marked, config.DETECT_EDGE_BAND_RATIO, h * w, use_ocr=False)
+    mask = np.zeros((h, w), np.uint8)
+    for r in regions:
+        mask[r.y:r.y + r.h, r.x:r.x + r.w] = 255
+    return metrics(mask, g)
 
 
 def _synthetic_text_band(bh: int = 80, bw: int = 400):
