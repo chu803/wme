@@ -52,6 +52,14 @@
 
 ## [Unreleased]
 
+## [1.0.17] - 2026-11-16
+
+> **发布记录（2026-11-16）**：已上架 PyPI（`wme-watermark-eraser==1.0.17`）。
+> 发布链：tag `v1.0.17` → Publish 工作流（`--strict-env` → build → `verify_dist_artifacts`
+> → `verify_installed_layout`（含启动冒烟）→ PyPI 上传）。
+> 本版＝**单图检测提速**（418：首检 ~9s→4.2s、重检 0.6s，real_gate ~3×）+
+> **edge_text 回归测量纠正**（419：4 条转绿）+ 余 3 条平台标定登记已知限制。承诺面不变。
+
 ### 性能（阶段 418 · 单图检测提速）
 
 - OCR patch 结果缓存（同图重检/调参复用，LRU 上限 128）+ 跳过中心低价值 patch 的 OCR。
