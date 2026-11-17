@@ -58,12 +58,14 @@
 - 实测：首检 **~9s→4.23s**、重检 **~9s→0.61s**；召回 7/8 不变、干净图无新增误报、56 检测/OCR 守卫绿。
 - 全屏/平铺水印仍由 translucent/grid 通路负责，中心跳过不影响其召回。
 
-### 已知限制（阶段 419 · --full 七条 dev 测试，用户拍板登记）
+### 已知限制（阶段 419 · --full dev 测试，部分修复+部分登记）
 
-- `--full` 的 7 条 slow 测试（box_refine/edge_text×4/mask_param/prompted_area_gate）为**预存在**
-  非承诺/平台敏感项（1.0.13 即有）；CI 子集不跑故 CI/发布绿。edge_text 标定陈旧（现 ~0.30 IoU）。
-- 不弱化阈值糊弄；精细守卫尝试（底部文字带豁免）验证为净负已回退。登记为已知 dev-env 限制，
-  edge_text 提升另案。承诺面（ai_logo/干净图）不受影响。
+- **已修 4 条**（edge_text precision×2/iou×2）：回归原先测「组合掩码」，混入无关 translucent
+  纹理误报稀释 precision/IoU；改测 `detect_edge_text` 通路本身（单独 IoU≈0.55，达标）⇒ 转绿。
+  这是测量纠正，非弱化守卫。
+- **余 3 条登记已知限制**（box_refine K5 收缩 / mask_param 过绘比 / prompted_area_gate）：
+  平台渲染标定边界（Windows 证据场/笔画密度与标定环境不同），不弱化阈值糊弄；CI/发布绿。
+- 精细守卫尝试（底部文字带豁免）验证为净负已回退。承诺面（ai_logo/干净图）不受影响。
 
 ## [1.0.16] - 2026-11-16
 
