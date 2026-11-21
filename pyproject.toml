@@ -32,7 +32,7 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "wme-watermark-eraser"
-version = "1.0.17"
+version = "1.0.18"
 description = "AI 智能水印擦除工作台：本地离线、免手涂的 AI 图片/PDF/视频可见水印检测与修复工具"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -68,6 +68,16 @@ Homepage = "https://github.com/chu803/wme"
 Repository = "https://github.com/chu803/wme"
 Documentation = "https://github.com/chu803/wme#readme"
 Changelog = "https://github.com/chu803/wme/blob/main/CHANGELOG.md"
+
+# 可选增强（阶段 420）：PaddleOCR 兜底引擎。
+#   装上后，当 EasyOCR 在「低对比 + 强纹理」场景读不出角标水印（检测级失灵）时，
+#   自动改用 PaddleOCR 兜底（识别文本需命中水印词表，故干净图不受影响）。
+#   不装则维持现状（EasyOCR 唯一引擎），基础安装体积不变。
+[project.optional-dependencies]
+ocr = [
+    "paddleocr>=3.0",
+    "paddlepaddle>=3.0",
+]
 
 # 控制台入口（阶段 296 补齐，服务「发布 v1.0」）。
 # 命名属发布范围决策：wme=UI 主入口 / wme-cli=批量命令行 / wme-api=REST 服务。

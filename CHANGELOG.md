@@ -52,6 +52,14 @@
 
 ## [Unreleased]
 
+## [1.0.18] - 2026-11-17
+
+> **发布记录（2026-11-17）**：已上架 PyPI（`wme-watermark-eraser==1.0.18`）。
+> 发布链：tag `v1.0.18` → Publish 工作流（`--strict-env` → build → `verify_dist_artifacts`
+> → `verify_installed_layout`（含启动冒烟）→ PyPI 上传）。
+> 本版＝**单图检测提速**（418）+ **edge_text 回归测量纠正**（419）+ **PaddleOCR 兜底攻低对比角标**（420，
+> 可选 extras `wme-watermark-eraser[ocr]`）。承诺面不变。
+
 ### 修复（阶段 420 · PaddleOCR 兜底，攻低对比角标召回）
 
 - **根因**：EasyOCR 的 CRAFT 检测器在「低对比 + 强纹理」上**检测级**失灵（连文字框都提不出
