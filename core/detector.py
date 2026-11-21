@@ -221,6 +221,12 @@ def _paddle_available() -> bool:
     if not config.DETECT_OCR_FALLBACK_PADDLE or _PADDLE_OCR_FAILED:
         return False
     try:
+        # 阶段 420：paddlepaddle 3.3.x 在 CPU 上「oneDNN + PIR」组合会抛
+        #   "ConvertPirAttribute2RuntimeAttribute not support" ⇒ 推理直接不可用。
+        #   关闭 oneDNN 与 PIR API（实测关掉后 CPU 推理正常，模型缓存在 ~/.paddlex）。
+        #   必须在 import paddleocr **之前**设，故放这里。
+        _os.environ.setdefault("FLAGS_use_mkldnn", "0")
+        _os.environ.setdefault("FLAGS_enable_pir_api", "0")
         import paddleocr  # noqa: F401
     except Exception:
         return False
@@ -242,6 +248,7 @@ def _get_paddle_ocr():
                     use_doc_orientation_classify=False,
                     use_doc_unwarping=False,
                     use_textline_orientation=False,
+                    enable_mkldnn=False,  # 阶段 420：CPU 上 oneDNN+PIR 组合会让推理崩
                 )
                 log.info("PaddleOCR 兜底阅读器初始化完成。")
             except Exception as exc:
@@ -252,7 +259,13 @@ def _get_paddle_ocr():
 
 
 def _paddle_boxes(rgb_patch: np.ndarray) -> List[Tuple[int, int, int, int]]:
-    """用 PaddleOCR 在 patch 上找文字框，返回 patch 坐标系的 (x, y, w, h)。
+    """用 PaddleOCR 在 patch 上找**水印文字**框，返回 patch 坐标系的 (x, y, w, h)。
+
+    三条硬约束（缺一不可，否则会误伤干净图）：
+      ① 小块 2x 放大再识别——实测不放大时 320px 角块读不出角标文字（放大后能读出 0.9998）。
+      ② 识别文本必须命中 `config.DETECT_OCR_WATERMARK_KEYWORDS`（豆包/AI生成/…）。
+         实测不加此判定时，场景文字（霓虹招牌/书页/花蕊）会被当成水印，干净图误报达 4%~13%。
+      ③ 置信度 ≥ `DETECT_OCR_FALLBACK_MIN_CONF`。
 
     兼容两代 API：3.x 的 `predict()` 返回 [dict(rec_texts/rec_scores/dt_polys)]；
     2.x 的 `ocr()` 返回 [[ [quad, (text, score)], ... ]]。
@@ -263,6 +276,13 @@ def _paddle_boxes(rgb_patch: np.ndarray) -> List[Tuple[int, int, int, int]]:
     try:
         cv2 = _require_cv2()
         bgr = cv2.cvtColor(rgb_patch, cv2.COLOR_RGB2BGR)
+        # 与主通路一致：小块 2x 放大再识别，坐标随后按比例回缩。
+        scale = 1.0
+        ph, pw = bgr.shape[:2]
+        if max(ph, pw) < 640:
+            scale = 2.0
+            bgr = cv2.resize(bgr, None, fx=scale, fy=scale,
+                             interpolation=cv2.INTER_CUBIC)
         if hasattr(reader, "predict"):
             res = reader.predict(bgr)
         else:
@@ -273,32 +293,43 @@ def _paddle_boxes(rgb_patch: np.ndarray) -> List[Tuple[int, int, int, int]]:
 
     boxes: List[Tuple[int, int, int, int]] = []
     min_conf = float(config.DETECT_OCR_FALLBACK_MIN_CONF)
+    keywords = [
+        "".join(k.split()).lower()
+        for k in config.DETECT_OCR_WATERMARK_KEYWORDS.split(",") if k.strip()
+    ]
+
+    def _hit(text: str) -> bool:
+        """识别文本是否命中水印词表（去空白 + 小写后子串匹配）。"""
+        if not text:
+            return False
+        norm = "".join(str(text).split()).lower()
+        return any(k in norm for k in keywords)
+
+    def _add(poly, text, score) -> None:
+        if float(score) < min_conf or not _hit(text):
+            return
+        pts = np.asarray(poly).reshape(-1, 2) / scale
+        x0, y0 = pts.min(axis=0)
+        x1, y1 = pts.max(axis=0)
+        boxes.append((int(x0), int(y0), int(x1 - x0), int(y1 - y0)))
+
     try:
         # 3.x：predict 返回 [ {'rec_texts': [...], 'rec_scores': [...], 'dt_polys': [...]}, ... ]
         if res and isinstance(res, list) and res and isinstance(res[0], dict):
             for item in res:
                 polys = item.get("dt_polys") or []
+                texts = item.get("rec_texts") or []
                 scores = item.get("rec_scores") or []
                 for i, poly in enumerate(polys):
-                    sc = float(scores[i]) if i < len(scores) else 0.0
-                    if sc < min_conf:
-                        continue
-                    pts = np.asarray(poly).reshape(-1, 2)
-                    x0, y0 = pts.min(axis=0)
-                    x1, y1 = pts.max(axis=0)
-                    boxes.append((int(x0), int(y0), int(x1 - x0), int(y1 - y0)))
+                    _add(poly, texts[i] if i < len(texts) else "",
+                         scores[i] if i < len(scores) else 0.0)
             return boxes
         # 2.x：[[ [quad, (text, score)], ... ]]
         for line in (res or []):
             for entry in line or []:
                 try:
-                    quad, (_text, score) = entry[0], entry[1]
-                    if float(score) < min_conf:
-                        continue
-                    pts = np.asarray(quad).reshape(-1, 2)
-                    x0, y0 = pts.min(axis=0)
-                    x1, y1 = pts.max(axis=0)
-                    boxes.append((int(x0), int(y0), int(x1 - x0), int(y1 - y0)))
+                    quad, (text, score) = entry[0], entry[1]
+                    _add(quad, text, score)
                 except Exception:
                     continue
     except Exception as exc:
@@ -365,6 +396,10 @@ class DetectionRegion:
     # （不在掩码内），因此合并过滤阶段对这类区域改用 anchors 逐点判活。
     merged_from: int = 1
     anchors: Optional[List[Tuple[int, int]]] = None
+    # 阶段 420：该区域由**高置信外部引擎**（PaddleOCR 兜底）定位，其框本身即强证据
+    # ⇒ 掩码直接采纳框，不再走「框内证据二次确认」（低对比文字自身无残差证据，
+    # 会被证据闸整框误丢——这正是 08 针织低对比角标漏检的最后一环）。
+    trusted: bool = False
     # 阶段 P1：全幅平铺水印的「全帧区域」标记 —— bbox 覆盖整幅（供门禁区域匹配 /
     # 产品提示「水印铺满全图」），但掩码默认仍为稀疏水印像素（避免整图重绘毁图）。
     # 合并过滤阶段对该类区域豁免「中心点须在掩码内」与面积上下限。
@@ -1669,6 +1704,7 @@ def _ocr_readtext(reader, bgr, timeout: float):
 def _ocr_boxes_in_patch(
     rgb_patch: np.ndarray, px: int, py: int,
     accept_low_conf: bool = False,
+    trusted_out: Optional[List[Tuple[int, int, int, int]]] = None,
 ) -> List[Tuple[int, int, int, int]]:
     """
     在单个裁剪块上调用 EasyOCR，返回映射到「原图坐标」的文字框包围盒。
@@ -1692,28 +1728,29 @@ def _ocr_boxes_in_patch(
           是**定位**而非**识别**——检测框几何常正确，识别失败只拉低置信度。
     """
     reader = _get_ocr_reader()
-    if reader is None:
-        return []
     # 阶段 418：同图同 patch 复用 OCR 定位框（重检/调参不重复 readtext）。
     key = _ocr_patch_key(rgb_patch, px, py, accept_low_conf)
     if key in _OCR_PATCH_CACHE:
         _OCR_PATCH_CACHE.move_to_end(key)
         return list(_OCR_PATCH_CACHE[key])
-    try:
-        cv2 = _require_cv2()
-        bgr = cv2.cvtColor(rgb_patch, cv2.COLOR_RGB2BGR)
-        # 预处理放大：小图放大识别，坐标随后按比例回缩。
-        scale = 1.0
-        if config.DETECT_OCR_UPSCALE:
-            ph, pw = bgr.shape[:2]
-            if max(ph, pw) < 640:
-                scale = 2.0
-                bgr = cv2.resize(bgr, None, fx=scale, fy=scale,
-                                 interpolation=cv2.INTER_CUBIC)
-        results = _ocr_readtext(reader, bgr, config.DETECT_OCR_TIMEOUT)
-    except Exception as exc:
-        log.warning("OCR 在角落区域识别失败：%s", exc)
-        return []
+    # 阶段 420：EasyOCR 缺失时**不**直接放弃——PaddleOCR 兜底可独立工作。
+    results = []
+    scale = 1.0
+    if reader is not None:
+        try:
+            cv2 = _require_cv2()
+            bgr = cv2.cvtColor(rgb_patch, cv2.COLOR_RGB2BGR)
+            # 预处理放大：小图放大识别，坐标随后按比例回缩。
+            if config.DETECT_OCR_UPSCALE:
+                ph, pw = bgr.shape[:2]
+                if max(ph, pw) < 640:
+                    scale = 2.0
+                    bgr = cv2.resize(bgr, None, fx=scale, fy=scale,
+                                     interpolation=cv2.INTER_CUBIC)
+            results = _ocr_readtext(reader, bgr, config.DETECT_OCR_TIMEOUT)
+        except Exception as exc:
+            log.warning("OCR 在角落区域识别失败：%s", exc)
+            results = []
 
     min_conf = config.DETECT_OCR_MIN_CONFIDENCE
     raw: List[Tuple[float, int, int, int, int]] = []
@@ -1745,7 +1782,12 @@ def _ocr_boxes_in_patch(
         # ⇒ 用 PaddleOCR 兜底再试一次（其 DB 检测器对低对比文字更强）。
         _pb = _paddle_boxes(rgb_patch)
         if _pb:
-            boxes.extend(_pb)
+            # paddle 返回的是 **patch 相对坐标**，须加上 patch 原点（与 easyocr 路径同口径）。
+            _pb_abs = [(px + bx, py + by, bw, bh) for (bx, by, bw, bh) in _pb]
+            if trusted_out is not None:
+                trusted_out.extend(_pb_abs)
+            else:
+                boxes.extend(_pb_abs)
             log.debug("PaddleOCR 兜底在搜索区给出 %d 个文字框。", len(_pb))
     _OCR_PATCH_CACHE[key] = list(boxes)
     _OCR_PATCH_CACHE.move_to_end(key)
@@ -2006,18 +2048,23 @@ def detect_corner_logo(
                     x=bx, y=by, w=bw, h=bh, kind=KIND_CORNER_LOGO,
                     confidence=0.7,
                 ))
-        # 优先 OCR（阶段 418：中心 patch 跳过，省一次 readtext）。
-        if use_ocr and _ocr_available() and (px, py) != _center:
-            boxes = _ocr_boxes_in_patch(patch, px, py, accept_low_conf=True)
-            if boxes:
-                # 阶段 100：此处原有 `used_ocr_here = True`，但它从未被读取——
-                # `detect_corner_logo` 只返回 regions，调用方按 `r.kind == KIND_OCR_TEXT`
-                # 自行判定（属死变量，注册后删除）。
-                for (bx, by, bw, bh) in boxes:
-                    regions.append(DetectionRegion(
-                        x=bx, y=by, w=bw, h=bh, kind=KIND_OCR_TEXT,
-                        confidence=0.9,
-                    ))
+        # 优先 OCR（阶段 418：中心 patch 跳过；阶段 420：EasyOCR 不可用时由 PaddleOCR 兜底）。
+        if use_ocr and (px, py) != _center and (_ocr_available() or _paddle_available()):
+            _trusted: List[Tuple[int, int, int, int]] = []
+            boxes = _ocr_boxes_in_patch(patch, px, py, accept_low_conf=True,
+                                        trusted_out=_trusted)
+            # 阶段 100：`used_ocr_here` 是死变量（调用方按 r.kind == KIND_OCR_TEXT 自判），已删除。
+            for (bx, by, bw, bh) in boxes:
+                regions.append(DetectionRegion(
+                    x=bx, y=by, w=bw, h=bh, kind=KIND_OCR_TEXT,
+                    confidence=0.9,
+                ))
+            for (bx, by, bw, bh) in _trusted:
+                regions.append(DetectionRegion(
+                    x=bx, y=by, w=bw, h=bh, kind=KIND_OCR_TEXT,
+                    confidence=0.95, trusted=True,
+                ))
+            if boxes or _trusted:
                 continue  # 该块已用 OCR 处理
         # 降级：MSER / 连通域（阶段 100：默认关闭，见 config.DETECT_CORNER_MSER_ENABLED）。
         # 控制流注意——本分支在「OCR 可用但该块无输出」时**同样会执行**，因此它并非
@@ -2355,13 +2402,19 @@ def detect_edge_text(
         band_gray = cv2.cvtColor(band, cv2.COLOR_RGB2GRAY)
         orientation = "horizontal" if bh <= bw else "vertical"
 
-        if use_ocr and _ocr_available():
-            ocr_boxes = _ocr_boxes_in_patch(band, bx, by)
-            if ocr_boxes:
-                for (x0, y0, w0, h0) in ocr_boxes:
-                    regions.append(DetectionRegion(
-                        x=x0, y=y0, w=w0, h=h0, kind=KIND_OCR_TEXT, confidence=0.9
-                    ))
+        if use_ocr and (_ocr_available() or _paddle_available()):
+            _trusted: List[Tuple[int, int, int, int]] = []
+            ocr_boxes = _ocr_boxes_in_patch(band, bx, by, trusted_out=_trusted)
+            for (x0, y0, w0, h0) in ocr_boxes:
+                regions.append(DetectionRegion(
+                    x=x0, y=y0, w=w0, h=h0, kind=KIND_OCR_TEXT, confidence=0.9
+                ))
+            for (x0, y0, w0, h0) in _trusted:
+                regions.append(DetectionRegion(
+                    x=x0, y=y0, w=w0, h=h0, kind=KIND_OCR_TEXT, confidence=0.95,
+                    trusted=True,
+                ))
+            if ocr_boxes or _trusted:
                 continue
         # 降级：投影法。
         # 阶段 52：额外传入绝对残差门限，启用第二条通路——在纹理/照片底图上
@@ -3285,9 +3338,17 @@ def detect_watermark_mask(
         else:
             # 阶段 P0-4：先剥离 OCR 文字框，其余区域走原证据 refine 通路。
             _trust = bool(config.DETECT_OCR_BOX_TRUST)
-            _ocr_regs = [r for r in regions if _trust and r.kind == KIND_OCR_TEXT]
-            _other = [r for r in regions if not (_trust and r.kind == KIND_OCR_TEXT)]
+            # 阶段 420：PaddleOCR 兜底框自带高置信证据（0.95+）⇒ 直接采纳框，
+            # 不走「框内证据二次确认」（低对比文字自身无残差证据，会被证据闸整框误丢）。
+            _trusted_regs = [r for r in regions if getattr(r, "trusted", False)]
+            _ocr_regs = [r for r in regions
+                         if _trust and r.kind == KIND_OCR_TEXT
+                         and not getattr(r, "trusted", False)]
+            _other = [r for r in regions
+                      if not (_trust and r.kind == KIND_OCR_TEXT)]
             m = np.zeros((h, w), np.uint8)
+            if _trusted_regs:
+                m = np.maximum(m, _regions_to_mask(_trusted_regs, h, w))
             if _ocr_regs:
                 # 阶段 409：角落高置信 OCR 豁免证据二次确认（#42 召回缺口）。
                 # 角落是强水印先验；暗底/低对比上证据场不响应会整框丢真水印。

@@ -2095,6 +2095,16 @@ DETECT_OCR_FALLBACK_MIN_CONF: Final[float] = _env_float(
     "DETECT_OCR_FALLBACK_MIN_CONF", 0.3, 0.0, 1.0
 )
 
+# 【水印词表】逗号分隔（阶段 420，默认含豆包/即梦/AI生成等平台水印字样）。
+#   PaddleOCR 兜底**只在识别文本命中本表时**才采纳其框——场景文字（霓虹招牌/书页/花蕊）
+#   不会被当成水印（实测不加此判定时干净图误报可达 4%~13%，违反「干净图不动」承诺）。
+#   命中词表是**强水印信号**：此时直接采纳框（不再走框内证据二次确认，低对比文字无残差）。
+DETECT_OCR_WATERMARK_KEYWORDS: Final[str] = _env_str(
+    "DETECT_OCR_WATERMARK_KEYWORDS",
+    "豆包,即梦,AI生成,AI 生成,AIGC,Doubao,Jimeng,Midjourney,DALL-E,Stable Diffusion,StableDiffusion,"
+    "千库,觅元素,稿定,创客贴,图怪兽,包图网,视觉中国,全景网,站酷,Unsplash,Pexels,Getty,Shutterstock",
+)
+
 # 【OCR 单图识别超时护栏】秒（阶段审计新增，默认 30.0）。
 #   真实图上偶有图像触发 EasyOCR 内部极慢路径（CPU 模式），单 patch 可卡数分钟，
 #   使整批门禁/检测挂起（实测某真实图令 general 全量跑出 918.8s）。开启后，对单个

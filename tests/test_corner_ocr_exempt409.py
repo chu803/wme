@@ -27,7 +27,8 @@ def _make_img():
 
 def _mock_ocr(monkeypatch):
     # 仅在右下角搜索区（px=py=384）返回一个文字框，其余搜索区无输出。
-    def fake(patch, px, py, accept_low_conf=False):
+    # trusted_out：阶段 420 起可选参数（PaddleOCR 兜底框走这里）；本替身不用它。
+    def fake(patch, px, py, accept_low_conf=False, trusted_out=None):
         if px == 384 and py == 384:
             return [(400, 440, 80, 40)]
         return []

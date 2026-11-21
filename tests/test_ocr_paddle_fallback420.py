@@ -37,7 +37,8 @@ def test_fallback_used_when_easyocr_empty(monkeypatch):
     _patch(monkeypatch, easy_out=[], paddle_out=[(10, 20, 30, 15)])
     patch = np.zeros((40, 40, 3), np.uint8)
     boxes = D._ocr_boxes_in_patch(patch, 5, 7, accept_low_conf=True)
-    assert boxes == [(10, 20, 30, 15)], "EasyOCR 零产出时应采纳 PaddleOCR 兜底框"
+    # paddle 框是 **patch 相对坐标**，须加上 patch 原点（与 easyocr 路径同口径）。
+    assert boxes == [(15, 27, 30, 15)], "EasyOCR 零产出时应采纳 PaddleOCR 兜底框（按 patch 原点换算）"
 
 
 def test_fallback_not_called_when_easyocr_has_box(monkeypatch):
