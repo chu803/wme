@@ -208,6 +208,104 @@ def _get_ocr_reader():
     return _OCR_READER
 
 
+# ---------------------------------------------------------------------------
+# 阶段 420：PaddleOCR 兜底（可选增强；未安装 / 初始化失败即 no-op）
+# ---------------------------------------------------------------------------
+_PADDLE_OCR = None
+_PADDLE_OCR_FAILED = False
+_PADDLE_LOCK = threading.Lock()
+
+
+def _paddle_available() -> bool:
+    """PaddleOCR 兜底是否可用（装了 paddleocr 且开关打开）。"""
+    if not config.DETECT_OCR_FALLBACK_PADDLE or _PADDLE_OCR_FAILED:
+        return False
+    try:
+        import paddleocr  # noqa: F401
+    except Exception:
+        return False
+    return True
+
+
+def _get_paddle_ocr():
+    """惰性初始化 PaddleOCR 阅读器（全局单例）；失败即永久禁用，不影响主通路。"""
+    global _PADDLE_OCR, _PADDLE_OCR_FAILED
+    if _PADDLE_OCR is not None or _PADDLE_OCR_FAILED:
+        return _PADDLE_OCR
+    with _PADDLE_LOCK:
+        if _PADDLE_OCR is None and not _PADDLE_OCR_FAILED:
+            try:
+                from paddleocr import PaddleOCR
+
+                _PADDLE_OCR = PaddleOCR(
+                    lang="ch",
+                    use_doc_orientation_classify=False,
+                    use_doc_unwarping=False,
+                    use_textline_orientation=False,
+                )
+                log.info("PaddleOCR 兜底阅读器初始化完成。")
+            except Exception as exc:
+                log.warning("PaddleOCR 初始化失败，兜底关闭（主通路不受影响）：%s", exc)
+                _PADDLE_OCR_FAILED = True
+                _PADDLE_OCR = None
+    return _PADDLE_OCR
+
+
+def _paddle_boxes(rgb_patch: np.ndarray) -> List[Tuple[int, int, int, int]]:
+    """用 PaddleOCR 在 patch 上找文字框，返回 patch 坐标系的 (x, y, w, h)。
+
+    兼容两代 API：3.x 的 `predict()` 返回 [dict(rec_texts/rec_scores/dt_polys)]；
+    2.x 的 `ocr()` 返回 [[ [quad, (text, score)], ... ]]。
+    """
+    reader = _get_paddle_ocr()
+    if reader is None:
+        return []
+    try:
+        cv2 = _require_cv2()
+        bgr = cv2.cvtColor(rgb_patch, cv2.COLOR_RGB2BGR)
+        if hasattr(reader, "predict"):
+            res = reader.predict(bgr)
+        else:
+            res = reader.ocr(bgr)
+    except Exception as exc:
+        log.warning("PaddleOCR 兜底识别失败：%s", exc)
+        return []
+
+    boxes: List[Tuple[int, int, int, int]] = []
+    min_conf = float(config.DETECT_OCR_FALLBACK_MIN_CONF)
+    try:
+        # 3.x：predict 返回 [ {'rec_texts': [...], 'rec_scores': [...], 'dt_polys': [...]}, ... ]
+        if res and isinstance(res, list) and res and isinstance(res[0], dict):
+            for item in res:
+                polys = item.get("dt_polys") or []
+                scores = item.get("rec_scores") or []
+                for i, poly in enumerate(polys):
+                    sc = float(scores[i]) if i < len(scores) else 0.0
+                    if sc < min_conf:
+                        continue
+                    pts = np.asarray(poly).reshape(-1, 2)
+                    x0, y0 = pts.min(axis=0)
+                    x1, y1 = pts.max(axis=0)
+                    boxes.append((int(x0), int(y0), int(x1 - x0), int(y1 - y0)))
+            return boxes
+        # 2.x：[[ [quad, (text, score)], ... ]]
+        for line in (res or []):
+            for entry in line or []:
+                try:
+                    quad, (_text, score) = entry[0], entry[1]
+                    if float(score) < min_conf:
+                        continue
+                    pts = np.asarray(quad).reshape(-1, 2)
+                    x0, y0 = pts.min(axis=0)
+                    x1, y1 = pts.max(axis=0)
+                    boxes.append((int(x0), int(y0), int(x1 - x0), int(y1 - y0)))
+                except Exception:
+                    continue
+    except Exception as exc:
+        log.warning("PaddleOCR 兜底结果解析失败：%s", exc)
+    return boxes
+
+
 def warm_up_ocr(blocking: bool = False) -> None:
     """
     预热 EasyOCR 阅读器，消除「首个检测请求」的冷启动卡顿（阶段 238）。
@@ -1642,6 +1740,13 @@ def _ocr_boxes_in_patch(
             if 1.3 <= ar <= 25 and w >= 12 and h >= 6:
                 boxes.append((x, y, w, h))
                 break
+    if not boxes and _paddle_available():
+        # 阶段 420：EasyOCR 在此 patch 零产出（低对比/强纹理场景**检测级**失灵）
+        # ⇒ 用 PaddleOCR 兜底再试一次（其 DB 检测器对低对比文字更强）。
+        _pb = _paddle_boxes(rgb_patch)
+        if _pb:
+            boxes.extend(_pb)
+            log.debug("PaddleOCR 兜底在搜索区给出 %d 个文字框。", len(_pb))
     _OCR_PATCH_CACHE[key] = list(boxes)
     _OCR_PATCH_CACHE.move_to_end(key)
     while len(_OCR_PATCH_CACHE) > _OCR_PATCH_CACHE_MAX:

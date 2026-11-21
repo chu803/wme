@@ -2081,6 +2081,20 @@ DETECT_OCR_UPSCALE: Final[bool] = _env_bool("DETECT_OCR_UPSCALE", True)
 #   仅作用于角落 patch（_ocr_boxes_in_patch(accept_low_conf=True)），不影响边缘检测通路。
 DETECT_OCR_CORNER_FALLBACK: Final[bool] = _env_bool("DETECT_OCR_CORNER_FALLBACK", True)
 
+# 【OCR 兜底引擎：PaddleOCR】布尔（阶段 420，默认开；未装 paddleocr 时自动 no-op）。
+#   EasyOCR 在「低对比 + 强纹理」上**检测级**失灵（连文字框都提不出——见 08 针织低对比角标，
+#   7 种预处理均无效）。开启后：当 EasyOCR 在角落/边缘搜索区**零产出**时，改用 PaddleOCR
+#   再试一次（其 DB 检测器对低对比场景文字明显更强），取其文字框。
+#   PaddleOCR 属**可选增强**：不进 requirements-min（装则生效、不装则维持现状），
+#   因此不改动 PyPI 元数据与安装体积；模型首次使用需联网下载（失败即降级，不影响检测）。
+DETECT_OCR_FALLBACK_PADDLE: Final[bool] = _env_bool("DETECT_OCR_FALLBACK_PADDLE", True)
+
+# 【PaddleOCR 兜底最低置信度】浮点 0~1（阶段 420，默认 0.3）。
+#   兜底只用于「EasyOCR 零产出」的补丁，置信度门槛略高于主引擎，避免低质量框进掩码。
+DETECT_OCR_FALLBACK_MIN_CONF: Final[float] = _env_float(
+    "DETECT_OCR_FALLBACK_MIN_CONF", 0.3, 0.0, 1.0
+)
+
 # 【OCR 单图识别超时护栏】秒（阶段审计新增，默认 30.0）。
 #   真实图上偶有图像触发 EasyOCR 内部极慢路径（CPU 模式），单 patch 可卡数分钟，
 #   使整批门禁/检测挂起（实测某真实图令 general 全量跑出 918.8s）。开启后，对单个
